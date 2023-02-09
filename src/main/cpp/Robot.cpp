@@ -1,9 +1,19 @@
 #include "Robot.h"
 
+#include <frc/DataLogManager.h>
+#include <frc/DriverStation.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc2/command/CommandScheduler.h>
 
-void Robot::RobotInit() {}
+void Robot::RobotInit() {
+  // Initializes recording of log data to disk and enables logging of
+  // DS control and joystick data
+  frc::DataLogManager::Start();
+
+#ifdef LOG_DATA_DRIVER_STATION
+  frc::DriverStation::StartDataLog(frc::DataLogManager::GetLog());
+#endif
+}
 
 /**
  * This function is called every 20 ms, no matter the mode. Use this for items
