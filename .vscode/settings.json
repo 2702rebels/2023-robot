@@ -1,4 +1,5 @@
 {
+  "editor.formatOnSave": true,
   "java.configuration.updateBuildConfiguration": "disabled",
   "java.import.gradle.enabled": false,
   "files.exclude": {
@@ -14,5 +15,11 @@
     "**/.factorypath": true,
     "**/*~": true
   },
-  "C_Cpp.default.configurationProvider": "vscode-wpilib"
+  "C_Cpp.default.configurationProvider": "vscode-wpilib",
+  "files.associations": {
+    "*.json": "jsonc",
+    "numbers": "cpp",
+    "*.inc": "cpp"
+  },
+  "cSpell.words": ["Brushless", "Deadband", "odometry", "teleop"]
 }
