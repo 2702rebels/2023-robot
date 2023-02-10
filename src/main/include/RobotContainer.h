@@ -11,7 +11,9 @@
 #include <frc2/command/RunCommand.h>
 
 #include "Constants.h"
+#include "subsystems/DoubleJointedArmSubsystem.h"
 #include "subsystems/DriveSubsystem.h"
+#include "subsystems/ExtendingArmSubsystem.h"
 
 /**
  * This class is where the bulk of the robot should be declared.
@@ -32,6 +34,12 @@ class RobotContainer {
 
   // The robot's subsystems
   DriveSubsystem m_drive;
+#ifdef EXTENDING_ARM_ENABLED
+  ExtendingArmSubsystem m_extendingArm;
+#endif
+#ifdef DOUBLE_JOINTED_ARM_ENABLED
+  DoubleJointedArmSubsystem m_djArm;
+#endif
 
   // The chooser for the autonomous routines
   frc::SendableChooser<frc2::Command*> m_chooser;

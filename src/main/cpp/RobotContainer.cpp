@@ -46,6 +46,26 @@ RobotContainer::RobotContainer() {
 void RobotContainer::ConfigureButtonBindings() {
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightBumper)
     .WhileTrue(new frc2::RunCommand([this] { m_drive.SetX(); }, { &m_drive }));
+
+#ifdef EXTENDING_ARM_ENABLED
+  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kA)
+    .WhileActiveOnce(
+      new frc2::RunCommand([this] { m_extendingArm.SetAxis1Angle(45); }, { &m_extendingArm }));
+
+  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kB)
+    .WhileActiveOnce(
+      new frc2::RunCommand([this] { m_extendingArm.SetAxis1Angle(90); }, { &m_extendingArm }));
+
+  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kY)
+    .WhileActiveOnce(
+      new frc2::RunCommand([this] { m_extendingArm.SetAxis1Angle(180); }, { &m_extendingArm }));
+
+  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kX)
+    .WhileActiveOnce(
+      new frc2::RunCommand([this] { m_extendingArm.SetAxis1Off(); }, { &m_extendingArm }));
+#endif
+#ifdef DOUBLE_JOINTED_ARM_ENABLED
+#endif
 }
 
 frc2::Command* RobotContainer::GetAutonomousCommand() {

@@ -133,3 +133,89 @@ namespace IntakeConstants {
 constexpr int kIntakeLeaderControllerCanId = 9;
 constexpr int kIntakeFollowerControllerCanId = 10;
 }  // namespace IntakeConstants
+
+namespace ExtendingArmConstants {
+// Motor controller CAN ID's
+constexpr int kExtendingArmAxis1MotorControllerCanId = 11;
+constexpr int kExtendingArmAxis2MotorControllerCanId = 12;
+constexpr int kExtendingArmAxis3MotorControllerCanId = 13;
+
+// PID constants for the arm axis's.
+// Axis 1 (Shoulder)
+constexpr double kAxis1P = 0.05;
+constexpr double kAxis1I = 0;
+constexpr double kAxis1D = 0;
+constexpr double kAxis1FF = 0;
+constexpr double kAxis1MinOutput = -1;
+constexpr double kAxis1MaxOutput = 1;
+
+// Neo into a versa 45:1 -> sprocket reduction of 26:14 -> sprocket reduction of 60:14.
+constexpr double kAxis1OverallReduction = (9.0 / 1.0) * (5.0 / 1.0) * (26.0 / 14.0) * (60.0 / 14.0);
+constexpr double kAxis1MotorRotationsPerDegree = 360 / kAxis1OverallReduction;
+constexpr double kAxis1ZeroAngle = 30;
+
+// Axis 2 (Extension)
+constexpr double kAxis2P = 0.05;
+constexpr double kAxis2I = 0;
+constexpr double kAxis2D = 0;
+constexpr double kAxis2FF = 0;
+constexpr double kAxis2MinOutput = -1;
+constexpr double kAxis2MaxOutput = 1;
+
+// Neo 550 into versa 45:1.
+constexpr double kAxis2OverallReduction = (9.0 / 1.0) * (5.0 / 1.0);
+// Belt is running on an 18t 5mm HTD pulley.
+constexpr double kAxis2MotorRotationsPerInchOfTravel =
+  kAxis2OverallReduction / ((18.0 * 5.0) / 25.4);
+
+// Axis 3 (Wrist)
+constexpr double kAxis3P = 0.05;
+constexpr double kAxis3I = 0;
+constexpr double kAxis3D = 0;
+constexpr double kAxis3FF = 0;
+constexpr double kAxis3MinOutput = -1;
+constexpr double kAxis3MaxOutput = 1;
+
+}  // namespace ExtendingArmConstants
+
+namespace DoubleJointedArmConstants {
+// Motor controller CAN ID's.
+constexpr int kDoubleJointedArmAxis1MotorControllerCanId = 11;
+constexpr int kDoubleJointedArmAxis2MotorControllerCanId = 12;
+constexpr int kDoubleJointedArmAxis3MotorControllerCanId = 13;
+
+// PID constants for the arm axis's.
+// Axis 1 (Shoulder)
+constexpr double kAxis1P = 0.05;
+constexpr double kAxis1I = 0;
+constexpr double kAxis1D = 0;
+constexpr double kAxis1FF = 0;
+constexpr double kAxis1MinOutput = -1;
+constexpr double kAxis1MaxOutput = 1;
+
+// Neo into a versa 45:1 -> sprocket reduction of 26:14 -> sprocket reduction of 60:14.
+constexpr double kAxis1OverallReduction = (9.0 / 1.0) * (5.0 / 1.0) * (26.0 / 14.0) * (60.0 / 14.0);
+constexpr double kAxis1MotorRotationsPerDegree = 360 / kAxis1OverallReduction;
+constexpr double kAxis1ZeroAngle = 30;
+
+// Axis 2 (Extension)
+constexpr double kAxis2P = 0.05;
+constexpr double kAxis2I = 0;
+constexpr double kAxis2D = 0;
+constexpr double kAxis2FF = 0;
+constexpr double kAxis2MinOutput = -1;
+constexpr double kAxis2MaxOutput = 1;
+
+// Neo into versa 45:1.
+constexpr double kAxis2OverallReduction = (9.0 / 1.0) * (5.0 / 1.0);
+constexpr double kAxis2MotorRotationsPerDegree = 360 / kAxis1OverallReduction;
+constexpr double kAxis2ZeroAngle = 30;
+
+// Axis 3 (Wrist)
+constexpr double kAxis3P = 0.05;
+constexpr double kAxis3I = 0;
+constexpr double kAxis3D = 0;
+constexpr double kAxis3FF = 0;
+constexpr double kAxis3MinOutput = -1;
+constexpr double kAxis3MaxOutput = 1;
+}  // namespace DoubleJointedArmConstants
