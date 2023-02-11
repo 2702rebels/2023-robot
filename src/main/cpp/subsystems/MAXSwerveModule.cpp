@@ -98,9 +98,11 @@ void MAXSwerveModule::SetDesiredState(const frc::SwerveModuleState& desiredState
     desiredState.angle + frc::Rotation2d(units::radian_t { m_chassisAngularOffset });
 
   // optimize the reference state to avoid spinning further than 90 degrees
-  frc::SwerveModuleState optimizedDesiredState { frc::SwerveModuleState::Optimize(
-    correctedDesiredState,
-    frc::Rotation2d(units::radian_t { m_turningAbsoluteEncoder.GetPosition() })) };
+  frc::SwerveModuleState optimizedDesiredState {
+    frc::SwerveModuleState::Optimize(
+      correctedDesiredState,
+      frc::Rotation2d(units::radian_t { m_turningAbsoluteEncoder.GetPosition() })),
+  };
 
   // command driving and turning SPARK MAX towards their respective setpoints
   m_drivingPIDController.SetReference(

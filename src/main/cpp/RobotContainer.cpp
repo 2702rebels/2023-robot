@@ -22,6 +22,9 @@ using namespace DriveConstants;
 RobotContainer::RobotContainer() {
   // initialize all of your commands and subsystems here
 
+  // register subsystems on the shuffleboard
+  frc::Shuffleboard::GetTab("Drivetrain").Add(m_drive);
+
   // configure the button bindings
   ConfigureButtonBindings();
 

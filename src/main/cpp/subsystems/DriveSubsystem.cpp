@@ -1,17 +1,38 @@
 #include "subsystems/DriveSubsystem.h"
 
+#include <frc/DataLogManager.h>
+#include <frc/StateSpaceUtil.h>
 #include <frc/geometry/Rotation2d.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <units/angle.h>
 #include <units/angular_velocity.h>
 #include <units/velocity.h>
+#include <wpi/DataLog.h>
+#include <wpi/sendable/SendableBuilder.h>
 
 #include "Constants.h"
+#include "Settings.h"
+#include "utils/MathUtils.h"
 #include "utils/SwerveUtils.h"
 
 using namespace DriveConstants;
 
+REGISTER_DOUBLE(DrivePoseStdDevStateX, "Drive/Pose/StdDev State/X", 0.1)
+REGISTER_DOUBLE(DrivePoseStdDevStateY, "Drive/Pose/StdDev State/Y", 0.1)
+REGISTER_DOUBLE(DrivePoseStdDevStateH, "Drive/Pose/StdDev State/θ", 0.1)
+REGISTER_DOUBLE(DrivePoseStdDevVisionX, "Drive/Pose/StdDev Vision/X", 0.1)
+REGISTER_DOUBLE(DrivePoseStdDevVisionY, "Drive/Pose/StdDev Vision/Y", 0.1)
+REGISTER_DOUBLE(DrivePoseStdDevVisionH, "Drive/Pose/StdDev Vision/θ", 0.1)
+REGISTER_DOUBLE(DriveSlewRateDirection, "Drive/Slew/Direction", DriveConstants::kDirectionSlewRate)
+REGISTER_DOUBLE(DriveSlewRateMagnitude, "Drive/Slew/Magnitude", DriveConstants::kMagnitudeSlewRate)
+REGISTER_DOUBLE(DriveSlewRateRotation, "Drive/Slew/Rotation", DriveConstants::kRotationalSlewRate)
+REGISTER_DOUBLE(DriveTuneTranslationStep, "Drive/Tune/Translation Step", 45)
+
 DriveSubsystem::DriveSubsystem() :
+  m_magLimiter { GetDriveSlewRateMagnitude() / 1_s },
+  m_rotLimiter { GetDriveSlewRateRotation() / 1_s },
+  m_slewRateDirection { GetDriveSlewRateDirection() },
+  m_translationStep { units::convert<units::degree, units::radian>(GetDriveTuneTranslationStep()) },
   m_frontLeft {
     kFrontLeftDrivingCanId,
     kFrontLeftTurningCanId,
@@ -35,25 +56,35 @@ DriveSubsystem::DriveSubsystem() :
   m_odometry {
     kDriveKinematics,
     frc::Rotation2d(GetGyroAngle()),
-    { m_frontLeft.GetPosition(),
+    {
+      m_frontLeft.GetPosition(),
       m_frontRight.GetPosition(),
       m_rearLeft.GetPosition(),
-      m_rearRight.GetPosition() },
+      m_rearRight.GetPosition(),
+    },
     frc::Pose2d {},
+#ifdef DRIVETRAIN_ODOMETRY_VISION
+    { GetDrivePoseStdDevStateX(), GetDrivePoseStdDevStateY(), GetDrivePoseStdDevStateH() },
+    { GetDrivePoseStdDevVisionX(), GetDrivePoseStdDevVisionY(), GetDrivePoseStdDevVisionH() },
+#endif
   } {
   frc::SmartDashboard::PutData("Field", &m_field);
   frc::SmartDashboard::PutData("Gyro", &m_gyro);
 }
 
+void DriveSubsystem::InitSendable(wpi::SendableBuilder& builder) {
+  SubsystemBase::InitSendable(builder);
+
+  builder.SetSmartDashboardType("Drive");
+
+  builder.AddDoubleProperty(
+    "Telemetry/Translation Heading", [this] { return m_currentTranslationDir; }, nullptr);
+  builder.AddDoubleProperty(
+    "Telemetry/Translation Magnitude", [this] { return m_currentTranslationMag; }, nullptr);
+}
+
 void DriveSubsystem::Periodic() {
-  // Implementation of subsystem periodic method goes here.
-  m_odometry.Update(
-    frc::Rotation2d(GetGyroAngle()),
-    { m_frontLeft.GetPosition(),
-      m_rearLeft.GetPosition(),
-      m_frontRight.GetPosition(),
-      m_rearRight.GetPosition() });
-  m_field.SetRobotPose(m_odometry.GetPose());
+  UpdateOdometry();
 }
 
 void DriveSubsystem::Drive(
@@ -67,13 +98,17 @@ void DriveSubsystem::Drive(
 
   if (rateLimit) {
     // convert XY to polar for rate limiting
-    const auto inputTranslationDir = atan2(ySpeed.value(), xSpeed.value());
+    auto inputTranslationDir = atan2(ySpeed.value(), xSpeed.value());
     const auto inputTranslationMag = sqrt(pow(xSpeed.value(), 2) + pow(ySpeed.value(), 2));
+
+    if (m_translationStep > 0) {
+      inputTranslationDir = MathUtils::RoundToStep(inputTranslationDir, m_translationStep);
+    }
 
     // calculate the direction slew rate based on an estimate of the lateral acceleration
     const auto directionSlewRate =
       m_currentTranslationMag != 0.0
-        ? abs(DriveConstants::kDirectionSlewRate / m_currentTranslationMag)
+        ? abs(m_slewRateDirection / m_currentTranslationMag)
         : 500.0;  // some high number that means the slew rate is effectively instantaneous
 
     const auto currentTime = wpi::Now() * 1e-6;
@@ -86,9 +121,9 @@ void DriveSubsystem::Drive(
         m_currentTranslationDir, inputTranslationDir, directionSlewRate * elapsedTime);
       m_currentTranslationMag = m_magLimiter.Calculate(inputTranslationMag);
     } else if (angleDiff > 0.85 * std::numbers::pi) {
+      // some small number to avoid floating-point errors with equality checking
       if (m_currentTranslationMag > 1e-4) {
-        // some small number to avoid floating-point errors with
-        // equality checking keep currentTranslationDir unchanged
+        // keep currentTranslationDir unchanged
         m_currentTranslationMag = m_magLimiter.Calculate(0.0);
       } else {
         m_currentTranslationDir =
@@ -156,6 +191,10 @@ void DriveSubsystem::ResetEncoders() {
   m_rearRight.ResetEncoders();
 }
 
+units::degree_t DriveSubsystem::GetGyroAngle() const {
+  return units::degree_t { m_gyro.GetAngle() };
+}
+
 units::degree_t DriveSubsystem::GetHeading() const {
   return frc::Rotation2d(GetGyroAngle()).Degrees();
 }
@@ -168,8 +207,29 @@ double DriveSubsystem::GetTurnRate() const {
   return -m_gyro.GetRate();
 }
 
+void DriveSubsystem::UpdateOdometry() {
+  m_odometry.Update(
+    frc::Rotation2d(GetGyroAngle()),
+    {
+      m_frontLeft.GetPosition(),
+      m_rearLeft.GetPosition(),
+      m_frontRight.GetPosition(),
+      m_rearRight.GetPosition(),
+    });
+
+  // feed global position from camera
+  // m_odometry.AddVisionMeasurement(pose, timestamp);
+
+  // update field position for debugging purposes
+  m_field.SetRobotPose(GetPose());
+}
+
 frc::Pose2d DriveSubsystem::GetPose() const {
+#ifdef DRIVETRAIN_ODOMETRY_VISION
+  return m_odometry.GetEstimatedPosition();
+#else
   return m_odometry.GetPose();
+#endif
 }
 
 void DriveSubsystem::ResetOdometry(frc::Pose2d pose) {
@@ -182,8 +242,4 @@ void DriveSubsystem::ResetOdometry(frc::Pose2d pose) {
       m_rearRight.GetPosition(),
     },
     pose);
-}
-
-units::degree_t DriveSubsystem::GetGyroAngle() const {
-  return units::degree_t { m_gyro.GetAngle() };
 }

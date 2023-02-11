@@ -2,6 +2,7 @@
 
 #include <ctre/Phoenix.h>
 #include <frc/ADIS16470_IMU.h>
+#include <frc/estimator/SwerveDrivePoseEstimator.h>
 #include <frc/filter/SlewRateLimiter.h>
 #include <frc/geometry/Pose2d.h>
 #include <frc/geometry/Rotation2d.h>
@@ -20,6 +21,11 @@
 class DriveSubsystem : public frc2::SubsystemBase {
  public:
   DriveSubsystem();
+
+  /**
+   * Custom subsystem telemetry.
+   */
+  void InitSendable(wpi::SendableBuilder& builder) override;
 
   /**
    * Will be called periodically whenever the CommandScheduler runs.
@@ -118,13 +124,26 @@ class DriveSubsystem : public frc2::SubsystemBase {
   double m_currentRotation = 0.0;
   double m_currentTranslationDir = 0.0;
   double m_currentTranslationMag = 0.0;
+  double m_slewRateDirection = DriveConstants::kDirectionSlewRate;
 
-  frc::SlewRateLimiter<units::scalar> m_magLimiter { DriveConstants::kMagnitudeSlewRate / 1_s };
-  frc::SlewRateLimiter<units::scalar> m_rotLimiter { DriveConstants::kRotationalSlewRate / 1_s };
+  // Constrain translational direction heading to a discrete step values (in radians)
+  double m_translationStep = 0.0;
+
+  frc::SlewRateLimiter<units::scalar> m_magLimiter;
+  frc::SlewRateLimiter<units::scalar> m_rotLimiter;
   double m_prevTime = wpi::Now() * 1e-6;
 
-  // Odometry class for tracking robot pose
+  // Odometry tracking can be based on either XxxOdometry or XxxPoseEstimator
+  // XxxOdometry relies only on encoders and gyro to estimate the pose
+  // XxxPoseEstimator extends basic odometry tracking by accepting pose from
+  // external vision system to compensate for the drift
+  void UpdateOdometry();
+
+#ifdef DRIVETRAIN_ODOMETRY_VISION
+  frc::SwerveDrivePoseEstimator<NUMBER_OF_MODULES> m_odometry;
+#else
   frc::SwerveDriveOdometry<NUMBER_OF_MODULES> m_odometry;
+#endif
 
   // Tracks robot position on the field (for debugging via Glass)
   frc::Field2d m_field;
