@@ -31,6 +31,9 @@ class ExtendingArmSubsystem : public frc2::SubsystemBase {
 
   void SetAxis1Off();
 
+  void ZeroAxis1();
+  void ZeroAxis2();
+
   /**
    * Set the distance in inches that axis 2 should travel to and maintain.
    * @param distance Distance in inches.

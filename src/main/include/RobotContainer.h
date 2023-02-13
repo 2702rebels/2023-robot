@@ -14,6 +14,7 @@
 #include "subsystems/DoubleJointedArmSubsystem.h"
 #include "subsystems/DriveSubsystem.h"
 #include "subsystems/ExtendingArmSubsystem.h"
+#include "subsystems/IntakeSubsystem.h"
 
 /**
  * This class is where the bulk of the robot should be declared.
@@ -37,8 +38,13 @@ class RobotContainer {
 #ifdef EXTENDING_ARM_ENABLED
   ExtendingArmSubsystem m_extendingArm;
 #endif
+
 #ifdef DOUBLE_JOINTED_ARM_ENABLED
   DoubleJointedArmSubsystem m_djArm;
+#endif
+
+#ifdef INTAKE_ENABLED
+  IntakeSubsystem m_intake;
 #endif
 
   // The chooser for the autonomous routines
