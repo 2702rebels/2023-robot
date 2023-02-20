@@ -13,35 +13,37 @@ using namespace ExtendingArmConstants;
 class ExtendingArmSubsystem : public frc2::SubsystemBase {
  public:
   ExtendingArmSubsystem();
-
+  void CurrentSetupParameters();
   /**
    * Will be called periodically whenever the CommandScheduler runs.
    */
   void Periodic() override;
 
+  void OnDisable();
+
   double GetAxis1Angle();
   double GetAxis2Distance();
   double GetAxis3Angle();
 
-  /**
-   * Set the angle in degrees that axis 1 should go to and maintain.
-   * @param angle Angle in degrees.
-   */
-  void SetAxis1Angle(double angle);
+  void SetAxis1Goal(double angle);
 
   void SetAxis1Off();
+  void SetAxis2Off();
+  void SetAxis3Off();
+  void SetArmOff();
 
   void ZeroAxis1();
   void ZeroAxis2();
+  void ZeroAxis3();
+  void ZeroArm();
 
-  /**
-   * Set the distance in inches that axis 2 should travel to and maintain.
-   * @param distance Distance in inches.
-   */
-  void SetAxis2Distance(double distance);
-  void SetAxis3Angle(double angle);
+  void SetAxis1NextSetpoint(double setPoint);
+  void SetAxis2NextSetpoint(double setPoint);
+  void SetAxis3NextSetpoint(double setPoint);
 
  private:
+  bool m_setupLogged = false;
+  int m_setupLoggedIters = 0;
   // Components (e.g. motor controllers and sensors) should generally be
   // declared private and exposed only through public methods.
   rev::CANSparkMax m_axis1Motor { kExtendingArmAxis1MotorControllerCanId,
@@ -58,4 +60,6 @@ class ExtendingArmSubsystem : public frc2::SubsystemBase {
   rev::SparkMaxRelativeEncoder m_axis1Encoder = m_axis1Motor.GetEncoder();
   rev::SparkMaxRelativeEncoder m_axis2Encoder = m_axis2Motor.GetEncoder();
   // rev::SparkMaxRelativeEncoder m_axis3Encoder = m_axis3Motor.GetEncoder();
+
+  bool m_enablePID = false;
 };

@@ -15,6 +15,7 @@
 #include <utility>
 
 #include "Constants.h"
+#include "commands/MoveArmCommand.h"
 #include "subsystems/DriveSubsystem.h"
 
 using namespace DriveConstants;
@@ -48,70 +49,53 @@ RobotContainer::RobotContainer() {
 #endif
 }
 
+void RobotContainer::OnDisable() {
+#ifdef EXTENDING_ARM_ENABLED
+  m_exArm.OnDisable();
+#endif
+#ifdef DOUBLE_JOINTED_ARM_ENABLED
+  m_djArm.OnDisable();
+#endif
+}
+
 void RobotContainer::ConfigureButtonBindings() {
   // frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightBumper)
   //   .WhileTrue(new frc2::RunCommand([this] { m_drive.SetX(); }, { &m_drive }));
 
-  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kBack)
-    .WhenPressed(new frc2::RunCommand(
-      [this] {
-        m_extendingArm.ZeroAxis1();
-        m_extendingArm.ZeroAxis2();
-      },
-      { &m_extendingArm }));
+#ifdef DRIVETRAIN_ENABLED
+
+  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightStick)
+    .OnTrue(new frc2::InstantCommand([this] { m_drive.ZeroHeading(); }, { &m_drive }));
+
+#endif
 
 #ifdef EXTENDING_ARM_ENABLED
+
+  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kStart)
+    .OnTrue(new frc2::InstantCommand([this] { m_exArm.ZeroArm(); }, { &m_exArm }));
+
+  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kBack)
+    .OnTrue(new frc2::InstantCommand([this] { m_exArm.SetArmOff(); }, { &m_exArm }));
+
   // Axis 1
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kA)
-    .WhileActiveOnce(
-      new frc2::RunCommand([this] { m_extendingArm.SetAxis1Angle(45); }, { &m_extendingArm }));
+    .OnTrue(new MoveArmCommand(&m_exArm, 0, 5.0_in));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kB)
-    .WhileActiveOnce(
-      new frc2::RunCommand([this] { m_extendingArm.SetAxis1Angle(90); }, { &m_extendingArm }));
+    .OnTrue(new MoveArmCommand(&m_exArm, 0, 0.0_in));
 
-  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kY)
-    .WhileActiveOnce(
-      new frc2::RunCommand([this] { m_extendingArm.SetAxis1Angle(135); }, { &m_extendingArm }));
-
-  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kX)
-    .WhileActiveOnce(
-      new frc2::RunCommand([this] { m_extendingArm.SetAxis1Off(); }, { &m_extendingArm }));
-
-  // Axis 2
-  // frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kA)
-  //   .WhileActiveOnce(
-  //     new frc2::RunCommand([this] { m_extendingArm.SetAxis2Distance(5); }, { &m_extendingArm }));
-
-  // frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kB)
-  //   .WhileActiveOnce(
-  //     new frc2::RunCommand([this] { m_extendingArm.SetAxis2Distance(10); }, { &m_extendingArm
-  //     }));
-
-  // frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kY)
-  //   .WhileActiveOnce(
-  //     new frc2::RunCommand([this] { m_extendingArm.SetAxis2Distance(22); }, { &m_extendingArm
-  //     }));
-
-  // frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kX)
-  //   .WhileActiveOnce(
-  //     new frc2::RunCommand([this] { m_extendingArm.SetAxis2Distance(0); }, { &m_extendingArm }));
-#endif
-#ifdef DOUBLE_JOINTED_ARM_ENABLED
 #endif
 
 #ifdef INTAKE_ENABLED
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightBumper)
-    .WhenPressed(new frc2::RunCommand([this] { m_intake.SetIntakeSpeed(0.5); }, { &m_intake }));
-
-  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightBumper)
-    .WhenReleased(new frc2::RunCommand([this] { m_intake.SetIntakeSpeed(0.0); }, { &m_intake }));
-
-  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kLeftBumper)
-    .WhenPressed(new frc2::RunCommand([this] { m_intake.SetIntakeSpeed(-0.4); }, { &m_intake }));
+    .OnTrue(new frc2::InstantCommand(
+      [this] { m_intake.SetIntakeSpeed(IntakeConstants::kIntakingSpeed); }, { &m_intake }))
+    .OnFalse(new frc2::InstantCommand([this] { m_intake.SetIntakeSpeed(0.0); }, { &m_intake }));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kLeftBumper)
-    .WhenReleased(new frc2::RunCommand([this] { m_intake.SetIntakeSpeed(0.0); }, { &m_intake }));
+    .OnTrue(new frc2::InstantCommand(
+      [this] { m_intake.SetIntakeSpeed(IntakeConstants::kOuttakingSpeed); }, { &m_intake }))
+    .OnFalse(new frc2::InstantCommand([this] { m_intake.SetIntakeSpeed(0.0); }, { &m_intake }));
 #endif
 }
 

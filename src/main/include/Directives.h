@@ -14,8 +14,5 @@
 // Indicates if the extending arm is instantiated and it's commands are bound.
 #define EXTENDING_ARM_ENABLED
 
-// Indicates if the double jointed arm is instantiated and it's commands are bound.
-// #define DOUBLE_JOINTED_ARM_ENABLED
-
 // Inidicates if the intake is instantiated and it's commands are bound.
 #define INTAKE_ENABLED

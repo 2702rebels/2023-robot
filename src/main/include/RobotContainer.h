@@ -29,14 +29,17 @@ class RobotContainer {
 
   frc2::Command* GetAutonomousCommand();
 
+  void OnDisable();
+
  private:
   // The driver's controller
   frc::XboxController m_driverController { OIConstants::kDriverControllerPort };
 
   // The robot's subsystems
   DriveSubsystem m_drive;
+
 #ifdef EXTENDING_ARM_ENABLED
-  ExtendingArmSubsystem m_extendingArm;
+  ExtendingArmSubsystem m_exArm;
 #endif
 
 #ifdef DOUBLE_JOINTED_ARM_ENABLED
