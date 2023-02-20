@@ -25,7 +25,13 @@ class ExtendingArmSubsystem : public frc2::SubsystemBase {
   double GetAxis2Distance();
   double GetAxis3Angle();
 
-  void SetAxis1Goal(double angle);
+  double GetAxis1Current();
+  double GetAxis2Current();
+  double GetAxis3Current();
+
+  void SetAxis1NextSetpoint(double setPoint);
+  void SetAxis2NextSetpoint(double setPoint);
+  void SetAxis3NextSetpoint(double setPoint);
 
   void SetAxis1Off();
   void SetAxis2Off();
@@ -37,9 +43,8 @@ class ExtendingArmSubsystem : public frc2::SubsystemBase {
   void ZeroAxis3();
   void ZeroArm();
 
-  void SetAxis1NextSetpoint(double setPoint);
-  void SetAxis2NextSetpoint(double setPoint);
-  void SetAxis3NextSetpoint(double setPoint);
+  void SetAxis1DutyCycle(double dutyCycle);
+  void SetAxis2DutyCycle(double dutyCycle);
 
  private:
   bool m_setupLogged = false;

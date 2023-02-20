@@ -80,7 +80,7 @@ void ExtendingArmSubsystem::CurrentSetupParameters() {
 // This method will be called once per scheduler run
 void ExtendingArmSubsystem::Periodic() {
   if (!m_setupLogged) {
-    if (m_setupLoggedIters > 9) {
+    if (m_setupLoggedIters > 4) {
       ExtendingArmSubsystem::CurrentSetupParameters();
       m_setupLogged = true;
       m_setupLoggedIters = 0;
@@ -92,8 +92,8 @@ void ExtendingArmSubsystem::Periodic() {
   frc::SmartDashboard::PutNumber("Axis1Angle", GetAxis1Angle());
   frc::SmartDashboard::PutNumber("Axis2Distance", GetAxis2Distance());
   frc::SmartDashboard::PutNumber("Axis3Angle", GetAxis3Angle());
-
-  frc::SmartDashboard::PutNumber("Axis2Current", m_axis1Motor.GetOutputCurrent());
+  frc::SmartDashboard::PutNumber("Axis1Current", m_axis1Motor.GetOutputCurrent());
+  frc::SmartDashboard::PutNumber("Axis2Current", m_axis2Motor.GetOutputCurrent());
 
   if (m_enablePID) {
     // frc::TrapezoidProfile<units::meters> profile { m_axis2Constraints,
@@ -119,25 +119,22 @@ double ExtendingArmSubsystem::GetAxis3Angle() {
   return 0;
 }
 
-void ExtendingArmSubsystem::SetAxis1Goal(double angle) {
-  frc::DataLogManager::Log(fmt::format("Commanding Axis 1 pid to {}", angle));
-  // double rotations = (angle - kAxis1ZeroAngle) * kAxis1MotorRotationsPerDegree;
-  // m_axis1PIDController.SetReference(rotations, rev::CANSparkMax::ControlType::kPosition);
-}
-
 void ExtendingArmSubsystem::SetAxis1Off() {
-  m_axis1PIDController.SetReference(0, rev::CANSparkMax::ControlType::kVoltage);
+  m_axis1Motor.StopMotor();
   frc::DataLogManager::Log(fmt::format("Axis1: Disabled motor by commanding voltage to 0"));
 }
 
 void ExtendingArmSubsystem::SetAxis2Off() {
-  m_axis2PIDController.SetReference(0, rev::CANSparkMax::ControlType::kVoltage);
+  m_axis2Motor.StopMotor();
   frc::DataLogManager::Log(fmt::format("Axis2: Disabled motor by commanding voltage to 0."));
 }
+
+void ExtendingArmSubsystem::SetAxis3Off() {}
 
 void ExtendingArmSubsystem::SetArmOff() {
   ExtendingArmSubsystem::SetAxis1Off();
   ExtendingArmSubsystem::SetAxis2Off();
+  ExtendingArmSubsystem::SetAxis3Off();
 }
 
 void ExtendingArmSubsystem::ZeroAxis1() {
@@ -157,11 +154,39 @@ void ExtendingArmSubsystem::ZeroAxis3() {}
 void ExtendingArmSubsystem::ZeroArm() {
   ExtendingArmSubsystem::ZeroAxis1();
   ExtendingArmSubsystem::ZeroAxis2();
+  ExtendingArmSubsystem::ZeroAxis3();
+}
+
+void ExtendingArmSubsystem::SetAxis1NextSetpoint(double setPoint) {
+  double rotations = setPoint * kAxis1MotorRotationsPerDegree;
+#ifdef VERBOSE_LOG
+  frc::DataLogManager::Log(
+    fmt::format("Axis1: Setting setpoint to: {}, Setting rotations to: {}", setPoint, rotations));
+#endif
+  m_axis1PIDController.SetReference(rotations, rev::CANSparkMax::ControlType::kPosition);
 }
 
 void ExtendingArmSubsystem::SetAxis2NextSetpoint(double setPoint) {
   double rotations = setPoint * kAxis2MotorRotationsPerInchOfTravel;
+#ifdef VERBOSE_LOG
   frc::DataLogManager::Log(
     fmt::format("Axis2: Setting setpoint to: {}, Setting rotations to: {}", setPoint, rotations));
+#endif
   m_axis2PIDController.SetReference(rotations, rev::CANSparkMax::ControlType::kPosition);
+}
+
+double ExtendingArmSubsystem::GetAxis1Current() {
+  return m_axis1Motor.GetOutputCurrent();
+}
+
+double ExtendingArmSubsystem::GetAxis2Current() {
+  return m_axis2Motor.GetOutputCurrent();
+}
+
+void ExtendingArmSubsystem::SetAxis1DutyCycle(double dutyCycle) {
+  m_axis1PIDController.SetReference(dutyCycle, rev::CANSparkMax::ControlType::kDutyCycle);
+}
+
+void ExtendingArmSubsystem::SetAxis2DutyCycle(double dutyCycle) {
+  m_axis2PIDController.SetReference(dutyCycle, rev::CANSparkMax::ControlType::kDutyCycle);
 }

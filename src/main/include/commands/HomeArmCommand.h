@@ -27,4 +27,9 @@ class HomeArmCommand : public frc2::CommandHelper<frc2::CommandBase, HomeArmComm
   void End(bool interrupted) override;
 
   bool IsFinished() override;
+
+ private:
+  ExtendingArmSubsystem* m_arm;
+  units::second_t m_homingStartTime;
+  bool m_isTimedOut = false;
 };
