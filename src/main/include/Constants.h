@@ -45,15 +45,15 @@ constexpr double kRearLeftChassisAngularOffset = std::numbers::pi;
 constexpr double kRearRightChassisAngularOffset = std::numbers::pi / 2;
 
 // SPARK MAX CAN IDs
-constexpr int kFrontLeftDrivingCanId = 7;
+constexpr int kFrontLeftDrivingCanId = 6;
 constexpr int kRearLeftDrivingCanId = 8;
-constexpr int kFrontRightDrivingCanId = 2;
+constexpr int kFrontRightDrivingCanId = 3;
 constexpr int kRearRightDrivingCanId = 1;
 
 constexpr int kFrontLeftTurningCanId = 5;
-constexpr int kRearLeftTurningCanId = 6;
+constexpr int kRearLeftTurningCanId = 7;
 constexpr int kFrontRightTurningCanId = 4;
-constexpr int kRearRightTurningCanId = 3;
+constexpr int kRearRightTurningCanId = 2;
 }  // namespace DriveConstants
 
 namespace ModuleConstants {
@@ -130,8 +130,8 @@ constexpr double kDriveDeadband = 0.1;
 }  // namespace OIConstants
 
 namespace IntakeConstants {
-constexpr int kIntakeLeaderControllerCanId = 9;
-constexpr int kIntakeFollowerControllerCanId = 10;
+constexpr int kIntakeLeaderControllerCanId = 10;
+constexpr int kIntakeFollowerControllerCanId = 11;
 
 // TODO: We might need separate speeds for cube and cone.
 constexpr double kIntakingSpeed = 0.6;
@@ -141,9 +141,9 @@ constexpr double kintakeIdleSpeed = 0.2;  // 775's can stall at 20% duty cycle f
 
 namespace ExtendingArmConstants {
 // Motor controller CAN ID's
-constexpr int kExtendingArmAxis1MotorControllerCanId = 11;
-constexpr int kExtendingArmAxis2MotorControllerCanId = 12;
-constexpr int kExtendingArmAxis3MotorControllerCanId = 13;
+constexpr int kExtendingArmAxis1MotorControllerCanId = 12;
+constexpr int kExtendingArmAxis2MotorControllerCanId = 13;
+constexpr int kExtendingArmAxis3MotorControllerCanId = 9;
 
 constexpr int kAxis1HomeLimitSwitchId = 0;
 constexpr int kAxis3EncoderChannel1Id = 1;
