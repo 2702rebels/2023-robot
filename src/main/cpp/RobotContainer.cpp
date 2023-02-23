@@ -1,5 +1,6 @@
 #include "RobotContainer.h"
 
+#include <frc/DataLogManager.h>
 #include <frc/controller/PIDController.h>
 #include <frc/geometry/Translation2d.h>
 #include <frc/shuffleboard/Shuffleboard.h>
@@ -15,16 +16,46 @@
 #include <utility>
 
 #include "Constants.h"
-#include "commands/MoveArmCommand.h"
+#include "commands/HomeAxis2Command.h"
+#include "commands/MoveAxis2Command.h"
 #include "subsystems/DriveSubsystem.h"
 
 using namespace DriveConstants;
 
 RobotContainer::RobotContainer() {
-  // initialize all of your commands and subsystems here
+// initialize all of your commands and subsystems here
 
-  // register subsystems on the shuffleboard
+// register subsystems on the shuffleboard
+#ifdef DRIVETRAIN_ENABLED
   frc::Shuffleboard::GetTab("Drivetrain").Add(m_drive);
+#endif
+#ifdef EXTENDING_ARM_ENABLED
+  frc::Shuffleboard::GetTab("Arm").Add(m_exArm);
+#endif
+
+#ifdef TRACE_LOG
+  // Log Shuffleboard events for command initialize, execute, finish, interrupt
+  frc2::CommandScheduler::GetInstance().OnCommandInitialize([](const frc2::Command& command) {
+    frc::Shuffleboard::AddEventMarker(
+      "Command initialized", command.GetName(), frc::ShuffleboardEventImportance::kNormal);
+    frc::DataLogManager::Log(fmt::format("Scheduler|{}: Initialize", command.GetName()));
+  });
+  frc2::CommandScheduler::GetInstance().OnCommandExecute([](const frc2::Command& command) {
+    frc::Shuffleboard::AddEventMarker(
+      "Command executed", command.GetName(), frc::ShuffleboardEventImportance::kNormal);
+    frc::DataLogManager::Log(fmt::format("Scheduler|{}: Execute", command.GetName()));
+  });
+  frc2::CommandScheduler::GetInstance().OnCommandFinish([](const frc2::Command& command) {
+    frc::Shuffleboard::AddEventMarker(
+      "Command finished", command.GetName(), frc::ShuffleboardEventImportance::kNormal);
+    frc::DataLogManager::Log(fmt::format("Scheduler|{}: Finish", command.GetName()));
+  });
+  frc2::CommandScheduler::GetInstance().OnCommandInterrupt([](const frc2::Command& command) {
+    frc::Shuffleboard::AddEventMarker(
+      "Command interrupted", command.GetName(), frc::ShuffleboardEventImportance::kNormal);
+    frc::DataLogManager::Log(fmt::format("Scheduler|{}: Interupt", command.GetName()));
+  });
+#endif
 
   // configure the button bindings
   ConfigureButtonBindings();
@@ -53,16 +84,12 @@ void RobotContainer::OnDisable() {
 #ifdef EXTENDING_ARM_ENABLED
   m_exArm.OnDisable();
 #endif
-#ifdef DOUBLE_JOINTED_ARM_ENABLED
-  m_djArm.OnDisable();
-#endif
 }
 
 void RobotContainer::ConfigureButtonBindings() {
+#ifdef DRIVETRAIN_ENABLED
   // frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightBumper)
   //   .WhileTrue(new frc2::RunCommand([this] { m_drive.SetX(); }, { &m_drive }));
-
-#ifdef DRIVETRAIN_ENABLED
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightStick)
     .OnTrue(new frc2::InstantCommand([this] { m_drive.ZeroHeading(); }, { &m_drive }));
@@ -70,19 +97,19 @@ void RobotContainer::ConfigureButtonBindings() {
 #endif
 
 #ifdef EXTENDING_ARM_ENABLED
-
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kStart)
-    .OnTrue(new frc2::InstantCommand([this] { m_exArm.ZeroArm(); }, { &m_exArm }));
+    //.OnTrue(m_exArm.Home());
+    .OnTrue(new HomeAxis2Command(&m_exArm));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kBack)
     .OnTrue(new frc2::InstantCommand([this] { m_exArm.SetArmOff(); }, { &m_exArm }));
 
   // Axis 1
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kA)
-    .OnTrue(new MoveArmCommand(&m_exArm, 0, 5.0_in));
+    .OnTrue(new MoveAxis2Command(&m_exArm, 5.0_in));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kB)
-    .OnTrue(new MoveArmCommand(&m_exArm, 0, 0.0_in));
+    .OnTrue(new MoveAxis2Command(&m_exArm, 0.0_in));
 
 #endif
 
@@ -100,6 +127,7 @@ void RobotContainer::ConfigureButtonBindings() {
 }
 
 frc2::Command* RobotContainer::GetAutonomousCommand() {
+#ifdef DRIVETRAIN_ENABLED
   // set up config for trajectory
   frc::TrajectoryConfig config(AutoConstants::kMaxSpeed, AutoConstants::kMaxAcceleration);
 
@@ -141,4 +169,8 @@ frc2::Command* RobotContainer::GetAutonomousCommand() {
   return new frc2::SequentialCommandGroup(
     std::move(swerveControllerCommand),
     frc2::InstantCommand([this]() { m_drive.Drive(0_mps, 0_mps, 0_rad_per_s, false, false); }, {}));
+#else
+  return new frc2::InstantCommand(
+    [this] { frc::DataLogManager::Log("Drivetrain disabled. Auto not run."); });
+#endif
 }

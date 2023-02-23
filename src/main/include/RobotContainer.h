@@ -11,7 +11,6 @@
 #include <frc2/command/RunCommand.h>
 
 #include "Constants.h"
-#include "subsystems/DoubleJointedArmSubsystem.h"
 #include "subsystems/DriveSubsystem.h"
 #include "subsystems/ExtendingArmSubsystem.h"
 #include "subsystems/IntakeSubsystem.h"
@@ -35,15 +34,13 @@ class RobotContainer {
   // The driver's controller
   frc::XboxController m_driverController { OIConstants::kDriverControllerPort };
 
+#ifdef DRIVETRAIN_ENABLED
   // The robot's subsystems
   DriveSubsystem m_drive;
+#endif
 
 #ifdef EXTENDING_ARM_ENABLED
   ExtendingArmSubsystem m_exArm;
-#endif
-
-#ifdef DOUBLE_JOINTED_ARM_ENABLED
-  DoubleJointedArmSubsystem m_djArm;
 #endif
 
 #ifdef INTAKE_ENABLED

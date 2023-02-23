@@ -26,18 +26,12 @@ void MoveArmCommand::Initialize() {
   m_profile = new frc::TrapezoidProfile<units::meters>(
     frc::TrapezoidProfile<units::meters>::Constraints { 0.25_mps, 0.1_mps_sq },
     frc::TrapezoidProfile<units::meters>::State { m_axis2Goal, 0_mps },
-    frc::TrapezoidProfile<units::meters>::State {
-      units::make_unit<units::inch_t, double>(m_arm->GetAxis2Distance()), 0_mps });
+    frc::TrapezoidProfile<units::meters>::State { m_arm->GetAxis2Distance(), 0_mps });
 }
 
 // Called repeatedly when this Command is scheduled to run
 void MoveArmCommand::Execute() {
-  units::inch_t positionInInches = m_profile->Calculate(m_profileTime).position;
-  // frc::DataLogManager::Log(fmt::format(
-  //   "ArmMoveCommand: Execute | profileTime:{}, positionInInches:{}",
-  //   m_profileTime,
-  //   positionInInches));
-  m_arm->SetAxis2NextSetpoint(positionInInches.value());
+  m_arm->SetAxis2NextSetpoint(m_profile->Calculate(m_profileTime).position);
   m_profileTime += 20_ms;
 }
 

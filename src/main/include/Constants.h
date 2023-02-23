@@ -145,88 +145,44 @@ constexpr int kExtendingArmAxis1MotorControllerCanId = 11;
 constexpr int kExtendingArmAxis2MotorControllerCanId = 12;
 constexpr int kExtendingArmAxis3MotorControllerCanId = 13;
 
-// PID constants for the arm axis's.
+constexpr int kAxis1HomeLimitSwitchId = 0;
+constexpr int kAxis3EncoderChannel1Id = 1;
+constexpr int kAxis3EncoderChannel2Id = 2;
+
 // Axis 1 (Shoulder)
-constexpr double kAxis1P = 0.05;
-constexpr double kAxis1I = 0;
-constexpr double kAxis1D = 0.00;
-constexpr double kAxis1FF = 0.000156;
+constexpr double kAxis1CurrentLimit = 40;
 constexpr double kAxis1MinOutput = -1.0;
 constexpr double kAxis1MaxOutput = 1;
-
-// double kP = 5e-5, kI = 1e-6, kD = 0, kIz = 0, kFF = 0.000156, kMaxOutput = 1, kMinOutput = -1;
-
 // Neo into a versa 45:1 -> sprocket reduction of 26:14 -> sprocket reduction of 60:14.
 constexpr double kAxis1OverallReduction = (9.0 / 1.0) * (5.0 / 1.0) * (26.0 / 14.0) * (60.0 / 14.0);
 constexpr double kAxis1MotorRotationsPerDegree = 360 / kAxis1OverallReduction;
 constexpr double kAxis1ZeroAngle = 0;
+constexpr int kAxis1HomeTimeoutInSeconds = 3;
+constexpr double kAxis1HomeCurrentThreshold = 30;
 
 // Axis 2 (Extension)
-constexpr double kAxis2P = 0.03;
-constexpr double kAxis2I = 0;
-constexpr double kAxis2D = 0;
-constexpr double kAxis2FF = 0;
+constexpr int kAxis2CurrentLimit = 20;
 constexpr double kAxis2MinOutput = -1;
 constexpr double kAxis2MaxOutput = 1;
-
 // Neo 550 into versa 9:1.
 constexpr double kAxis2OverallReduction = (4.0 / 1.0) * (3.0 / 1.0);
 // Belt is running on an 18t 5mm HTD pulley.
 constexpr double kAxis2MotorRotationsPerInchOfTravel =
   kAxis2OverallReduction / ((18.0 * 5.0) / 25.4);
+constexpr int kAxis2HomeTimeoutInSeconds = 3;
+constexpr double kAxis2HomeCurrentThreshold = 30;
 
 // Axis 3 (Wrist)
+constexpr int kAxis3CurrentLimit = 20;
+constexpr int kAxis3CurrentLimitDuration = 200;
 constexpr double kAxis3P = 0.05;
 constexpr double kAxis3I = 0;
 constexpr double kAxis3D = 0;
 constexpr double kAxis3FF = 0;
 constexpr double kAxis3MinOutput = -1;
 constexpr double kAxis3MaxOutput = 1;
+constexpr int kAxis3HomeTimeoutInSeconds = 3;
+constexpr double kAxis3HomeCurrentThreshold = 30;
+constexpr double kAxis3EncoderPulsesPerRevolution = 44.4;
 
 }  // namespace ExtendingArmConstants
-
-namespace DoubleJointedArmConstants {
-// Motor controller CAN ID's.
-constexpr int kDoubleJointedArmAxis1MotorControllerCanId = 11;
-constexpr int kDoubleJointedArmAxis2MotorControllerCanId = 12;
-constexpr int kDoubleJointedArmAxis3MotorControllerCanId = 13;
-
-// PID constants for the arm axis's.
-// Axis 1 (Shoulder)
-constexpr double kAxis1P = 0.1;
-constexpr double kAxis1I = 0;
-constexpr double kAxis1D = 0;
-constexpr double kAxis1FF = 0;
-constexpr double kAxis1MinOutput = -1;
-constexpr double kAxis1MaxOutput = 1;
-
-// Neo into a versa 45:1 > 18t pulley on an arc that would encompase 191.5 teeth over 360deg.
-constexpr double kAxis1OverallReduction = (5.0 / 1.0) * (4.0 / 1.0) * (191.5 / 18.0);
-constexpr double kAxis1MotorRotationsPerDegree = kAxis1OverallReduction / 360;
-constexpr double kAxis1ZeroAngle = 0;
-
-// Axis 2 (Extension)
-constexpr double kAxis2P = 0.1;
-constexpr double kAxis2I = 0;
-constexpr double kAxis2D = 0;
-constexpr double kAxis2FF = 0;
-constexpr double kAxis2MinOutput = -1;
-constexpr double kAxis2MaxOutput = 1;
-
-// Neo into versa 45:1 running a 60:14 chain reduction on the shoulder joint.
-constexpr double kAxis2OverallReduction = (9.0 / 1.0) * (5.0 / 1.0) * (60.0 / 14.0);
-constexpr double kAxis2MotorRotationsPerDegree = kAxis2OverallReduction / 360;
-constexpr double kAxis2ZeroAngle = 0;
-
-// Axis 3 (Wrist)
-constexpr double kAxis3P = 0.01;
-constexpr double kAxis3I = 0.000005;
-constexpr double kAxis3D = 0;
-constexpr double kAxis3FF = 0;
-constexpr double kAxis3MinOutput = -1;
-constexpr double kAxis3MaxOutput = 1;
-
-// Neo 550 into a 9:1 versa running a 48:18 belt reduction.
-constexpr double kAxis3OverallReduction = (9.0 / 1.0) * (4.1 / 1.0) * (48.0 / 18.0);
-constexpr double kAxis3MotorRotationsPerDegree = kAxis3OverallReduction / 360;
-}  // namespace DoubleJointedArmConstants

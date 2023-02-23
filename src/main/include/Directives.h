@@ -1,8 +1,12 @@
 // Indicates that detailed logging of DS and joystick controls should be enabled
 #define LOG_DATA_DRIVER_STATION
 
-// Indicates that verbose log statements should be written. (This will likely spam logs.)
+// Indicates that verbose log statements should be written.
+// (Mostly for debugging. This will likely spam logs.)
 // #define VERBOSE_LOG
+
+// Indicates if trace log statements should be written.
+#define TRACE_LOG
 
 // Indicates if the drivetrain commands are bound.
 // Currently the drivetrain object is still instantiated.
@@ -15,7 +19,7 @@
 #define DRIVETRAIN_ODOMETRY_VISION
 
 // Indicates if the extending arm is instantiated and it's commands are bound.
-#define EXTENDING_ARM_ENABLED
+// #define EXTENDING_ARM_ENABLED
 
 // Inidicates if the intake is instantiated and it's commands are bound.
-#define INTAKE_ENABLED
+// #define INTAKE_ENABLED
