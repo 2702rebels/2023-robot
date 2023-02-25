@@ -26,12 +26,17 @@ REGISTER_DOUBLE(DrivePoseStdDevVisionH, "Drive/Pose/StdDev Vision/θ", 0.1)
 REGISTER_DOUBLE(DriveSlewRateDirection, "Drive/Slew/Direction", DriveConstants::kDirectionSlewRate)
 REGISTER_DOUBLE(DriveSlewRateMagnitude, "Drive/Slew/Magnitude", DriveConstants::kMagnitudeSlewRate)
 REGISTER_DOUBLE(DriveSlewRateRotation, "Drive/Slew/Rotation", DriveConstants::kRotationalSlewRate)
-REGISTER_DOUBLE(DriveTuneTranslationStep, "Drive/Tune/Translation Step", 45)
+REGISTER_DOUBLE(DriveTuneTranslationStep, "Drive/Tune/Translation Step", 5)
+REGISTER_DOUBLE(DriveTuneMaxSpeed, "Drive/Tune/Max Speed (mps)", 3)
+REGISTER_DOUBLE(DriveTuneMaxAngularSpeed, "Drive/Tune/Max Angular Speed (dps)", 360)
 
 DriveSubsystem::DriveSubsystem() :
   m_magLimiter { GetDriveSlewRateMagnitude() / 1_s },
   m_rotLimiter { GetDriveSlewRateRotation() / 1_s },
   m_slewRateDirection { GetDriveSlewRateDirection() },
+  m_maxSpeed { units::meters_per_second_t { GetDriveTuneMaxSpeed() } },
+  m_maxAngularSpeed { units::convert<units::degrees_per_second, units::radians_per_second>(
+    GetDriveTuneMaxAngularSpeed()) },
   m_translationStep { units::convert<units::degree, units::radian>(GetDriveTuneTranslationStep()) },
   m_frontLeft {
     kFrontLeftDrivingCanId,
@@ -55,7 +60,7 @@ DriveSubsystem::DriveSubsystem() :
   },
   m_odometry {
     kDriveKinematics,
-    frc::Rotation2d(GetGyroAngle()),
+    GetHeading(),
     {
       m_frontLeft.GetPosition(),
       m_frontRight.GetPosition(),
@@ -148,17 +153,16 @@ void DriveSubsystem::Drive(
   }
 
   // convert the commanded speeds into the correct units for the drivetrain
-  const auto xSpeedDelivered = xSpeedCommanded * DriveConstants::kMaxSpeed;
-  const auto ySpeedDelivered = ySpeedCommanded * DriveConstants::kMaxSpeed;
-  const auto rotDelivered = m_currentRotation * DriveConstants::kMaxAngularSpeed;
+  const auto xSpeedDelivered = xSpeedCommanded * m_maxSpeed;
+  const auto ySpeedDelivered = ySpeedCommanded * m_maxSpeed;
+  const auto rotDelivered = m_currentRotation * m_maxAngularSpeed;
 
   auto states = kDriveKinematics.ToSwerveModuleStates(
-    fieldRelative
-      ? frc::ChassisSpeeds::FromFieldRelativeSpeeds(
-          xSpeedDelivered, ySpeedDelivered, rotDelivered, frc::Rotation2d(GetGyroAngle()))
-      : frc::ChassisSpeeds { xSpeedDelivered, ySpeedDelivered, rotDelivered });
+    fieldRelative ? frc::ChassisSpeeds::FromFieldRelativeSpeeds(
+                      xSpeedDelivered, ySpeedDelivered, rotDelivered, GetHeading())
+                  : frc::ChassisSpeeds { xSpeedDelivered, ySpeedDelivered, rotDelivered });
 
-  kDriveKinematics.DesaturateWheelSpeeds(&states, DriveConstants::kMaxSpeed);
+  kDriveKinematics.DesaturateWheelSpeeds(&states, m_maxSpeed);
 
   auto [fl, fr, bl, br] = states;
 
@@ -177,7 +181,7 @@ void DriveSubsystem::SetX() {
 
 void DriveSubsystem::SetModuleStates(
   wpi::array<frc::SwerveModuleState, NUMBER_OF_MODULES> desiredStates) {
-  kDriveKinematics.DesaturateWheelSpeeds(&desiredStates, DriveConstants::kMaxSpeed);
+  kDriveKinematics.DesaturateWheelSpeeds(&desiredStates, m_maxSpeed);
   m_frontLeft.SetDesiredState(desiredStates[0]);
   m_frontRight.SetDesiredState(desiredStates[1]);
   m_rearLeft.SetDesiredState(desiredStates[2]);
@@ -192,11 +196,11 @@ void DriveSubsystem::ResetEncoders() {
 }
 
 units::degree_t DriveSubsystem::GetGyroAngle() const {
-  return units::degree_t { m_gyro.GetAngle() };
+  return units::degree_t { -m_gyro.GetAngle() };  // flip the sign if changing gyro orientation
 }
 
-units::degree_t DriveSubsystem::GetHeading() const {
-  return frc::Rotation2d(GetGyroAngle()).Degrees();
+frc::Rotation2d DriveSubsystem::GetHeading() const {
+  return frc::Rotation2d(GetGyroAngle());
 }
 
 void DriveSubsystem::ZeroHeading() {
@@ -204,16 +208,16 @@ void DriveSubsystem::ZeroHeading() {
 }
 
 double DriveSubsystem::GetTurnRate() const {
-  return -m_gyro.GetRate();
+  return m_gyro.GetRate();  // flip the sign if changing gyro orientation
 }
 
 void DriveSubsystem::UpdateOdometry() {
   m_odometry.Update(
-    frc::Rotation2d(GetGyroAngle()),
+    GetHeading(),
     {
       m_frontLeft.GetPosition(),
-      m_rearLeft.GetPosition(),
       m_frontRight.GetPosition(),
+      m_rearLeft.GetPosition(),
       m_rearRight.GetPosition(),
     });
 
@@ -232,7 +236,8 @@ frc::Pose2d DriveSubsystem::GetPose() const {
 #endif
 }
 
-void DriveSubsystem::ResetOdometry(frc::Pose2d pose) {
+void DriveSubsystem::ResetOdometry(const frc::Pose2d& pose) {
+  m_gyro.Reset();
   m_odometry.ResetPosition(
     GetHeading(),
     {

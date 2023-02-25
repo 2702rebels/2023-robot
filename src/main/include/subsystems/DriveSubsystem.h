@@ -70,7 +70,7 @@ class DriveSubsystem : public frc2::SubsystemBase {
    * Returns the heading of the robot.
    * @return the robot's heading in degrees, from 180 to 180
    */
-  units::degree_t GetHeading() const;
+  frc::Rotation2d GetHeading() const;
 
   /**
    * Zeroes the heading of the robot.
@@ -94,7 +94,7 @@ class DriveSubsystem : public frc2::SubsystemBase {
    *
    * @param pose The pose to which to set the odometry.
    */
-  void ResetOdometry(frc::Pose2d pose);
+  void ResetOdometry(const frc::Pose2d& pose);
 
   frc::SwerveDriveKinematics<NUMBER_OF_MODULES> kDriveKinematics {
     frc::Translation2d { DriveConstants::kWheelBase / 2, DriveConstants::kTrackWidth / 2 },
@@ -128,6 +128,8 @@ class DriveSubsystem : public frc2::SubsystemBase {
 
   // Constrain translational direction heading to a discrete step values (in radians)
   double m_translationStep = 0.0;
+  units::meters_per_second_t m_maxSpeed = DriveConstants::kMaxSpeed;
+  units::radians_per_second_t m_maxAngularSpeed = DriveConstants::kMaxAngularSpeed;
 
   frc::SlewRateLimiter<units::scalar> m_magLimiter;
   frc::SlewRateLimiter<units::scalar> m_rotLimiter;

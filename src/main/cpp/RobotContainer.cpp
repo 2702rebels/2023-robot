@@ -94,6 +94,9 @@ void RobotContainer::ConfigureButtonBindings() {
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightStick)
     .OnTrue(new frc2::InstantCommand([this] { m_drive.ZeroHeading(); }, { &m_drive }));
 
+  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kX)
+    .OnTrue(
+      new frc2::InstantCommand([this] { m_drive.ResetOdometry(frc::Pose2d {}); }, { &m_drive }));
 #endif
 
 #ifdef EXTENDING_ARM_ENABLED
