@@ -9,6 +9,7 @@
 MoveAxis2Command::MoveAxis2Command(ExtendingArmSubsystem* arm, units::meter_t axis2Distance) :
   m_arm(arm),
   m_axis2Goal(axis2Distance) {
+  SetName("MoveAxis2");
   // Use addRequirements() here to declare subsystem dependencies.
   AddRequirements(arm);
 }
@@ -16,7 +17,7 @@ MoveAxis2Command::MoveAxis2Command(ExtendingArmSubsystem* arm, units::meter_t ax
 // Called when the command is initially scheduled.
 void MoveAxis2Command::Initialize() {
   frc::DataLogManager::Log(fmt::format(
-    "ArmAxis2Command: Initialize | Goal:{}, CurrentPosition:{}",
+    "MoveArmAxis2Command: Initialize | Goal:{}, CurrentPosition:{}",
     m_axis2Goal,
     m_arm->GetAxis2Distance()));
 
@@ -35,7 +36,7 @@ void MoveAxis2Command::Execute() {
 
 // Called once the command ends or is interrupted.
 void MoveAxis2Command::End(bool interrupted) {
-  frc::DataLogManager::Log(fmt::format("ArmAxis2Command: End"));
+  frc::DataLogManager::Log(fmt::format("MoveArmAxis2Command: End"));
 }
 
 // Returns true when the command should end.

@@ -15,6 +15,7 @@ HomeAxis1Command::HomeAxis1Command(ExtendingArmSubsystem* arm) : m_arm(arm) {
 // Called when the command is initially scheduled.
 void HomeAxis1Command::Initialize() {
   frc::DataLogManager::Log(fmt::format("HomeAxis1Command: Initialize"));
+  m_isHomed = false;
   m_isTimedOut = false;
   m_isLimitHit = false;
   m_isWorkingHardProtection = false;
@@ -32,25 +33,28 @@ void HomeAxis1Command::Initialize() {
 // Called repeatedly when this Command is scheduled to run
 void HomeAxis1Command::Execute() {
   if (!m_isLimitHit && m_arm->GetAxis1LimitSwitch()) {
+    frc::DataLogManager::Log(
+      fmt::format("LimitSwitchState: {} Inside First If", m_arm->GetAxis1LimitSwitch()));
     m_isLimitHit = true;
     m_arm->SetAxis1DutyCycle(0.2);
   }
 
-  if (m_isLimitHit && m_arm->GetAxis1LimitSwitch()) {
+  if (m_isLimitHit && !m_arm->GetAxis1LimitSwitch()) {
+    frc::DataLogManager::Log(
+      fmt::format("LimitSwitchState: {} Inside Second If", m_arm->GetAxis1LimitSwitch()));
+
     m_arm->ZeroAxis1();
-    this->End(false);
+    m_isHomed = true;
   }
 
   if (m_arm->GetAxis1Current() >= ExtendingArmConstants::kAxis1HomeCurrentThreshold) {
     m_isWorkingHardProtection = true;
-    this->End(true);
   }
 
   if (
     m_homingStartTime + units::second_t(ExtendingArmConstants::kAxis1HomeTimeoutInSeconds) <=
     frc::Timer::GetFPGATimestamp()) {
     m_isTimedOut = true;
-    this->End(true);
   }
 }
 
@@ -61,7 +65,7 @@ void HomeAxis1Command::End(bool interrupted) {
     m_arm->SetAxis1Off();
 
     if (m_isTimedOut) {
-      frc::DataLogManager::Log(fmt::format("HomeAxis1Command: Timedout"));
+      frc::DataLogManager::Log(fmt::format("HomeAxis1Command: Timed out"));
     }
 
     if (m_isWorkingHardProtection) {
@@ -72,5 +76,8 @@ void HomeAxis1Command::End(bool interrupted) {
 
 // Returns true when the command should end.
 bool HomeAxis1Command::IsFinished() {
+  if (m_isHomed || m_isTimedOut || m_isWorkingHardProtection) {
+    return true;
+  }
   return false;
 }

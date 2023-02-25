@@ -9,6 +9,7 @@
 MoveAxis1Command::MoveAxis1Command(ExtendingArmSubsystem* arm, units::degree_t axis1Angle) :
   m_arm(arm),
   m_axisGoal(axis1Angle) {
+  SetName("MoveAxis1");
   // Use addRequirements() here to declare subsystem dependencies.
   AddRequirements(arm);
 }
@@ -16,7 +17,7 @@ MoveAxis1Command::MoveAxis1Command(ExtendingArmSubsystem* arm, units::degree_t a
 // Called when the command is initially scheduled.
 void MoveAxis1Command::Initialize() {
   frc::DataLogManager::Log(fmt::format(
-    "ArmAxis1Command: Initialize | Goal:{}, CurrentPosition:{}",
+    "MoveArmAxis1Command: Initialize | Goal:{}, CurrentPosition:{}",
     m_axisGoal,
     m_arm->GetAxis1Angle()));
 
@@ -37,7 +38,7 @@ void MoveAxis1Command::Execute() {
 
 // Called once the command ends or is interrupted.
 void MoveAxis1Command::End(bool interrupted) {
-  frc::DataLogManager::Log(fmt::format("ArmAxis1Command: End"));
+  frc::DataLogManager::Log(fmt::format("MoveArmAxis1Command: End"));
 }
 
 // Returns true when the command should end.

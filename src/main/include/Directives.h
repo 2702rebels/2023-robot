@@ -6,7 +6,7 @@
 // #define VERBOSE_LOG
 
 // Indicates if trace log statements should be written.
-#define TRACE_LOG
+// #define TRACE_LOG
 
 // Indicates if the drivetrain commands are bound.
 // Currently the drivetrain object is still instantiated.
@@ -16,7 +16,7 @@
 // an external vision system that can provide global positioning estimates;
 // if not enabled, then basic odometry tracking based on encoders and gyro only
 // will be used to estimate robot position
-// #define DRIVETRAIN_ODOMETRY_VISION
+#define DRIVETRAIN_ODOMETRY_VISION
 
 // Indicates if the extending arm is instantiated and it's commands are bound.
 // #define EXTENDING_ARM_ENABLED

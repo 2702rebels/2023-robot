@@ -39,6 +39,7 @@ class HomeAxis1Command : public frc2::CommandHelper<frc2::CommandBase, HomeAxis1
  private:
   ExtendingArmSubsystem* m_arm;
   units::second_t m_homingStartTime;
+  bool m_isHomed = false;
   bool m_isTimedOut = false;
   bool m_isLimitHit = false;
   bool m_isWorkingHardProtection = false;

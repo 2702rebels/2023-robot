@@ -161,7 +161,7 @@ constexpr int kAxis1HomeTimeoutInSeconds = 3;
 constexpr double kAxis1HomeCurrentThreshold = 30;
 
 // Axis 2 (Extension)
-constexpr int kAxis2CurrentLimit = 20;
+constexpr int kAxis2CurrentLimit = 25;
 constexpr double kAxis2MinOutput = -1;
 constexpr double kAxis2MaxOutput = 1;
 // Neo 550 into versa 9:1.
@@ -170,7 +170,7 @@ constexpr double kAxis2OverallReduction = (4.0 / 1.0) * (3.0 / 1.0);
 constexpr double kAxis2MotorRotationsPerInchOfTravel =
   kAxis2OverallReduction / ((18.0 * 5.0) / 25.4);
 constexpr int kAxis2HomeTimeoutInSeconds = 3;
-constexpr double kAxis2HomeCurrentThreshold = 30;
+constexpr double kAxis2HomeCurrentThreshold = 20;
 
 // Axis 3 (Wrist)
 constexpr int kAxis3CurrentLimit = 20;

@@ -16,7 +16,9 @@
 #include <utility>
 
 #include "Constants.h"
+#include "commands/HomeAxis1Command.h"
 #include "commands/HomeAxis2Command.h"
+#include "commands/MoveAxis1Command.h"
 #include "commands/MoveAxis2Command.h"
 #include "subsystems/DriveSubsystem.h"
 
@@ -43,7 +45,7 @@ RobotContainer::RobotContainer() {
   frc2::CommandScheduler::GetInstance().OnCommandExecute([](const frc2::Command& command) {
     frc::Shuffleboard::AddEventMarker(
       "Command executed", command.GetName(), frc::ShuffleboardEventImportance::kNormal);
-    frc::DataLogManager::Log(fmt::format("Scheduler|{}: Execute", command.GetName()));
+    // frc::DataLogManager::Log(fmt::format("Scheduler|{}: Execute", command.GetName()));
   });
   frc2::CommandScheduler::GetInstance().OnCommandFinish([](const frc2::Command& command) {
     frc::Shuffleboard::AddEventMarker(
@@ -102,18 +104,26 @@ void RobotContainer::ConfigureButtonBindings() {
 #ifdef EXTENDING_ARM_ENABLED
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kStart)
     //.OnTrue(m_exArm.Home());
-    .OnTrue(new HomeAxis2Command(&m_exArm));
+    //.OnTrue(new HomeAxis2Command(&m_exArm));
+    //.OnTrue(new HomeAxis1Command(&m_exArm));
+    .OnTrue(new frc2::InstantCommand([this] { m_exArm.ZeroAxis1(); }, { &m_exArm }));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kBack)
     .OnTrue(new frc2::InstantCommand([this] { m_exArm.SetArmOff(); }, { &m_exArm }));
 
   // Axis 1
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kA)
-    .OnTrue(new MoveAxis2Command(&m_exArm, 5.0_in));
+    .OnTrue(new MoveAxis1Command(&m_exArm, 15.0_deg));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kB)
-    .OnTrue(new MoveAxis2Command(&m_exArm, 0.0_in));
+    .OnTrue(new MoveAxis1Command(&m_exArm, 0.0_deg));
 
+  // Axis 2
+  // frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kA)
+  //   .OnTrue(new MoveAxis2Command(&m_exArm, 5.0_in));
+
+  // frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kB)
+  //   .OnTrue(new MoveAxis2Command(&m_exArm, 0.0_in));
 #endif
 
 #ifdef INTAKE_ENABLED
