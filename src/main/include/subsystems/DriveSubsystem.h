@@ -110,6 +110,21 @@ class DriveSubsystem : public frc2::SubsystemBase {
    */
   units::degree_t GetGyroAngle() const;
 
+  frc::SlewRateLimiter<units::scalar> m_magLimiter;
+  frc::SlewRateLimiter<units::scalar> m_rotLimiter;
+
+  // Slew rate filter variables for controlling lateral acceleration
+  double m_currentRotation = 0.0;
+  double m_currentTranslationDir = 0.0;
+  double m_currentTranslationMag = 0.0;
+  double m_slewRateDirection = DriveConstants::kDirectionSlewRate;
+
+  units::meters_per_second_t m_maxSpeed = DriveConstants::kMaxSpeed;
+  units::radians_per_second_t m_maxAngularSpeed = DriveConstants::kMaxAngularSpeed;
+
+  // Constrain translational direction heading to a discrete step values (in radians)
+  double m_translationStep = 0.0;
+
   // Components (e.g. motor controllers and sensors) should generally be
   // declared private and exposed only through public methods.
   MAXSwerveModule m_frontLeft;
@@ -120,19 +135,6 @@ class DriveSubsystem : public frc2::SubsystemBase {
   TalonSRX m_gyroController { IntakeConstants::kIntakeLeaderControllerCanId };
   WPI_PigeonIMU m_gyro { m_gyroController };
 
-  // Slew rate filter variables for controlling lateral acceleration
-  double m_currentRotation = 0.0;
-  double m_currentTranslationDir = 0.0;
-  double m_currentTranslationMag = 0.0;
-  double m_slewRateDirection = DriveConstants::kDirectionSlewRate;
-
-  // Constrain translational direction heading to a discrete step values (in radians)
-  double m_translationStep = 0.0;
-  units::meters_per_second_t m_maxSpeed = DriveConstants::kMaxSpeed;
-  units::radians_per_second_t m_maxAngularSpeed = DriveConstants::kMaxAngularSpeed;
-
-  frc::SlewRateLimiter<units::scalar> m_magLimiter;
-  frc::SlewRateLimiter<units::scalar> m_rotLimiter;
   double m_prevTime = wpi::Now() * 1e-6;
 
   // Odometry tracking can be based on either XxxOdometry or XxxPoseEstimator
