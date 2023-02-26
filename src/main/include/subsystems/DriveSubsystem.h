@@ -1,7 +1,6 @@
 #pragma once
 
 #include <ctre/Phoenix.h>
-#include <frc/ADIS16470_IMU.h>
 #include <frc/estimator/SwerveDrivePoseEstimator.h>
 #include <frc/filter/SlewRateLimiter.h>
 #include <frc/geometry/Pose2d.h>
@@ -95,6 +94,11 @@ class DriveSubsystem : public frc2::SubsystemBase {
   frc::Pose2d GetPose() const;
 
   /**
+   * Gets the drive deadband.
+   */
+  double GetDeadband() const;
+
+  /**
    * Resets the odometry to the specified pose.
    *
    * @param pose The pose to which to set the odometry.
@@ -120,20 +124,29 @@ class DriveSubsystem : public frc2::SubsystemBase {
    */
   units::degree_t GetGyroAngle() const;
 
+  /**
+   * Gets effective maximum speed.
+   */
+  units::meters_per_second_t GetMaxSpeed() const;
+
   frc::SlewRateLimiter<units::scalar> m_magLimiter;
   frc::SlewRateLimiter<units::scalar> m_rotLimiter;
 
-  // Slew rate filter variables for controlling lateral acceleration
   double m_currentRotation = 0.0;
+
+  // Slew rate filter variables for controlling lateral acceleration
   double m_currentTranslationDir = 0.0;
   double m_currentTranslationMag = 0.0;
   double m_slewRateDirection = DriveConstants::kDirectionSlewRate;
+  double m_deadband = 0.2;
 
   units::meters_per_second_t m_maxSpeed = DriveConstants::kMaxSpeed;
   units::radians_per_second_t m_maxAngularSpeed = DriveConstants::kMaxAngularSpeed;
 
   // Constrain translational direction heading to a discrete step values (in radians)
   double m_translationStep = 0.0;
+  double m_maxSpeedFactor = 1.0;
+  double m_maxInclination = 0.0;
 
   // Components (e.g. motor controllers and sensors) should generally be
   // declared private and exposed only through public methods.

@@ -70,11 +70,11 @@ RobotContainer::RobotContainer() {
     [this] {
       m_drive.Drive(
         -units::meters_per_second_t {
-          frc::ApplyDeadband(m_driverController.GetLeftY(), OIConstants::kDriveDeadband) },
+          frc::ApplyDeadband(m_driverController.GetLeftY(), m_drive.GetDeadband()) },
         -units::meters_per_second_t {
-          frc::ApplyDeadband(m_driverController.GetLeftX(), OIConstants::kDriveDeadband) },
+          frc::ApplyDeadband(m_driverController.GetLeftX(), m_drive.GetDeadband()) },
         -units::radians_per_second_t {
-          frc::ApplyDeadband(m_driverController.GetRightX(), OIConstants::kDriveDeadband) },
+          frc::ApplyDeadband(m_driverController.GetRightX(), m_drive.GetDeadband()) },
         true,
         true);
     },

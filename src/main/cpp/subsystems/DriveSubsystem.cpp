@@ -30,14 +30,20 @@ REGISTER_DOUBLE(DriveSlewRateRotation, "Drive/Slew/Rotation", DriveConstants::kR
 REGISTER_DOUBLE(DriveTuneTranslationStep, "Drive/Tune/Translation Step", 5)
 REGISTER_DOUBLE(DriveTuneMaxSpeed, "Drive/Tune/Max Speed (mps)", 3)
 REGISTER_DOUBLE(DriveTuneMaxAngularSpeed, "Drive/Tune/Max Angular Speed (dps)", 360)
+REGISTER_DOUBLE(DriveTuneMaxInclination, "Drive/Tune/Max Inclination (deg)", 10)
+REGISTER_DOUBLE(DriveTuneMaxSpeedFactor, "Drive/Tune/Max Speed Factor", 0.5)
+REGISTER_DOUBLE(DriveTuneDeadband, "Drive/Tune/Deadband", 0.2)
 
 DriveSubsystem::DriveSubsystem() :
   m_magLimiter { GetDriveSlewRateMagnitude() / 1_s },
   m_rotLimiter { GetDriveSlewRateRotation() / 1_s },
   m_slewRateDirection { GetDriveSlewRateDirection() },
+  m_deadband { GetDriveTuneDeadband() },
   m_maxSpeed { units::meters_per_second_t { GetDriveTuneMaxSpeed() } },
   m_maxAngularSpeed { units::degrees_per_second_t { GetDriveTuneMaxAngularSpeed() } },
   m_translationStep { units::convert<units::degree, units::radian>(GetDriveTuneTranslationStep()) },
+  m_maxSpeedFactor { GetDriveTuneMaxSpeedFactor() },
+  m_maxInclination { GetDriveTuneMaxInclination() },
   m_frontLeft {
     kFrontLeftDrivingCanId,
     kFrontLeftTurningCanId,
@@ -86,6 +92,8 @@ void DriveSubsystem::InitSendable(wpi::SendableBuilder& builder) {
     "Telemetry/Translation Heading", [this] { return m_currentTranslationDir; }, nullptr);
   builder.AddDoubleProperty(
     "Telemetry/Translation Magnitude", [this] { return m_currentTranslationMag; }, nullptr);
+  builder.AddDoubleProperty(
+    "Telemetry/Current Rotation", [this] { return m_currentRotation; }, nullptr);
   builder.AddDoubleProperty(
     "Telemetry/Turn Rate", [this] { return GetTurnRate(); }, nullptr);
   builder.AddDoubleProperty(
@@ -168,9 +176,11 @@ void DriveSubsystem::Drive(
     m_currentRotation = rot.value();
   }
 
+  const auto maxSpeed = GetMaxSpeed();
+
   // convert the commanded speeds into the correct units for the drivetrain
-  const auto xSpeedDelivered = xSpeedCommanded * m_maxSpeed;
-  const auto ySpeedDelivered = ySpeedCommanded * m_maxSpeed;
+  const auto xSpeedDelivered = xSpeedCommanded * maxSpeed;
+  const auto ySpeedDelivered = ySpeedCommanded * maxSpeed;
   const auto rotDelivered = m_currentRotation * m_maxAngularSpeed;
 
   auto states = kDriveKinematics.ToSwerveModuleStates(
@@ -178,7 +188,7 @@ void DriveSubsystem::Drive(
                       xSpeedDelivered, ySpeedDelivered, rotDelivered, GetHeading())
                   : frc::ChassisSpeeds { xSpeedDelivered, ySpeedDelivered, rotDelivered });
 
-  kDriveKinematics.DesaturateWheelSpeeds(&states, m_maxSpeed);
+  kDriveKinematics.DesaturateWheelSpeeds(&states, maxSpeed);
 
   auto [fl, fr, bl, br] = states;
 
@@ -211,6 +221,25 @@ void DriveSubsystem::ResetEncoders() {
   m_rearRight.ResetEncoders();
 }
 
+units::meters_per_second_t DriveSubsystem::GetMaxSpeed() const {
+  if (m_maxInclination <= 0.0) {
+    return m_maxSpeed;
+  }
+
+  // reduce max speed when pitch / roll are too high to help reduce
+  // chances of robot tipping over
+  double ypr[3];
+  m_gyro.GetYawPitchRoll(ypr);
+  const auto pitch = ypr[1];
+  const auto roll = ypr[2];
+
+  if (fabs(pitch) >= m_maxInclination || fabs(roll) >= m_maxInclination) {
+    return m_maxSpeed * m_maxSpeedFactor;
+  }
+
+  return m_maxSpeed;
+}
+
 units::degree_t DriveSubsystem::GetGyroAngle() const {
   return units::degree_t { -m_gyro.GetAngle() };  // flip the sign if changing gyro orientation
 }
@@ -225,6 +254,10 @@ void DriveSubsystem::ZeroHeading() {
 
 double DriveSubsystem::GetTurnRate() const {
   return m_gyro.GetRate();  // flip the sign if changing gyro orientation
+}
+
+double DriveSubsystem::GetDeadband() const {
+  return m_deadband;
 }
 
 void DriveSubsystem::UpdateOdometry() {
@@ -254,9 +287,12 @@ frc::Pose2d DriveSubsystem::GetPose() const {
 
 void DriveSubsystem::UpdateTuningParameters() {
   m_slewRateDirection = GetDriveSlewRateDirection();
+  m_deadband = GetDriveTuneDeadband();
   m_maxSpeed = units::meters_per_second_t { GetDriveTuneMaxSpeed() };
   m_maxAngularSpeed = units::degrees_per_second_t { GetDriveTuneMaxAngularSpeed() };
   m_translationStep = units::convert<units::degree, units::radian>(GetDriveTuneTranslationStep());
+  m_maxInclination = GetDriveTuneMaxInclination();
+  m_maxSpeedFactor = GetDriveTuneMaxSpeedFactor();
 }
 
 void DriveSubsystem::ResetOdometry(const frc::Pose2d& pose) {

@@ -36,6 +36,16 @@ class MAXSwerveModule {
   void SetDesiredState(const frc::SwerveModuleState& state);
 
   /**
+   * Gets the desired speed.
+   */
+  units::meters_per_second_t GetDesiredSpeed() const;
+
+  /**
+   * Gets the desired angle.
+   */
+  units::radian_t GetDesiredAngle() const;
+
+  /**
    * Zeroes all the SwerveModule encoders.
    */
   void ResetEncoders();

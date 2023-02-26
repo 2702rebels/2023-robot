@@ -90,6 +90,14 @@ frc::SwerveModulePosition MAXSwerveModule::GetPosition() const {
   };
 }
 
+units::meters_per_second_t MAXSwerveModule::GetDesiredSpeed() const {
+  return m_desiredState.speed;
+}
+
+units::radian_t MAXSwerveModule::GetDesiredAngle() const {
+  return m_desiredState.angle.Radians();
+}
+
 void MAXSwerveModule::SetDesiredState(const frc::SwerveModuleState& desiredState) {
   // apply chassis angular offset to the desired state.
   frc::SwerveModuleState correctedDesiredState {};
@@ -104,14 +112,14 @@ void MAXSwerveModule::SetDesiredState(const frc::SwerveModuleState& desiredState
       frc::Rotation2d(units::radian_t { m_turningAbsoluteEncoder.GetPosition() })),
   };
 
+  const auto desiredSpeed = optimizedDesiredState.speed.value();            // meters per second
+  const auto desiredAngle = optimizedDesiredState.angle.Radians().value();  // angle
+
   // command driving and turning SPARK MAX towards their respective setpoints
-  m_drivingPIDController.SetReference(
-    (double) optimizedDesiredState.speed, rev::CANSparkMax::ControlType::kVelocity);
+  m_drivingPIDController.SetReference(desiredSpeed, rev::CANSparkMax::ControlType::kVelocity);
+  m_turningPIDController.SetReference(desiredAngle, rev::CANSparkMax::ControlType::kPosition);
 
-  m_turningPIDController.SetReference(
-    optimizedDesiredState.angle.Radians().value(), rev::CANSparkMax::ControlType::kPosition);
-
-  m_desiredState = desiredState;
+  m_desiredState = optimizedDesiredState;
 }
 
 void MAXSwerveModule::ResetEncoders() {
