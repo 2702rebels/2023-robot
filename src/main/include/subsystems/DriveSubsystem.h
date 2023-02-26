@@ -52,6 +52,11 @@ class DriveSubsystem : public frc2::SubsystemBase {
     bool rateLimit);
 
   /**
+   * Re-reads and re-assigns various tuning parameters.
+   */
+  void UpdateTuningParameters();
+
+  /**
    * Sets the wheels into an X formation to prevent movement.
    */
   void SetX();
@@ -95,6 +100,11 @@ class DriveSubsystem : public frc2::SubsystemBase {
    * @param pose The pose to which to set the odometry.
    */
   void ResetOdometry(const frc::Pose2d& pose);
+
+  /**
+   * Stops the robot.
+   */
+  void Stop();
 
   frc::SwerveDriveKinematics<NUMBER_OF_MODULES> kDriveKinematics {
     frc::Translation2d { DriveConstants::kWheelBase / 2, DriveConstants::kTrackWidth / 2 },

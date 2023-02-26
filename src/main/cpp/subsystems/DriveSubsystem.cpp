@@ -2,6 +2,7 @@
 
 #include <frc/DataLogManager.h>
 #include <frc/StateSpaceUtil.h>
+#include <frc/controller/PIDController.h>
 #include <frc/geometry/Rotation2d.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <units/angle.h>
@@ -35,8 +36,7 @@ DriveSubsystem::DriveSubsystem() :
   m_rotLimiter { GetDriveSlewRateRotation() / 1_s },
   m_slewRateDirection { GetDriveSlewRateDirection() },
   m_maxSpeed { units::meters_per_second_t { GetDriveTuneMaxSpeed() } },
-  m_maxAngularSpeed { units::convert<units::degrees_per_second, units::radians_per_second>(
-    GetDriveTuneMaxAngularSpeed()) },
+  m_maxAngularSpeed { units::degrees_per_second_t { GetDriveTuneMaxAngularSpeed() } },
   m_translationStep { units::convert<units::degree, units::radian>(GetDriveTuneTranslationStep()) },
   m_frontLeft {
     kFrontLeftDrivingCanId,
@@ -86,6 +86,22 @@ void DriveSubsystem::InitSendable(wpi::SendableBuilder& builder) {
     "Telemetry/Translation Heading", [this] { return m_currentTranslationDir; }, nullptr);
   builder.AddDoubleProperty(
     "Telemetry/Translation Magnitude", [this] { return m_currentTranslationMag; }, nullptr);
+  builder.AddDoubleProperty(
+    "Telemetry/Turn Rate", [this] { return GetTurnRate(); }, nullptr);
+  builder.AddDoubleProperty(
+    "Telemetry/Heading", [this] { return GetHeading().Degrees().value(); }, nullptr);
+  builder.AddDoubleProperty(
+    "Telemetry/Fused Heading", [this] { return m_gyro.GetFusedHeading(); }, nullptr);
+  builder.AddDoubleProperty(
+    "Telemetry/Yaw", [this] { return m_gyro.GetYaw(); }, nullptr);
+  builder.AddDoubleProperty(
+    "Telemetry/Pitch", [this] { return m_gyro.GetPitch(); }, nullptr);
+  builder.AddDoubleProperty(
+    "Telemetry/Roll", [this] { return m_gyro.GetRoll(); }, nullptr);
+  builder.AddBooleanProperty(
+    "Telemetry/IMU Ready",
+    [this] { return m_gyro.GetState() == ctre::phoenix::sensors::PigeonIMU::PigeonState::Ready; },
+    nullptr);
 }
 
 void DriveSubsystem::Periodic() {
@@ -190,8 +206,8 @@ void DriveSubsystem::SetModuleStates(
 
 void DriveSubsystem::ResetEncoders() {
   m_frontLeft.ResetEncoders();
-  m_rearLeft.ResetEncoders();
   m_frontRight.ResetEncoders();
+  m_rearLeft.ResetEncoders();
   m_rearRight.ResetEncoders();
 }
 
@@ -236,6 +252,13 @@ frc::Pose2d DriveSubsystem::GetPose() const {
 #endif
 }
 
+void DriveSubsystem::UpdateTuningParameters() {
+  m_slewRateDirection = GetDriveSlewRateDirection();
+  m_maxSpeed = units::meters_per_second_t { GetDriveTuneMaxSpeed() };
+  m_maxAngularSpeed = units::degrees_per_second_t { GetDriveTuneMaxAngularSpeed() };
+  m_translationStep = units::convert<units::degree, units::radian>(GetDriveTuneTranslationStep());
+}
+
 void DriveSubsystem::ResetOdometry(const frc::Pose2d& pose) {
   m_gyro.Reset();
   m_odometry.ResetPosition(
@@ -247,4 +270,8 @@ void DriveSubsystem::ResetOdometry(const frc::Pose2d& pose) {
       m_rearRight.GetPosition(),
     },
     pose);
+}
+
+void DriveSubsystem::Stop() {
+  Drive(0_mps, 0_mps, 0_rad_per_s, true, true);
 }

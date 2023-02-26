@@ -62,9 +62,9 @@ RobotContainer::RobotContainer() {
   // configure the button bindings
   ConfigureButtonBindings();
 
-// set up default drive command:
-// - the left stick controls translation of the robot
-// - turning is controlled by the X axis of the right stick
+  // set up default drive command:
+  // - the left stick controls translation of the robot
+  // - turning is controlled by the X axis of the right stick
 #ifdef DRIVETRAIN_ENABLED
   m_drive.SetDefaultCommand(frc2::RunCommand(
     [this] {
@@ -79,6 +79,13 @@ RobotContainer::RobotContainer() {
         true);
     },
     { &m_drive }));
+#endif
+
+  // autonomous command chooser
+#ifdef AUTO_CHOOSER
+  m_chooser.SetDefaultOption("Auto1", &m_auto1);
+  m_chooser.AddOption("Auto2", &m_auto2);
+  frc::Shuffleboard::GetTab("Auto").Add(m_chooser);
 #endif
 }
 
@@ -140,6 +147,9 @@ void RobotContainer::ConfigureButtonBindings() {
 }
 
 frc2::Command* RobotContainer::GetAutonomousCommand() {
+#ifdef AUTO_CHOOSER
+  return m_chooser.GetSelected();
+#else
 #ifdef DRIVETRAIN_ENABLED
   // set up config for trajectory
   frc::TrajectoryConfig config(AutoConstants::kMaxSpeed, AutoConstants::kMaxAcceleration);
@@ -165,7 +175,7 @@ frc2::Command* RobotContainer::GetAutonomousCommand() {
   thetaController.EnableContinuousInput(
     units::radian_t { -std::numbers::pi }, units::radian_t { std::numbers::pi });
 
-  frc2::SwerveControllerCommand<4> swerveControllerCommand(
+  frc2::SwerveControllerCommand<NUMBER_OF_MODULES> swerveControllerCommand(
     exampleTrajectory,
     [this]() { return m_drive.GetPose(); },
     m_drive.kDriveKinematics,
@@ -181,9 +191,10 @@ frc2::Command* RobotContainer::GetAutonomousCommand() {
   // no auto
   return new frc2::SequentialCommandGroup(
     std::move(swerveControllerCommand),
-    frc2::InstantCommand([this]() { m_drive.Drive(0_mps, 0_mps, 0_rad_per_s, false, false); }, {}));
+    frc2::InstantCommand([this]() { m_drive.Drive(0_mps, 0_mps, 0_rad_per_s, true, true); }, {}));
 #else
   return new frc2::InstantCommand(
     [this] { frc::DataLogManager::Log("Drivetrain disabled. Auto not run."); });
+#endif
 #endif
 }
