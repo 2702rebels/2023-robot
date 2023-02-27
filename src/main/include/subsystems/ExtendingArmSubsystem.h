@@ -13,6 +13,20 @@
 #include <frc2/command/SubsystemBase.h>
 #include <rev/CANSparkMax.h>
 
+enum ExtendingArmPositions {
+  STOWED,
+  INTAKE_FLOOR_CONE,
+  INTAKE_FLOOR_CUBE,
+  INTAKE_STATION_CONE,
+  INTAKE_STATION_CUBE,
+  SCORE_LOW_CONE,
+  SCORE_LOW_CUBE,
+  SCORE_MID_CONE,
+  SCORE_MID_CUBE,
+  SCORE_HIGH_CONE,
+  SCORE_HIGH_CUBE,
+};
+
 class ExtendingArmSubsystem : public frc2::SubsystemBase {
  public:
   ExtendingArmSubsystem();
@@ -25,21 +39,16 @@ class ExtendingArmSubsystem : public frc2::SubsystemBase {
   void OnDisable();
 
   units::degree_t GetAxis1Angle();
+  units::degrees_per_second_t GetAxis1Velocity();
   units::inch_t GetAxis2Distance();
+  units::meters_per_second_t GetAxis2Velocity();
   units::degree_t GetAxis3Angle();
+
   bool GetAxis1LimitSwitch();
 
   double GetAxis1Current();
   double GetAxis2Current();
   double GetAxis3Current();
-
-  void SetAxis1NextSetpoint(units::degree_t setPoint);
-  void SetAxis2NextSetpoint(units::inch_t setPoint);
-  void SetAxis3NextSetpoint(units::degree_t setPoint);
-
-  void SetAxis1DutyCycle(double dutyCycle);
-  void SetAxis2DutyCycle(double dutyCycle);
-  void SetAxis3DutyCycle(double dutyCycle);
 
   void SetAxis1Off();
   void SetAxis2Off();
@@ -50,11 +59,13 @@ class ExtendingArmSubsystem : public frc2::SubsystemBase {
   void ZeroAxis2();
   void ZeroAxis3();
 
-  frc2::CommandPtr Home();
-  frc2::CommandPtr MoveArm(units::degree_t angle, units::inch_t distance);
-  void MoveArmSimple(units::degree_t angle, units::inch_t distance);
+  void SetAxis1DutyCycle(double dutyCycle);
+  void SetAxis2DutyCycle(double dutyCycle);
+  void SetAxis3DutyCycle(double dutyCycle);
 
-  frc::TrapezoidProfile<units::degree>::Constraints GetAxis1Profile();
+  frc2::CommandPtr Home();
+  frc2::CommandPtr MoveArm(ExtendingArmPositions position);
+  frc2::CommandPtr MoveArm(units::degree_t angle, units::inch_t distance);
 
   void ReloadConfigs();
 
@@ -92,4 +103,11 @@ class ExtendingArmSubsystem : public frc2::SubsystemBase {
   // frc::TrapezoidProfile<units::meters>* m_axis2TrapezoidalProfile;
   frc::TrapezoidProfile<units::meters>::Constraints* m_axis2TrapezoidalProfileConstraints;
   frc::TrapezoidProfile<units::meters>::State m_axis2TrapezoidalProfileState;
+
+  void SetAxis1NextSetpoint(units::degree_t setPoint);
+  void SetAxis2NextSetpoint(units::inch_t setPoint);
+  void SetAxis3NextSetpoint(units::degree_t setPoint);
+
+  void MoveArmSimple(units::degree_t angle, units::inch_t distance);
+  bool IsArmAtCommandedPosition();
 };

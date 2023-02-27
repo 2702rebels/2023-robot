@@ -19,8 +19,6 @@
 #include "Constants.h"
 #include "commands/HomeAxis1Command.h"
 #include "commands/HomeAxis2Command.h"
-#include "commands/MoveAxis1Command.h"
-#include "commands/MoveAxis2Command.h"
 #include "subsystems/DriveSubsystem.h"
 
 using namespace DriveConstants;
@@ -125,16 +123,13 @@ void RobotContainer::ConfigureButtonBindings() {
     .OnTrue(HomeAxis2Command(&m_exArm).ToPtr());
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kA)
-    .OnTrue(
-      new frc2::InstantCommand([this] { m_exArm.MoveArmSimple(0.0_deg, 0.0_in); }, { &m_exArm }));
+    .OnTrue(m_exArm.MoveArm(ExtendingArmPositions::STOWED));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kB)
-    .OnTrue(
-      new frc2::InstantCommand([this] { m_exArm.MoveArmSimple(70.0_deg, 7.0_in); }, { &m_exArm }));
+    .OnTrue(m_exArm.MoveArm(ExtendingArmPositions::SCORE_MID_CONE));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kY)
-    .OnTrue(
-      new frc2::InstantCommand([this] { m_exArm.MoveArmSimple(80.0_deg, 20.0_in); }, { &m_exArm }));
+    .OnTrue(m_exArm.MoveArm(ExtendingArmPositions::SCORE_HIGH_CONE));
 #endif
 
 #ifdef INTAKE_ENABLED

@@ -11,8 +11,6 @@
 #include <frc2/command/SequentialCommandGroup.h>
 
 #include "Settings.h"
-#include "commands/MoveAxis1Command.h"
-#include "commands/MoveAxis2Command.h"
 
 using namespace ExtendingArmConstants;
 using namespace frc2;
@@ -61,8 +59,9 @@ void ExtendingArmSubsystem::ConfigureTuningParams() {
   m_axis1PIDController.SetI(GetAxis1I());
   m_axis1PIDController.SetD(GetAxis1D());
   m_axis1PIDController.SetOutputRange(kAxis1MinOutput, kAxis1MaxOutput);
-  m_axis1Motor.BurnFlash();
+  // Conver to degree's per second.
   m_axis1Encoder.SetVelocityConversionFactor((1 / kAxis1MotorRotationsPerDegree) / 60);
+  m_axis1Motor.BurnFlash();
   m_axis1feedforward = new frc::ArmFeedforward(
     units::volt_t(GetAxis1kS()),
     units::volt_t(GetAxis1kG()),
@@ -96,6 +95,8 @@ void ExtendingArmSubsystem::ConfigureTuningParams() {
   m_axis2PIDController.SetI(GetAxis2I());
   m_axis2PIDController.SetD(GetAxis2D());
   m_axis2PIDController.SetOutputRange(kAxis2MinOutput, kAxis2MaxOutput);
+  // Convert to meters per second.
+  m_axis2Encoder.SetVelocityConversionFactor((1 / kAxis2MotorRotationsPerMeterOfTravel) / 60);
   m_axis2Motor.BurnFlash();
   m_axis2TrapezoidalProfileConstraints = new frc::TrapezoidProfile<units::meter>::Constraints(
     units::meters_per_second_t(GetAxis2MaxVelocity() * 0.0254),
@@ -157,7 +158,7 @@ void ExtendingArmSubsystem::Periodic() {
 
   if (m_isAxis1ControlEnabled) {
     frc::TrapezoidProfile<units::degree> axis1Profile {
-      ExtendingArmSubsystem::GetAxis1Profile(),
+      *m_axis1TrapezoidalProfileConstraints,
       frc::TrapezoidProfile<units::degree>::State { axis1ProfileSetPoint,
                                                     units::degrees_per_second_t(0) },
       m_axis1TrapezoidalProfileState
@@ -196,8 +197,16 @@ units::degree_t ExtendingArmSubsystem::GetAxis1Angle() {
   return units::degree_t(m_axis1Encoder.GetPosition() / kAxis1MotorRotationsPerDegree);
 }
 
+units::degrees_per_second_t ExtendingArmSubsystem::GetAxis1Velocity() {
+  return units::degrees_per_second_t(m_axis1Encoder.GetVelocity());
+}
+
 units::inch_t ExtendingArmSubsystem::GetAxis2Distance() {
   return units::inch_t(m_axis2Encoder.GetPosition() / kAxis2MotorRotationsPerInchOfTravel);
+}
+
+units::meters_per_second_t ExtendingArmSubsystem::GetAxis2Velocity() {
+  return units::meters_per_second_t(m_axis2Encoder.GetVelocity());
 }
 
 units::degree_t ExtendingArmSubsystem::GetAxis3Angle() {
@@ -234,7 +243,7 @@ void ExtendingArmSubsystem::SetAxis1NextSetpoint(units::degree_t setPoint) {
     0,
     m_axis1feedforward
       ->Calculate(
-        ExtendingArmSubsystem::GetAxis1Angle(),
+        ExtendingArmSubsystem::GetAxis1Angle() - kaxis1ffAngleCorrection,
         units::radians_per_second_t(0),
         units::radians_per_second_squared_t(0))
       .value());
@@ -287,6 +296,8 @@ void ExtendingArmSubsystem::SetAxis2Off() {
 
 void ExtendingArmSubsystem::SetAxis3Off() {
   m_axis3Motor.Set(ctre::phoenix::motorcontrol::ControlMode::Disabled, 0);
+  frc::DataLogManager::Log(
+    fmt::format("Axis3: Disabled motor by commanding motor control mode to 'Disabled'."));
 }
 
 void ExtendingArmSubsystem::SetArmOff() {
@@ -315,24 +326,6 @@ void ExtendingArmSubsystem::ZeroAxis3() {
   frc::DataLogManager::Log(fmt::format("Axis3: Zero'd and started position pid at 0."));
 }
 
-frc::TrapezoidProfile<units::degree>::Constraints ExtendingArmSubsystem::GetAxis1Profile() {
-  return *m_axis1TrapezoidalProfileConstraints;
-}
-
-frc2::CommandPtr ExtendingArmSubsystem::MoveArm(units::degree_t angle, units::inch_t distance) {
-  return frc2::cmd::Sequence(
-    MoveAxis1Command(this, units::degree_t(angle)).ToPtr(),
-    MoveAxis2Command(this, units::inch_t(distance)).ToPtr());
-  // return frc2::cmd::Either(
-  //   frc2::cmd::Sequence(
-  //     MoveAxis1Command(this, units::degree_t(angle)).ToPtr(),
-  //     MoveAxis2Command(this, units::inch_t(distance)).ToPtr()),
-  //   frc2::cmd::Sequence(
-  //     MoveAxis2Command(this, units::inch_t(distance)).ToPtr(),
-  //     MoveAxis1Command(this, units::degree_t(angle)).ToPtr()),
-  //   [this] { return units::degree_t(1) > GetAxis1Angle(); });
-}
-
 void ExtendingArmSubsystem::MoveArmSimple(units::degree_t angle, units::inch_t distance) {
   m_axis1SetPoint = angle;
   m_axis2SetPoint = distance;
@@ -340,11 +333,107 @@ void ExtendingArmSubsystem::MoveArmSimple(units::degree_t angle, units::inch_t d
   m_isAxis2ControlEnabled = true;
 
   // Reset our initial profile states.
-  m_axis1TrapezoidalProfileState = frc::TrapezoidProfile<units::degree>::State {
-    GetAxis1Angle(), units::degrees_per_second_t(m_axis1Encoder.GetVelocity())
-  };
+  m_axis1TrapezoidalProfileState =
+    frc::TrapezoidProfile<units::degree>::State { ExtendingArmSubsystem::GetAxis1Angle(),
+                                                  ExtendingArmSubsystem::GetAxis1Velocity() };
   m_axis2TrapezoidalProfileState =
-    frc::TrapezoidProfile<units::meters>::State { GetAxis2Distance(), 0_mps };
+    frc::TrapezoidProfile<units::meters>::State { ExtendingArmSubsystem::GetAxis2Distance(),
+                                                  ExtendingArmSubsystem::GetAxis2Velocity() };
+}
+
+frc2::CommandPtr ExtendingArmSubsystem::MoveArm(ExtendingArmPositions position) {
+  units::degree_t angle = 0.0_deg;
+  units::inch_t distance = 0.0_in;
+
+  switch (position) {
+    case STOWED:
+      angle = 0.0_deg;
+      distance = 0.0_in;
+      break;
+    case INTAKE_FLOOR_CONE:
+      angle = 20.0_deg;
+      distance = 5.0_in;
+      break;
+    case INTAKE_FLOOR_CUBE:
+      angle = 20.0_deg;
+      distance = 5.0_in;
+      break;
+    case INTAKE_STATION_CONE:
+      angle = 0.0_deg;
+      distance = 0.0_in;
+      break;
+    case INTAKE_STATION_CUBE:
+      angle = 0.0_deg;
+      distance = 0.0_in;
+      break;
+    case SCORE_LOW_CONE:
+      angle = 15.0_deg;
+      distance = 0.0_in;
+      break;
+    case SCORE_LOW_CUBE:
+      angle = 15.0_deg;
+      distance = 0.0_in;
+      break;
+    case SCORE_MID_CONE:
+      angle = 70.0_deg;
+      distance = 7.0_in;
+      break;
+    case SCORE_MID_CUBE:
+      angle = 65.0_deg;
+      distance = 7.0_in;
+      break;
+    case SCORE_HIGH_CONE:
+      angle = 80.0_deg;
+      distance = 20.0_in;
+      break;
+    case SCORE_HIGH_CUBE:
+      angle = 75.0_deg;
+      distance = 15.0_in;
+      break;
+  }
+
+  return frc2::FunctionalCommand(
+           // Initialize
+           [&] { ExtendingArmSubsystem::MoveArmSimple(angle, distance); },
+           // Execute
+           [this] {},
+           // End
+           [this](bool interrupted) {},
+           // IsFinished
+           [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+           // Require subsystem
+           { this })
+    .ToPtr();
+}
+
+frc2::CommandPtr ExtendingArmSubsystem::MoveArm(units::degree_t angle, units::inch_t distance) {
+  return frc2::FunctionalCommand(
+           // Initialize
+           [&] { ExtendingArmSubsystem::MoveArmSimple(angle, distance); },
+           // Execute
+           [this] {},
+           // End
+           [this](bool interrupted) {},
+           // IsFinished
+           [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+           // Require subsystem
+           { this })
+    .ToPtr();
+}
+
+bool ExtendingArmSubsystem::IsArmAtCommandedPosition() {
+  double axis1 = GetAxis1Angle().value();
+  double axis2 = GetAxis2Distance().value();
+  double axis1SetPoint = m_axis1SetPoint.value();
+  double axis2SetPoint = m_axis2SetPoint.value();
+
+  if (
+    (axis1 < axis1SetPoint + kAxis1Deadband && axis1 > axis1SetPoint - kAxis1Deadband) &&
+    (axis2 < axis2SetPoint + kAxis2Deadband && axis2 > axis2SetPoint - kAxis2Deadband)) {
+    return true;
+  }
+
+  return false;
 }
 
 void ExtendingArmSubsystem::DisableControlAxis2() {

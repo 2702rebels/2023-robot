@@ -166,6 +166,8 @@ constexpr double kAxis1MotorRotationsPerDegree = 360 / kAxis1OverallReduction;
 constexpr double kAxis1ZeroAngle = 0;
 constexpr int kAxis1HomeTimeoutInSeconds = 3;
 constexpr double kAxis1HomeCurrentThreshold = 30;
+constexpr double kaxis1ffAngleCorrection = 70;
+constexpr double kAxis1Deadband = 1;
 
 // Axis 2 (Extension)
 constexpr int kAxis2CurrentLimit = 25;
@@ -176,8 +178,11 @@ constexpr double kAxis2OverallReduction = (4.0 / 1.0) * (3.0 / 1.0);
 // Belt is running on an 18t 5mm HTD pulley.
 constexpr double kAxis2MotorRotationsPerInchOfTravel =
   kAxis2OverallReduction / ((18.0 * 5.0) / 25.4);
+constexpr double kAxis2MotorRotationsPerMeterOfTravel =
+  kAxis2OverallReduction / ((18.0 * 5.0) / 1000);
 constexpr int kAxis2HomeTimeoutInSeconds = 3;
 constexpr double kAxis2HomeCurrentThreshold = 15;
+constexpr double kAxis2Deadband = 0.5;
 
 // Axis 3 (Wrist)
 constexpr int kAxis3CurrentLimit = 20;
