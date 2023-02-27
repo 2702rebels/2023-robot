@@ -12,6 +12,8 @@ Auto2::Auto2(DriveSubsystem* drive) {
       { frc::Translation2d { 1_m, 1_m }, frc::Translation2d { 2_m, -1_m } },
       // end 3 meters straight ahead of where we started, facing forward
       frc::Pose2d { 3_m, 0_m, 0_deg },
+      false,
+      true,
       drive),
     frc2::InstantCommand([drive] { drive->Stop(); }, { drive }));
 }
