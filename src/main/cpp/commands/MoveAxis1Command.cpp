@@ -23,8 +23,7 @@ void MoveAxis1Command::Initialize() {
 
   m_profileTime = 0_ms;
   m_profile = new frc::TrapezoidProfile<units::degree>(
-    frc::TrapezoidProfile<units::degree>::Constraints { units::degrees_per_second_t(15.0),
-                                                        units::degrees_per_second_squared_t(10.0) },
+    m_arm->GetAxis1Profile(),
     frc::TrapezoidProfile<units::degree>::State { m_axisGoal, units::degrees_per_second_t(0) },
     frc::TrapezoidProfile<units::degree>::State { m_arm->GetAxis1Angle(),
                                                   units::degrees_per_second_t(0) });

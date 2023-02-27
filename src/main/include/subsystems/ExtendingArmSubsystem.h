@@ -51,10 +51,20 @@ class ExtendingArmSubsystem : public frc2::SubsystemBase {
   void ZeroAxis3();
 
   frc2::CommandPtr Home();
+  frc2::CommandPtr MoveArm(units::degree_t angle, units::inch_t distance);
+  void MoveArmSimple(units::degree_t angle, units::inch_t distance);
+
+  frc::TrapezoidProfile<units::degree>::Constraints GetAxis1Profile();
+
+  void ReloadConfigs();
+
+  void DisableControlAxis2();
 
  private:
-  bool m_setupLogged = false;
-  int m_setupLoggedIters = 0;
+  bool m_isAxis1ControlEnabled = false;
+  bool m_isAxis2ControlEnabled = false;
+  units::degree_t m_axis1SetPoint;
+  units::inch_t m_axis2SetPoint;
   // Components (e.g. motor controllers and sensors) should generally be
   // declared private and exposed only through public methods.
   rev::CANSparkMax m_axis1Motor { ExtendingArmConstants::kExtendingArmAxis1MotorControllerCanId,
@@ -75,4 +85,11 @@ class ExtendingArmSubsystem : public frc2::SubsystemBase {
   frc::DigitalInput m_axis1HomeLimitSwitch { ExtendingArmConstants::kAxis1HomeLimitSwitchId };
 
   frc::ArmFeedforward* m_axis1feedforward;
+  // frc::TrapezoidProfile<units::degree>* m_axis1TrapezoidalProfile;
+  frc::TrapezoidProfile<units::degree>::Constraints* m_axis1TrapezoidalProfileConstraints;
+  frc::TrapezoidProfile<units::degree>::State m_axis1TrapezoidalProfileState;
+
+  // frc::TrapezoidProfile<units::meters>* m_axis2TrapezoidalProfile;
+  frc::TrapezoidProfile<units::meters>::Constraints* m_axis2TrapezoidalProfileConstraints;
+  frc::TrapezoidProfile<units::meters>::State m_axis2TrapezoidalProfileState;
 };

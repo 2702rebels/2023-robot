@@ -6,6 +6,7 @@
 #include <frc/shuffleboard/Shuffleboard.h>
 #include <frc/trajectory/Trajectory.h>
 #include <frc/trajectory/TrajectoryGenerator.h>
+#include <frc2/command/Commands.h>
 #include <frc2/command/InstantCommand.h>
 #include <frc2/command/SequentialCommandGroup.h>
 #include <frc2/command/SwerveControllerCommand.h>
@@ -25,7 +26,7 @@
 using namespace DriveConstants;
 
 RobotContainer::RobotContainer() {
-// initialize all of your commands and subsystems here
+  // initialize all of your commands and subsystems here
 
 // register subsystems on the shuffleboard
 #ifdef DRIVETRAIN_ENABLED
@@ -103,34 +104,37 @@ void RobotContainer::ConfigureButtonBindings() {
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightStick)
     .OnTrue(new frc2::InstantCommand([this] { m_drive.ZeroHeading(); }, { &m_drive }));
 
-  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kX)
-    .OnTrue(
-      new frc2::InstantCommand([this] { m_drive.ResetOdometry(frc::Pose2d {}); }, { &m_drive }));
+  // frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kX)
+  //   .OnTrue(
+  //     new frc2::InstantCommand([this] { m_drive.ResetOdometry(frc::Pose2d {}); }, { &m_drive }));
 #endif
 
 #ifdef EXTENDING_ARM_ENABLED
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kStart)
-    //.OnTrue(m_exArm.Home());
-    //.OnTrue(new HomeAxis2Command(&m_exArm));
-    //.OnTrue(new HomeAxis1Command(&m_exArm));
-    .OnTrue(new frc2::InstantCommand([this] { m_exArm.ZeroAxis1(); }, { &m_exArm }));
+    .OnTrue(new frc2::InstantCommand([this] { m_exArm.ConfigureTuningParams(); }, { &m_exArm }));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kBack)
-    .OnTrue(new frc2::InstantCommand([this] { m_exArm.SetArmOff(); }, { &m_exArm }));
+    .OnTrue(new frc2::InstantCommand(
+      [this] {
+        m_exArm.ZeroAxis1();
+        m_exArm.ZeroAxis2();
+      },
+      { &m_exArm }));
 
-  // Axis 1
+  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kLeftBumper)
+    .OnTrue(HomeAxis2Command(&m_exArm).ToPtr());
+
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kA)
-    .OnTrue(new MoveAxis1Command(&m_exArm, 15.0_deg));
+    .OnTrue(
+      new frc2::InstantCommand([this] { m_exArm.MoveArmSimple(0.0_deg, 0.0_in); }, { &m_exArm }));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kB)
-    .OnTrue(new MoveAxis1Command(&m_exArm, 0.0_deg));
+    .OnTrue(
+      new frc2::InstantCommand([this] { m_exArm.MoveArmSimple(70.0_deg, 7.0_in); }, { &m_exArm }));
 
-  // Axis 2
-  // frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kA)
-  //   .OnTrue(new MoveAxis2Command(&m_exArm, 5.0_in));
-
-  // frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kB)
-  //   .OnTrue(new MoveAxis2Command(&m_exArm, 0.0_in));
+  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kY)
+    .OnTrue(
+      new frc2::InstantCommand([this] { m_exArm.MoveArmSimple(80.0_deg, 20.0_in); }, { &m_exArm }));
 #endif
 
 #ifdef INTAKE_ENABLED

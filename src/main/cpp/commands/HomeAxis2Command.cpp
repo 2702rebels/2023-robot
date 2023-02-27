@@ -19,7 +19,8 @@ void HomeAxis2Command::Initialize() {
   m_isTimedOut = false;
   m_homingStartTime = frc::Timer::GetFPGATimestamp();
   m_cyclesAboveCurrentLimit = 0;
-  m_arm->SetAxis2DutyCycle(-0.8);
+  m_arm->SetAxis2DutyCycle(-0.6);
+  m_arm->DisableControlAxis2();
 }
 
 // Called repeatedly when this Command is scheduled to run

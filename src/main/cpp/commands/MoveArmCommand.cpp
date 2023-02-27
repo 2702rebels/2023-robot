@@ -31,6 +31,10 @@ void MoveArmCommand::Initialize() {
 
 // Called repeatedly when this Command is scheduled to run
 void MoveArmCommand::Execute() {
+  // If arm angle is below outside the robot, don't allow the arm to extend.
+
+  // if arm angle is trying to get into the robot and it's extended, gate it until extension is
+  // inside.
   m_arm->SetAxis2NextSetpoint(m_profile->Calculate(m_profileTime).position);
   m_profileTime += 20_ms;
 }

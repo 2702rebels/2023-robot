@@ -11,8 +11,8 @@
 #include <frc2/command/SequentialCommandGroup.h>
 
 #include "Settings.h"
-#include "commands/HomeAxis1Command.h"
-#include "commands/HomeAxis2Command.h"
+#include "commands/MoveAxis1Command.h"
+#include "commands/MoveAxis2Command.h"
 
 using namespace ExtendingArmConstants;
 using namespace frc2;
@@ -24,12 +24,26 @@ REGISTER_DOUBLE(Axis1kS, "ExArm/TuningParameters/Axis1 ArmFeedForward/kS", 0.0)
 REGISTER_DOUBLE(Axis1kG, "ExArm/TuningParameters/Axis1 ArmFeedForward/kG", 0.0)
 REGISTER_DOUBLE(Axis1kV, "ExArm/TuningParameters/Axis1 ArmFeedForward/kV", 0.0)
 REGISTER_DOUBLE(Axis1kA, "ExArm/TuningParameters/Axis1 ArmFeedForward/kA", 0.0)
-REGISTER_DOUBLE(Axis2P, "ExArm/TuningParameters/Axis2 PID/P", 0.03)
-REGISTER_DOUBLE(Axis2I, "ExArm/TuningParameters/Axis2 PID/I", 0.0)
+REGISTER_DOUBLE(
+  Axis1MaxVelocity, "ExArm/TuningParameters/Axis1 MotionProfile/MaxVelDegPerSecond", 100.0)
+REGISTER_DOUBLE(
+  Axis1MaxAcceletration, "ExArm/TuningParameters/Axis1 MotionProfile/MaxAccelDegPerSecond", 130.0)
+REGISTER_DOUBLE(Axis1CurrentLimit, "ExArm/TuningParameters/Axis1CurrentLimit", 40.0)
+
+REGISTER_DOUBLE(Axis2P, "ExArm/TuningParameters/Axis2 PID/P", 0.04)
+REGISTER_DOUBLE(Axis2I, "ExArm/TuningParameters/Axis2 PID/I", 0.00001)
 REGISTER_DOUBLE(Axis2D, "ExArm/TuningParameters/Axis2 PID/D", 0.0)
+REGISTER_DOUBLE(
+  Axis2MaxVelocity, "ExArm/TuningParameters/Axis2 MotionProfile/MaxVelInchPerSec", 40.0)
+REGISTER_DOUBLE(
+  Axis2MaxAcceletration, "ExArm/TuningParameters/Axis2 MotionProfile/MaxAccelInchPerSec", 60.0)
+REGISTER_DOUBLE(Axis2CurrentLimit, "ExArm/TuningParameters/Axis2CurrentLimit", 20.0)
+
 REGISTER_DOUBLE(Axis3P, "ExArm/TuningParameters/Axis3 PID/P", 0.0)
 REGISTER_DOUBLE(Axis3I, "ExArm/TuningParameters/Axis3 PID/I", 0.0)
 REGISTER_DOUBLE(Axis3D, "ExArm/TuningParameters/Axis3 PID/D", 0.0)
+REGISTER_DOUBLE(Axis3CurrentLimit, "ExArm/TuningParameters/Axis3CurrentLimit", 0.0)
+REGISTER_DOUBLE(Axis3CurrentLimitDuration, "ExArm/TuningParameters/Axis3CurrentLimitDuration", 0.0)
 
 ExtendingArmSubsystem::ExtendingArmSubsystem() {
   frc::DataLogManager::Log(fmt::format("Initializing ExtendingArmSubsystem."));
@@ -42,60 +56,79 @@ void ExtendingArmSubsystem::ConfigureTuningParams() {
   m_axis1Motor.RestoreFactoryDefaults();
   m_axis1Motor.SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
   m_axis1Motor.SetInverted(false);
-  m_axis1Motor.SetSmartCurrentLimit(kAxis1CurrentLimit);
+  m_axis1Motor.SetSmartCurrentLimit(GetAxis1CurrentLimit());
   m_axis1PIDController.SetP(GetAxis1P());
   m_axis1PIDController.SetI(GetAxis1I());
   m_axis1PIDController.SetD(GetAxis1D());
   m_axis1PIDController.SetOutputRange(kAxis1MinOutput, kAxis1MaxOutput);
   m_axis1Motor.BurnFlash();
-  // m_axis1feedforward = new frc::ArmFeedforward(
-  //   units::volt_t(GetAxis1kS()),
-  //   units::volt_t(GetAxis1kG()),
-  //   units::radians_per_second_t(GetAxis1kV()),
-  //   units::radians_per_second_squared_t(GetAxis1kA()));
+  m_axis1Encoder.SetVelocityConversionFactor((1 / kAxis1MotorRotationsPerDegree) / 60);
+  m_axis1feedforward = new frc::ArmFeedforward(
+    units::volt_t(GetAxis1kS()),
+    units::volt_t(GetAxis1kG()),
+    units::unit_t<frc::ArmFeedforward::kv_unit>(GetAxis1kV()),
+    units::unit_t<frc::ArmFeedforward::ka_unit>(GetAxis1kA()));
+  m_axis1TrapezoidalProfileConstraints = new frc::TrapezoidProfile<units::degree>::Constraints(
+    units::degrees_per_second_t(GetAxis1MaxVelocity()),
+    units::degrees_per_second_squared_t(GetAxis1MaxAcceletration()));
   frc::DataLogManager::Log(fmt::format(
-    "Configured Axis1 with parameters: P={}, I={}, D={}, CurrentLimit={}",
+    "Configured Axis1 with parameters: P={}, I={}, D={}, CurrentLimit={}, MinOutput={}, "
+    "MaxOutput={}, ArmFeedForward=[kS={}, kG={}, kV={}, kA={}], MaxVelocity={}, MaxAcceleration={}",
     GetAxis1P(),
     GetAxis1I(),
     GetAxis1D(),
-    kAxis1CurrentLimit));
+    GetAxis1CurrentLimit(),
+    kAxis1MinOutput,
+    kAxis1MaxOutput,
+    GetAxis1kS(),
+    GetAxis1kG(),
+    GetAxis1kV(),
+    GetAxis1kA(),
+    GetAxis1MaxVelocity(),
+    GetAxis1MaxAcceletration()));
 
   // Axis 2
   m_axis2Motor.RestoreFactoryDefaults();
   m_axis2Motor.SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
   m_axis2Motor.SetInverted(false);
-  m_axis2Motor.SetSmartCurrentLimit(kAxis2CurrentLimit);
+  m_axis2Motor.SetSmartCurrentLimit(GetAxis2CurrentLimit());
   m_axis2PIDController.SetP(GetAxis2P());
   m_axis2PIDController.SetI(GetAxis2I());
   m_axis2PIDController.SetD(GetAxis2D());
   m_axis2PIDController.SetOutputRange(kAxis2MinOutput, kAxis2MaxOutput);
   m_axis2Motor.BurnFlash();
+  m_axis2TrapezoidalProfileConstraints = new frc::TrapezoidProfile<units::meter>::Constraints(
+    units::meters_per_second_t(GetAxis2MaxVelocity() * 0.0254),
+    units::meters_per_second_squared_t(GetAxis2MaxAcceletration() * 0.0254));
   frc::DataLogManager::Log(fmt::format(
     "Configured Axis2 with parameters: P={}, I={}, D={}, CurrentLimit={}, MinOutput={}, "
-    "MaxOutput={}",
+    "MaxOutput={},  MaxVelocity={}, MaxAcceleration={}",
     GetAxis2P(),
     GetAxis2I(),
     GetAxis2D(),
-    kAxis2CurrentLimit,
+    GetAxis2CurrentLimit(),
     kAxis2MinOutput,
-    kAxis2MaxOutput));
+    kAxis2MaxOutput,
+    GetAxis2MaxVelocity(),
+    GetAxis2MaxAcceletration()));
 
   // Axis 3
   m_axis3Motor.ConfigFactoryDefault(50);
   m_axis3Motor.SetNeutralMode(ctre::phoenix::motorcontrol::NeutralMode::Brake);
-  m_axis3Motor.ConfigPeakCurrentLimit(kAxis3CurrentLimit);
-  m_axis3Motor.ConfigPeakCurrentDuration(kAxis3CurrentLimitDuration);
-  m_axis3Motor.ConfigContinuousCurrentLimit(kAxis3CurrentLimit);
+  m_axis3Motor.ConfigPeakCurrentLimit(GetAxis3CurrentLimit());
+  m_axis3Motor.ConfigPeakCurrentDuration(GetAxis3CurrentLimitDuration());
+  m_axis3Motor.ConfigContinuousCurrentLimit(GetAxis3CurrentLimit());
   m_axis3Motor.EnableCurrentLimit(true);
   m_axis3PIDController.SetP(GetAxis3P());
   m_axis3PIDController.SetI(GetAxis3I());
   m_axis3PIDController.SetD(GetAxis3D());
   frc::DataLogManager::Log(fmt::format(
-    "Configured Axis2 with parameters: P={}, I={}, D={}, CurrentLimit={}",
+    "Configured Axis2 with parameters: P={}, I={}, D={}, CurrentLimit={}, CurrentLimitDuration={}",
     GetAxis3P(),
     GetAxis3I(),
     GetAxis3D(),
-    kAxis3CurrentLimit));
+    GetAxis3CurrentLimit(),
+    GetAxis3CurrentLimitDuration()));
 }
 
 // This method will be called once per scheduler run
@@ -103,9 +136,47 @@ void ExtendingArmSubsystem::Periodic() {
   frc::SmartDashboard::PutNumber("Axis1Angle", GetAxis1Angle().value());
   frc::SmartDashboard::PutNumber("Axis2Distance", GetAxis2Distance().value());
   frc::SmartDashboard::PutNumber("Axis3Angle", GetAxis3Angle().value());
-  frc::SmartDashboard::PutNumber("Axis1Current", m_axis1Motor.GetOutputCurrent());
-  frc::SmartDashboard::PutNumber("Axis2Current", m_axis2Motor.GetOutputCurrent());
+  frc::SmartDashboard::PutNumber("Axis1Current", GetAxis1Current());
+  frc::SmartDashboard::PutNumber("Axis2Current", GetAxis2Current());
+  frc::SmartDashboard::PutNumber("Axis3Current", GetAxis3Current());
   frc::SmartDashboard::PutBoolean("Axis1HomeLimitSwitch", GetAxis1LimitSwitch());
+
+  // Axis 1 & 2.
+  units::degree_t axis1ProfileSetPoint = m_axis1SetPoint;
+  units::inch_t axis2ProfileSetPoint = m_axis2SetPoint;
+
+  if (GetAxis1Angle().value() < kPastBumperAngle) {
+    axis2ProfileSetPoint = units::inch_t(0);
+  }
+
+  if (
+    axis1ProfileSetPoint.value() < kPastBumperAngle &&
+    GetAxis2Distance().value() > kAxis2ZeroDeadBand) {
+    axis1ProfileSetPoint = units::degree_t(kPastBumperAngle);
+  }
+
+  if (m_isAxis1ControlEnabled) {
+    frc::TrapezoidProfile<units::degree> axis1Profile {
+      ExtendingArmSubsystem::GetAxis1Profile(),
+      frc::TrapezoidProfile<units::degree>::State { axis1ProfileSetPoint,
+                                                    units::degrees_per_second_t(0) },
+      m_axis1TrapezoidalProfileState
+    };
+
+    m_axis1TrapezoidalProfileState = axis1Profile.Calculate(ExtendingArmConstants::kDt);
+    ExtendingArmSubsystem::SetAxis1NextSetpoint(m_axis1TrapezoidalProfileState.position);
+
+    if (m_isAxis2ControlEnabled) {
+      frc::TrapezoidProfile<units::meters> axis2Profile {
+        *m_axis2TrapezoidalProfileConstraints,
+        frc::TrapezoidProfile<units::meters>::State { axis2ProfileSetPoint, 0_mps },
+        m_axis2TrapezoidalProfileState
+      };
+
+      m_axis2TrapezoidalProfileState = axis2Profile.Calculate(ExtendingArmConstants::kDt);
+      ExtendingArmSubsystem::SetAxis2NextSetpoint(m_axis2TrapezoidalProfileState.position);
+    }
+  }
 
   // Run axis 3 PID if the axis isn't disabled.
   if (m_axis3Motor.GetControlMode() != ctre::phoenix::motorcontrol::ControlMode::Disabled) {
@@ -116,6 +187,8 @@ void ExtendingArmSubsystem::Periodic() {
 }
 
 void ExtendingArmSubsystem::OnDisable() {
+  m_isAxis1ControlEnabled = false;
+  m_isAxis2ControlEnabled = false;
   ExtendingArmSubsystem::SetArmOff();
 }
 
@@ -242,7 +315,38 @@ void ExtendingArmSubsystem::ZeroAxis3() {
   frc::DataLogManager::Log(fmt::format("Axis3: Zero'd and started position pid at 0."));
 }
 
-// frc2::CommandPtr ExtendingArmSubsystem::Home() {
-//   return frc2::cmd::Sequence(
-//     std::move(new HomeAxis2Command(this)), std::move(new HomeAxis1Command(this)));
-// }
+frc::TrapezoidProfile<units::degree>::Constraints ExtendingArmSubsystem::GetAxis1Profile() {
+  return *m_axis1TrapezoidalProfileConstraints;
+}
+
+frc2::CommandPtr ExtendingArmSubsystem::MoveArm(units::degree_t angle, units::inch_t distance) {
+  return frc2::cmd::Sequence(
+    MoveAxis1Command(this, units::degree_t(angle)).ToPtr(),
+    MoveAxis2Command(this, units::inch_t(distance)).ToPtr());
+  // return frc2::cmd::Either(
+  //   frc2::cmd::Sequence(
+  //     MoveAxis1Command(this, units::degree_t(angle)).ToPtr(),
+  //     MoveAxis2Command(this, units::inch_t(distance)).ToPtr()),
+  //   frc2::cmd::Sequence(
+  //     MoveAxis2Command(this, units::inch_t(distance)).ToPtr(),
+  //     MoveAxis1Command(this, units::degree_t(angle)).ToPtr()),
+  //   [this] { return units::degree_t(1) > GetAxis1Angle(); });
+}
+
+void ExtendingArmSubsystem::MoveArmSimple(units::degree_t angle, units::inch_t distance) {
+  m_axis1SetPoint = angle;
+  m_axis2SetPoint = distance;
+  m_isAxis1ControlEnabled = true;
+  m_isAxis2ControlEnabled = true;
+
+  // Reset our initial profile states.
+  m_axis1TrapezoidalProfileState = frc::TrapezoidProfile<units::degree>::State {
+    GetAxis1Angle(), units::degrees_per_second_t(m_axis1Encoder.GetVelocity())
+  };
+  m_axis2TrapezoidalProfileState =
+    frc::TrapezoidProfile<units::meters>::State { GetAxis2Distance(), 0_mps };
+}
+
+void ExtendingArmSubsystem::DisableControlAxis2() {
+  m_isAxis2ControlEnabled = false;
+}

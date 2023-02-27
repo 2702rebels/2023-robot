@@ -140,6 +140,9 @@ constexpr double kintakeIdleSpeed = 0.2;  // 775's can stall at 20% duty cycle f
 }  // namespace IntakeConstants
 
 namespace ExtendingArmConstants {
+// Execute cycle time.
+constexpr units::second_t kDt = 20_ms;
+
 // Motor controller CAN ID's
 constexpr int kExtendingArmAxis1MotorControllerCanId = 12;
 constexpr int kExtendingArmAxis2MotorControllerCanId = 13;
@@ -148,6 +151,10 @@ constexpr int kExtendingArmAxis3MotorControllerCanId = 9;
 constexpr int kAxis1HomeLimitSwitchId = 0;
 constexpr int kAxis3EncoderChannel1Id = 1;
 constexpr int kAxis3EncoderChannel2Id = 2;
+
+// Self Avoidance constants
+constexpr double kPastBumperAngle = 15;
+constexpr double kAxis2ZeroDeadBand = 1;
 
 // Axis 1 (Shoulder)
 constexpr double kAxis1CurrentLimit = 40;
@@ -170,7 +177,7 @@ constexpr double kAxis2OverallReduction = (4.0 / 1.0) * (3.0 / 1.0);
 constexpr double kAxis2MotorRotationsPerInchOfTravel =
   kAxis2OverallReduction / ((18.0 * 5.0) / 25.4);
 constexpr int kAxis2HomeTimeoutInSeconds = 3;
-constexpr double kAxis2HomeCurrentThreshold = 20;
+constexpr double kAxis2HomeCurrentThreshold = 15;
 
 // Axis 3 (Wrist)
 constexpr int kAxis3CurrentLimit = 20;
