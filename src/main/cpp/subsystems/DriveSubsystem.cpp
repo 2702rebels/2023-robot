@@ -190,7 +190,7 @@ void DriveSubsystem::Drive(
 
   kDriveKinematics.DesaturateWheelSpeeds(&states, maxSpeed);
 
-  auto [fl, fr, bl, br] = states;
+  const auto [fl, fr, bl, br] = states;
 
   m_frontLeft.SetDesiredState(fl);
   m_frontRight.SetDesiredState(fr);

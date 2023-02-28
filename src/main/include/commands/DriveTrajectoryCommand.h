@@ -21,6 +21,7 @@ class DriveTrajectoryCommand
    * @param start Start pose of the robot
    * @param interiorWaypoints Interior waypoints (positions only)
    * @param end End pose of the robot
+   * @param rotation Final pose rotation (heading)
    * @param reversed Indicates that robot is facing backwards
    * @param resetOdometry Indicates that odometry should be reset to the initial pose
    */
@@ -28,6 +29,7 @@ class DriveTrajectoryCommand
     const frc::Pose2d& start,
     const std::vector<frc::Translation2d>& interiorWaypoints,
     const frc::Pose2d& end,
+    const frc::Rotation2d& rotation,
     bool reversed,
     bool resetOdometry,
     DriveSubsystem* drive);
@@ -37,11 +39,13 @@ class DriveTrajectoryCommand
    * uses quintic hermite spline trajectory generation.
    *
    * @param waypoints Waypoints, each should be a complete pose with orientation
+   * @param rotation Final pose rotation (heading)
    * @param reversed Indicates that robot is facing backwards
    * @param resetOdometry Indicates that odometry should be reset to the initial pose
    */
   DriveTrajectoryCommand(
     const std::vector<frc::Pose2d>& waypoints,
+    const frc::Rotation2d& rotation,
     bool reversed,
     bool resetOdometry,
     DriveSubsystem* drive);

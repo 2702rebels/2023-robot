@@ -112,14 +112,20 @@ constexpr units::ampere_t kTurningMotorCurrentLimit = 20_A;
 }  // namespace ModuleConstants
 
 namespace AutoConstants {
-constexpr auto kMaxSpeed = 2_mps;
-constexpr auto kMaxAcceleration = 1.5_mps_sq;
-constexpr auto kMaxAngularSpeed = 3.142_rad_per_s;
-constexpr auto kMaxAngularAcceleration = 3.142_rad_per_s_sq;
+constexpr auto kMaxSpeed = 3_mps;
+constexpr auto kMaxAcceleration = 2_mps_sq;
+constexpr auto kMaxAngularSpeed = 540_deg_per_s;
+constexpr auto kMaxAngularAcceleration = 480_deg_per_s_sq;
 
 constexpr double kPXController = 0.5;
+constexpr double kIXController = 0.0;
+constexpr double kDXController = 0.1;
 constexpr double kPYController = 0.5;
-constexpr double kPThetaController = 0.5;
+constexpr double kIYController = 0.0;
+constexpr double kDYController = 0.1;
+constexpr double kPThetaController = 1.5;
+constexpr double kIThetaController = 0.0;
+constexpr double kDThetaController = 0.3;
 
 extern const frc::TrapezoidProfile<units::radians>::Constraints kThetaControllerConstraints;
 }  // namespace AutoConstants

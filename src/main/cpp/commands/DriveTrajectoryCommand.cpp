@@ -45,7 +45,10 @@ frc::Trajectory createTrajectory(
  */
 frc::ProfiledPIDController<units::radians> createThetaController() {
   frc::ProfiledPIDController<units::radians> controller {
-    AutoConstants::kPThetaController, 0, 0, AutoConstants::kThetaControllerConstraints
+    AutoConstants::kPThetaController,
+    AutoConstants::kIThetaController,
+    AutoConstants::kDThetaController,
+    AutoConstants::kThetaControllerConstraints,
   };
 
   controller.EnableContinuousInput(
@@ -58,6 +61,7 @@ DriveTrajectoryCommand::DriveTrajectoryCommand(
   const frc::Pose2d& start,
   const std::vector<frc::Translation2d>& interiorWaypoints,
   const frc::Pose2d& end,
+  const frc::Rotation2d& rotation,
   bool reversed,
   bool resetOdometry,
   DriveSubsystem* drive) :
@@ -65,9 +69,18 @@ DriveTrajectoryCommand::DriveTrajectoryCommand(
     createTrajectory(start, interiorWaypoints, end, reversed, drive),
     [drive]() { return drive->GetPose(); },
     drive->kDriveKinematics,
-    frc2::PIDController { AutoConstants::kPXController, 0, 0 },
-    frc2::PIDController { AutoConstants::kPYController, 0, 0 },
+    frc2::PIDController {
+      AutoConstants::kPXController,
+      AutoConstants::kIXController,
+      AutoConstants::kDXController,
+    },
+    frc2::PIDController {
+      AutoConstants::kPYController,
+      AutoConstants::kIYController,
+      AutoConstants::kDYController,
+    },
     createThetaController(),
+    [rotation]() { return rotation; },
     [drive](auto moduleStates) { drive->SetModuleStates(moduleStates); },
     { drive },
   },
@@ -79,6 +92,7 @@ DriveTrajectoryCommand::DriveTrajectoryCommand(
 
 DriveTrajectoryCommand::DriveTrajectoryCommand(
   const std::vector<frc::Pose2d>& waypoints,
+  const frc::Rotation2d& rotation,
   bool reversed,
   bool resetOdometry,
   DriveSubsystem* drive) :
@@ -86,9 +100,18 @@ DriveTrajectoryCommand::DriveTrajectoryCommand(
     createTrajectory(waypoints, reversed, drive),
     [drive]() { return drive->GetPose(); },
     drive->kDriveKinematics,
-    frc2::PIDController { AutoConstants::kPXController, 0, 0 },
-    frc2::PIDController { AutoConstants::kPYController, 0, 0 },
+    frc2::PIDController {
+      AutoConstants::kPXController,
+      AutoConstants::kIXController,
+      AutoConstants::kDXController,
+    },
+    frc2::PIDController {
+      AutoConstants::kPYController,
+      AutoConstants::kIYController,
+      AutoConstants::kDYController,
+    },
     createThetaController(),
+    [rotation]() { return rotation; },
     [drive](auto moduleStates) { drive->SetModuleStates(moduleStates); },
     { drive },
   },

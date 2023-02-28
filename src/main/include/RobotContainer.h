@@ -13,6 +13,7 @@
 #include "Constants.h"
 #include "commands/Auto1.h"
 #include "commands/Auto2.h"
+#include "commands/Auto3.h"
 #include "subsystems/DriveSubsystem.h"
 #include "subsystems/ExtendingArmSubsystem.h"
 #include "subsystems/IntakeSubsystem.h"
@@ -52,6 +53,7 @@ class RobotContainer {
   // The autonomous routines
   Auto1 m_auto1 { &m_drive };
   Auto2 m_auto2 { &m_drive };
+  Auto3 m_auto3 { &m_drive };
 
   // The chooser for the autonomous routines
   frc::SendableChooser<frc2::Command*> m_chooser;

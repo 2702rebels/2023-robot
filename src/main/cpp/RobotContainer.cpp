@@ -84,6 +84,7 @@ RobotContainer::RobotContainer() {
 #ifdef AUTO_CHOOSER
   m_chooser.SetDefaultOption("Auto1", &m_auto1);
   m_chooser.AddOption("Auto2", &m_auto2);
+  m_chooser.AddOption("Auto3", &m_auto3);
   frc::Shuffleboard::GetTab("Auto").Add(m_chooser);
 #endif
 }
@@ -100,11 +101,11 @@ void RobotContainer::ConfigureButtonBindings() {
   //   .WhileTrue(new frc2::RunCommand([this] { m_drive.SetX(); }, { &m_drive }));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightStick)
-    .OnTrue(new frc2::InstantCommand([this] { m_drive.ZeroHeading(); }, { &m_drive }));
+    .OnTrue(frc2::InstantCommand([this] { m_drive.ZeroHeading(); }, { &m_drive }).ToPtr());
 
-  // frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kX)
-  //   .OnTrue(
-  //     new frc2::InstantCommand([this] { m_drive.ResetOdometry(frc::Pose2d {}); }, { &m_drive }));
+  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kX)
+    .OnTrue(frc2::InstantCommand([this] { m_drive.ResetOdometry(frc::Pose2d {}); }, { &m_drive })
+              .ToPtr());
 #endif
 
 #ifdef EXTENDING_ARM_ENABLED
@@ -158,29 +159,37 @@ frc2::Command* RobotContainer::GetAutonomousCommand() {
 
   // an example trajectory to follow (all units in meters)
   const auto exampleTrajectory = frc::TrajectoryGenerator::GenerateTrajectory(
-    // start at the origin facing the +X direction
-    frc::Pose2d { 0_m, 0_m, 0_deg },
-    // pass through these two interior waypoints, making an 's' curve path
-    { frc::Translation2d { 1_m, 1_m }, frc::Translation2d { 2_m, -1_m } },
-    // end 3 meters straight ahead of where we started, facing forward
-    frc::Pose2d { 3_m, 0_m, 0_deg },
+    {
+      frc::Pose2d { 0_m, 0_m, 0_deg },
+      frc::Pose2d { 1_m, 0_m, 0_deg },
+      frc::Pose2d { 2_m, 0_m, 0_deg },
+      frc::Pose2d { 3_m, 0_m, 0_deg },
+      frc::Pose2d { 4_m, 0_m, 0_deg },
+    },
     // pass the config
     config);
 
   frc::ProfiledPIDController<units::radians> thetaController {
-    AutoConstants::kPThetaController, 0, 0, AutoConstants::kThetaControllerConstraints
+    AutoConstants::kPThetaController,
+    AutoConstants::kIThetaController,
+    AutoConstants::kDThetaController,
+    AutoConstants::kThetaControllerConstraints
   };
 
   thetaController.EnableContinuousInput(
     units::radian_t { -std::numbers::pi }, units::radian_t { std::numbers::pi });
 
+  const auto rotation = frc::Rotation2d { 180_deg };
   frc2::SwerveControllerCommand<NUMBER_OF_MODULES> swerveControllerCommand(
     exampleTrajectory,
     [this]() { return m_drive.GetPose(); },
     m_drive.kDriveKinematics,
-    frc2::PIDController { AutoConstants::kPXController, 0, 0 },
-    frc2::PIDController { AutoConstants::kPYController, 0, 0 },
+    frc2::PIDController {
+      AutoConstants::kPXController, AutoConstants::kIXController, AutoConstants::kDXController },
+    frc2::PIDController {
+      AutoConstants::kPYController, AutoConstants::kIYController, AutoConstants::kDYController },
     thetaController,
+    [rotation]() { return rotation; },
     [this](auto moduleStates) { m_drive.SetModuleStates(moduleStates); },
     { &m_drive });
 
