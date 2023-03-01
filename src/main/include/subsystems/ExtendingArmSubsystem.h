@@ -13,6 +13,8 @@
 #include <frc2/command/SubsystemBase.h>
 #include <rev/CANSparkMax.h>
 
+#include "subsystems/IntakeSubsystem.h"
+
 enum ExtendingArmPositions {
   STOWED,
   INTAKE_FLOOR_CONE,
@@ -66,16 +68,29 @@ class ExtendingArmSubsystem : public frc2::SubsystemBase {
   frc2::CommandPtr Home();
   frc2::CommandPtr MoveArm(ExtendingArmPositions position);
   frc2::CommandPtr MoveArm(units::degree_t angle, units::inch_t distance);
+  frc2::CommandPtr ScoreCone();
+  frc2::CommandPtr ScoreCube();
 
   void ReloadConfigs();
 
   void DisableControlAxis2();
 
+  void SetAxis3NextSetpoint(units::degree_t setPoint);
+
+  void SetIntakeReference(IntakeSubsystem* intake) {
+    m_intake = intake;
+  }
+
  private:
   bool m_isAxis1ControlEnabled = false;
   bool m_isAxis2ControlEnabled = false;
+  bool m_isAxis3ControlEnabled = false;
+
+  IntakeSubsystem* m_intake;
+
   units::degree_t m_axis1SetPoint;
   units::inch_t m_axis2SetPoint;
+  units::degree_t m_axis3SetPoint;
   // Components (e.g. motor controllers and sensors) should generally be
   // declared private and exposed only through public methods.
   rev::CANSparkMax m_axis1Motor { ExtendingArmConstants::kExtendingArmAxis1MotorControllerCanId,
@@ -106,8 +121,12 @@ class ExtendingArmSubsystem : public frc2::SubsystemBase {
 
   void SetAxis1NextSetpoint(units::degree_t setPoint);
   void SetAxis2NextSetpoint(units::inch_t setPoint);
-  void SetAxis3NextSetpoint(units::degree_t setPoint);
+  // void SetAxis3NextSetpoint(units::degree_t setPoint);
 
   void MoveArmSimple(units::degree_t angle, units::inch_t distance);
   bool IsArmAtCommandedPosition();
+
+  double debug_calcVal = 0;
+  double debug_setpntVal = 0;
+  double debug_angleVal = 0;
 };

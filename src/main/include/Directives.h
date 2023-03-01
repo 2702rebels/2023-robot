@@ -22,7 +22,10 @@
 #define EXTENDING_ARM_ENABLED
 
 // Inidicates if the intake is instantiated and it's commands are bound.
-// #define INTAKE_ENABLED
+#define INTAKE_ENABLED
 
 // Indicates that autonomous mode chooser via Shuffleboard should be used
 #define AUTO_CHOOSER
+
+// Indicates that the led's are enabled.
+#define LED_ENABLED

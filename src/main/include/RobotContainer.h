@@ -1,5 +1,6 @@
 #pragma once
 
+#include <frc/AddressableLED.h>
 #include <frc/XboxController.h>
 #include <frc/controller/PIDController.h>
 #include <frc/controller/ProfiledPIDController.h>
@@ -25,6 +26,9 @@
  * the scheduler calls). Instead, the structure of the robot (including subsystems,
  * commands, and button mappings) should be declared here.
  */
+
+enum RobotMode { CONE, CUBE };
+
 class RobotContainer {
  public:
   RobotContainer();
@@ -33,12 +37,18 @@ class RobotContainer {
 
   void OnDisable();
 
+  void ToggleRobotMode(RobotMode mode);
+  void ToggleRobotMode();
+
+  std::string GetRobotModeState();
+
  private:
   // The driver's controller
   frc::XboxController m_driverController { OIConstants::kDriverControllerPort };
+  frc::XboxController m_operatorController { OIConstants::kDriverControllerPort };
 
-#ifdef DRIVETRAIN_ENABLED
   // The robot's subsystems
+#ifdef DRIVETRAIN_ENABLED
   DriveSubsystem m_drive;
 #endif
 
@@ -46,8 +56,15 @@ class RobotContainer {
   ExtendingArmSubsystem m_exArm;
 #endif
 
+#ifdef EXTENDING_ARM_ENABLED
 #ifdef INTAKE_ENABLED
   IntakeSubsystem m_intake;
+#endif
+#endif
+
+#ifdef LED_ENABLED
+  frc::AddressableLED m_led { LEDConstants::kpwmPort };
+  std::array<frc::AddressableLED::LEDData, LEDConstants::kLength> m_ledBuffer;
 #endif
 
   // The autonomous routines
@@ -57,6 +74,8 @@ class RobotContainer {
 
   // The chooser for the autonomous routines
   frc::SendableChooser<frc2::Command*> m_chooser;
+
+  RobotMode m_mode = RobotMode::CONE;
 
   void ConfigureButtonBindings();
 };

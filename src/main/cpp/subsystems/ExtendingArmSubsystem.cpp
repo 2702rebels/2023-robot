@@ -119,7 +119,7 @@ void ExtendingArmSubsystem::ConfigureTuningParams() {
   m_axis3Motor.ConfigPeakCurrentLimit(GetAxis3CurrentLimit());
   m_axis3Motor.ConfigPeakCurrentDuration(GetAxis3CurrentLimitDuration());
   m_axis3Motor.ConfigContinuousCurrentLimit(GetAxis3CurrentLimit());
-  m_axis3Motor.EnableCurrentLimit(true);
+  // m_axis3Motor.EnableCurrentLimit(true);
   m_axis3PIDController.SetP(GetAxis3P());
   m_axis3PIDController.SetI(GetAxis3I());
   m_axis3PIDController.SetD(GetAxis3D());
@@ -141,6 +141,8 @@ void ExtendingArmSubsystem::Periodic() {
   frc::SmartDashboard::PutNumber("Axis2Current", GetAxis2Current());
   frc::SmartDashboard::PutNumber("Axis3Current", GetAxis3Current());
   frc::SmartDashboard::PutBoolean("Axis1HomeLimitSwitch", GetAxis1LimitSwitch());
+  frc::SmartDashboard::PutNumber("Axis1SetPoint", m_axis1SetPoint.value());
+  frc::SmartDashboard::PutNumber("Axis2SetPoint", m_axis2SetPoint.value());
 
   // Axis 1 & 2.
   units::degree_t axis1ProfileSetPoint = m_axis1SetPoint;
@@ -156,6 +158,7 @@ void ExtendingArmSubsystem::Periodic() {
     axis1ProfileSetPoint = units::degree_t(kPastBumperAngle);
   }
 
+  // Axis 1 control loop.
   if (m_isAxis1ControlEnabled) {
     frc::TrapezoidProfile<units::degree> axis1Profile {
       *m_axis1TrapezoidalProfileConstraints,
@@ -166,30 +169,41 @@ void ExtendingArmSubsystem::Periodic() {
 
     m_axis1TrapezoidalProfileState = axis1Profile.Calculate(ExtendingArmConstants::kDt);
     ExtendingArmSubsystem::SetAxis1NextSetpoint(m_axis1TrapezoidalProfileState.position);
-
-    if (m_isAxis2ControlEnabled) {
-      frc::TrapezoidProfile<units::meters> axis2Profile {
-        *m_axis2TrapezoidalProfileConstraints,
-        frc::TrapezoidProfile<units::meters>::State { axis2ProfileSetPoint, 0_mps },
-        m_axis2TrapezoidalProfileState
-      };
-
-      m_axis2TrapezoidalProfileState = axis2Profile.Calculate(ExtendingArmConstants::kDt);
-      ExtendingArmSubsystem::SetAxis2NextSetpoint(m_axis2TrapezoidalProfileState.position);
-    }
   }
 
-  // Run axis 3 PID if the axis isn't disabled.
-  if (m_axis3Motor.GetControlMode() != ctre::phoenix::motorcontrol::ControlMode::Disabled) {
-    m_axis3Motor.Set(
-      ctre::phoenix::motorcontrol::ControlMode::PercentOutput,
-      m_axis3PIDController.Calculate(ExtendingArmSubsystem::GetAxis3Angle().value()));
+  // Axis 2 control loop.
+  if (m_isAxis2ControlEnabled) {
+    frc::TrapezoidProfile<units::meters> axis2Profile {
+      *m_axis2TrapezoidalProfileConstraints,
+      frc::TrapezoidProfile<units::meters>::State { axis2ProfileSetPoint, 0_mps },
+      m_axis2TrapezoidalProfileState
+    };
+
+    m_axis2TrapezoidalProfileState = axis2Profile.Calculate(ExtendingArmConstants::kDt);
+    ExtendingArmSubsystem::SetAxis2NextSetpoint(m_axis2TrapezoidalProfileState.position);
+  }
+
+  // Axis 3 control loop.
+  if (m_isAxis3ControlEnabled) {
+    double calcVal = m_axis3PIDController.Calculate(ExtendingArmSubsystem::GetAxis3Angle().value());
+    double setpntVal = m_axis3PIDController.GetSetpoint();
+    double angleVal = ExtendingArmSubsystem::GetAxis3Angle().value();
+    m_axis3Motor.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, -calcVal);
+
+    if (calcVal != debug_calcVal || setpntVal != debug_setpntVal || angleVal != debug_angleVal) {
+      debug_calcVal = calcVal;
+      debug_setpntVal = setpntVal;
+      debug_angleVal = angleVal;
+      frc::DataLogManager::Log(
+        fmt::format("Axis3 Set Point: {} PID: {} Position: {}", setpntVal, calcVal, angleVal));
+    }
   }
 }
 
 void ExtendingArmSubsystem::OnDisable() {
   m_isAxis1ControlEnabled = false;
   m_isAxis2ControlEnabled = false;
+  m_isAxis3ControlEnabled = false;
   ExtendingArmSubsystem::SetArmOff();
 }
 
@@ -262,14 +276,15 @@ void ExtendingArmSubsystem::SetAxis2NextSetpoint(units::inch_t setPoint) {
 }
 
 void ExtendingArmSubsystem::SetAxis3NextSetpoint(units::degree_t setPoint) {
-  double rotations = setPoint.value() * kAxis2MotorRotationsPerInchOfTravel;
+  double rotations = setPoint.value();
 #ifdef VERBOSE_LOG
   frc::DataLogManager::Log(
     fmt::format("Axis3: Setting setpoint to: {}, Setting rotations to: {}", setPoint, rotations));
 #endif
   m_axis3Motor.Set(
     ctre::phoenix::motorcontrol::ControlMode::PercentOutput,
-    m_axis3PIDController.Calculate(ExtendingArmSubsystem::GetAxis3Angle().value(), rotations));
+    m_axis3PIDController.Calculate(ExtendingArmSubsystem::GetAxis3Angle().value(), -rotations));
+  m_isAxis3ControlEnabled = true;
 }
 
 void ExtendingArmSubsystem::SetAxis1DutyCycle(double dutyCycle) {
@@ -327,8 +342,23 @@ void ExtendingArmSubsystem::ZeroAxis3() {
 }
 
 void ExtendingArmSubsystem::MoveArmSimple(units::degree_t angle, units::inch_t distance) {
-  m_axis1SetPoint = angle;
-  m_axis2SetPoint = distance;
+  // Ensure we aren't commanding the arm outside it's limit.
+  if (angle > kAxis1MaxAngle) {
+    m_axis1SetPoint = kAxis1MaxAngle;
+  } else if (angle < units::degree_t(0)) {
+    m_axis1SetPoint = units::degree_t(0);
+  } else {
+    m_axis1SetPoint = angle;
+  }
+
+  if (distance > kAxis2MaxExtension) {
+    m_axis2SetPoint = kAxis2MaxExtension;
+  } else if (distance < units::inch_t(0)) {
+    m_axis2SetPoint = units::inch_t(0);
+  } else {
+    m_axis2SetPoint = distance;
+  }
+
   m_isAxis1ControlEnabled = true;
   m_isAxis2ControlEnabled = true;
 
@@ -342,59 +372,167 @@ void ExtendingArmSubsystem::MoveArmSimple(units::degree_t angle, units::inch_t d
 }
 
 frc2::CommandPtr ExtendingArmSubsystem::MoveArm(ExtendingArmPositions position) {
-  units::degree_t angle = 0.0_deg;
-  units::inch_t distance = 0.0_in;
-
   switch (position) {
     case STOWED:
-      angle = 0.0_deg;
-      distance = 0.0_in;
-      break;
+      return frc2::FunctionalCommand(
+               // Initialize
+               [this] { ExtendingArmSubsystem::MoveArmSimple(0.0_deg, 0.0_in); },
+               // Execute
+               [this] {},
+               // End
+               [this](bool interrupted) {},
+               // IsFinished
+               [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+               // Require subsystem
+               { this })
+        .ToPtr();
     case INTAKE_FLOOR_CONE:
-      angle = 20.0_deg;
-      distance = 5.0_in;
-      break;
+      return frc2::FunctionalCommand(
+               // Initialize
+               [this] { ExtendingArmSubsystem::MoveArmSimple(18.0_deg, 10.0_in); },
+               // Execute
+               [this] {},
+               // End
+               [this](bool interrupted) {},
+               // IsFinished
+               [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+               // Require subsystem
+               { this })
+        .ToPtr();
     case INTAKE_FLOOR_CUBE:
-      angle = 20.0_deg;
-      distance = 5.0_in;
-      break;
+      return frc2::FunctionalCommand(
+               // Initialize
+               [this] { ExtendingArmSubsystem::MoveArmSimple(18.0_deg, 5.0_in); },
+               // Execute
+               [this] {},
+               // End
+               [this](bool interrupted) {},
+               // IsFinished
+               [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+               // Require subsystem
+               { this })
+        .ToPtr();
     case INTAKE_STATION_CONE:
-      angle = 0.0_deg;
-      distance = 0.0_in;
-      break;
+      return frc2::FunctionalCommand(
+               // Initialize
+               [this] { ExtendingArmSubsystem::MoveArmSimple(72.0_deg, 5.0_in); },
+               // Execute
+               [this] {},
+               // End
+               [this](bool interrupted) {},
+               // IsFinished
+               [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+               // Require subsystem
+               { this })
+        .ToPtr();
     case INTAKE_STATION_CUBE:
-      angle = 0.0_deg;
-      distance = 0.0_in;
-      break;
+      return frc2::FunctionalCommand(
+               // Initialize
+               [this] { ExtendingArmSubsystem::MoveArmSimple(72.0_deg, 5.0_in); },
+               // Execute
+               [this] {},
+               // End
+               [this](bool interrupted) {},
+               // IsFinished
+               [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+               // Require subsystem
+               { this })
+        .ToPtr();
     case SCORE_LOW_CONE:
-      angle = 15.0_deg;
-      distance = 0.0_in;
-      break;
+      return frc2::FunctionalCommand(
+               // Initialize
+               [this] { ExtendingArmSubsystem::MoveArmSimple(15.0_deg, 0.0_in); },
+               // Execute
+               [this] {},
+               // End
+               [this](bool interrupted) {},
+               // IsFinished
+               [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+               // Require subsystem
+               { this })
+        .ToPtr();
     case SCORE_LOW_CUBE:
-      angle = 15.0_deg;
-      distance = 0.0_in;
-      break;
+      return frc2::FunctionalCommand(
+               // Initialize
+               [this] { ExtendingArmSubsystem::MoveArmSimple(15.0_deg, 0.0_in); },
+               // Execute
+               [this] {},
+               // End
+               [this](bool interrupted) {},
+               // IsFinished
+               [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+               // Require subsystem
+               { this })
+        .ToPtr();
     case SCORE_MID_CONE:
-      angle = 70.0_deg;
-      distance = 7.0_in;
-      break;
+      return frc2::FunctionalCommand(
+               // Initialize
+               [this] { ExtendingArmSubsystem::MoveArmSimple(70.0_deg, 7.0_in); },
+               // Execute
+               [this] {},
+               // End
+               [this](bool interrupted) {},
+               // IsFinished
+               [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+               // Require subsystem
+               { this })
+        .ToPtr();
     case SCORE_MID_CUBE:
-      angle = 65.0_deg;
-      distance = 7.0_in;
-      break;
+      return frc2::FunctionalCommand(
+               // Initialize
+               [this] { ExtendingArmSubsystem::MoveArmSimple(65.0_deg, 7.0_in); },
+               // Execute
+               [this] {},
+               // End
+               [this](bool interrupted) {},
+               // IsFinished
+               [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+               // Require subsystem
+               { this })
+        .ToPtr();
     case SCORE_HIGH_CONE:
-      angle = 80.0_deg;
-      distance = 20.0_in;
-      break;
+      return frc2::FunctionalCommand(
+               // Initialize
+               [this] { ExtendingArmSubsystem::MoveArmSimple(90.0_deg, 20.0_in); },
+               // Execute
+               [this] {},
+               // End
+               [this](bool interrupted) {},
+               // IsFinished
+               [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+               // Require subsystem
+               { this })
+        .ToPtr();
     case SCORE_HIGH_CUBE:
-      angle = 75.0_deg;
-      distance = 15.0_in;
-      break;
+      return frc2::FunctionalCommand(
+               // Initialize
+               [this] { ExtendingArmSubsystem::MoveArmSimple(75.0_deg, 15.0_in); },
+               // Execute
+               [this] {},
+               // End
+               [this](bool interrupted) {},
+               // IsFinished
+               [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+               // Require subsystem
+               { this })
+        .ToPtr();
   }
 
+  return frc2::InstantCommand(
+           [this] { frc::DataLogManager::Log(fmt::format("Location not implemented.")); }, {})
+    .ToPtr();
+}
+
+frc2::CommandPtr ExtendingArmSubsystem::MoveArm(units::degree_t angle, units::inch_t distance) {
   return frc2::FunctionalCommand(
            // Initialize
-           [&] { ExtendingArmSubsystem::MoveArmSimple(angle, distance); },
+           [&] {
+             ExtendingArmSubsystem::MoveArmSimple(angle, distance);
+             frc::DataLogManager::Log(fmt::format(
+               "Running MoveArm command with angle:{} and distance{}",
+               angle.value(),
+               distance.value()));
+           },
            // Execute
            [this] {},
            // End
@@ -406,19 +544,76 @@ frc2::CommandPtr ExtendingArmSubsystem::MoveArm(ExtendingArmPositions position) 
     .ToPtr();
 }
 
-frc2::CommandPtr ExtendingArmSubsystem::MoveArm(units::degree_t angle, units::inch_t distance) {
-  return frc2::FunctionalCommand(
-           // Initialize
-           [&] { ExtendingArmSubsystem::MoveArmSimple(angle, distance); },
-           // Execute
-           [this] {},
-           // End
-           [this](bool interrupted) {},
-           // IsFinished
-           [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
-           // Require subsystem
-           { this })
-    .ToPtr();
+frc2::CommandPtr ExtendingArmSubsystem::ScoreCone() {
+  return frc2::cmd::Sequence(
+    frc2::FunctionalCommand(
+      // Initialize
+      [this] {
+        ExtendingArmSubsystem::MoveArmSimple(GetAxis1Angle() - 10.0_deg, GetAxis2Distance());
+      },
+      // Execute
+      [this] {},
+      // End
+      [this](bool interrupted) {},
+      // IsFinished
+      [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+      // Require subsystem
+      { this })
+      .ToPtr(),
+    frc2::FunctionalCommand(
+      // Initialize
+      [this] { ExtendingArmSubsystem::MoveArmSimple(GetAxis1Angle(), 0.0_in); },
+      // Execute
+      [this] {},
+      // End
+      [this](bool interrupted) {},
+      // IsFinished
+      [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+      // Require subsystem
+      { this })
+      .ToPtr(),
+    frc2::FunctionalCommand(
+      // Initialize
+      [this] { ExtendingArmSubsystem::MoveArmSimple(0.0_deg, 0.0_in); },
+      // Execute
+      [this] {},
+      // End
+      [this](bool interrupted) {},
+      // IsFinished
+      [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+      // Require subsystem
+      { this })
+      .ToPtr());
+}
+
+frc2::CommandPtr ExtendingArmSubsystem::ScoreCube() {
+  return frc2::cmd::Sequence(
+    frc2::InstantCommand([this] { m_intake->StartOuttaking(); }, { m_intake }),
+    frc2::FunctionalCommand(
+      // Initialize
+      [this] { ExtendingArmSubsystem::MoveArmSimple(GetAxis1Angle(), 0.0_in); },
+      // Execute
+      [this] {},
+      // End
+      [this](bool interrupted) {},
+      // IsFinished
+      [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+      // Require subsystem
+      { this })
+      .ToPtr(),
+    frc2::InstantCommand([this] { m_intake->StopOuttaking(); }, { m_intake }),
+    frc2::FunctionalCommand(
+      // Initialize
+      [this] { ExtendingArmSubsystem::MoveArmSimple(0.0_deg, 0.0_in); },
+      // Execute
+      [this] {},
+      // End
+      [this](bool interrupted) {},
+      // IsFinished
+      [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+      // Require subsystem
+      { this })
+      .ToPtr());
 }
 
 bool ExtendingArmSubsystem::IsArmAtCommandedPosition() {

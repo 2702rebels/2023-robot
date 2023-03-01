@@ -132,6 +132,7 @@ extern const frc::TrapezoidProfile<units::radians>::Constraints kThetaController
 
 namespace OIConstants {
 constexpr int kDriverControllerPort = 0;
+constexpr int koperatorControllerPort = 1;
 constexpr double kDriveDeadband = 0.1;
 }  // namespace OIConstants
 
@@ -142,7 +143,8 @@ constexpr int kIntakeFollowerControllerCanId = 11;
 // TODO: We might need separate speeds for cube and cone.
 constexpr double kIntakingSpeed = 0.6;
 constexpr double kOuttakingSpeed = -0.7;
-constexpr double kintakeIdleSpeed = 0.2;  // 775's can stall at 20% duty cycle for an entire match.
+constexpr double kIntakeHoldSpeed = 0.2;  // 775's can stall at 20% duty cycle for an entire match.
+constexpr double kHasGamePieceCurrent = 15;
 }  // namespace IntakeConstants
 
 namespace ExtendingArmConstants {
@@ -173,14 +175,15 @@ constexpr double kAxis1ZeroAngle = 0;
 constexpr int kAxis1HomeTimeoutInSeconds = 3;
 constexpr double kAxis1HomeCurrentThreshold = 30;
 constexpr double kaxis1ffAngleCorrection = 70;
-constexpr double kAxis1Deadband = 1;
+constexpr double kAxis1Deadband = 2;
+constexpr units::degree_t kAxis1MaxAngle = units::degree_t(100);
 
 // Axis 2 (Extension)
 constexpr int kAxis2CurrentLimit = 25;
 constexpr double kAxis2MinOutput = -1;
 constexpr double kAxis2MaxOutput = 1;
-// Neo 550 into versa 9:1.
-constexpr double kAxis2OverallReduction = (4.0 / 1.0) * (3.0 / 1.0);
+// Neo 550 into versa 35:1.
+constexpr double kAxis2OverallReduction = (7.0 / 1.0) * (5.0 / 1.0);
 // Belt is running on an 18t 5mm HTD pulley.
 constexpr double kAxis2MotorRotationsPerInchOfTravel =
   kAxis2OverallReduction / ((18.0 * 5.0) / 25.4);
@@ -188,10 +191,11 @@ constexpr double kAxis2MotorRotationsPerMeterOfTravel =
   kAxis2OverallReduction / ((18.0 * 5.0) / 1000);
 constexpr int kAxis2HomeTimeoutInSeconds = 3;
 constexpr double kAxis2HomeCurrentThreshold = 15;
-constexpr double kAxis2Deadband = 0.5;
+constexpr double kAxis2Deadband = 1.2;
+constexpr units::inch_t kAxis2MaxExtension = units::inch_t(17.75);
 
 // Axis 3 (Wrist)
-constexpr int kAxis3CurrentLimit = 20;
+constexpr int kAxis3CurrentLimit = 30;
 constexpr int kAxis3CurrentLimitDuration = 200;
 constexpr double kAxis3P = 0.05;
 constexpr double kAxis3I = 0;
@@ -204,3 +208,8 @@ constexpr double kAxis3HomeCurrentThreshold = 30;
 constexpr double kAxis3EncoderPulsesPerRevolution = 44.4;
 
 }  // namespace ExtendingArmConstants
+
+namespace LEDConstants {
+constexpr int kpwmPort = 0;
+constexpr int kLength = 18 * 4;
+}  // namespace LEDConstants
