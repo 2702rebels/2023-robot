@@ -199,10 +199,16 @@ void RobotContainer::ConfigureButtonBindings() {
     .OnTrue(m_exArm.MoveArm(ExtendingArmPositions::STOWED));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kB)
-    .OnTrue(m_exArm.MoveArm(ExtendingArmPositions::SCORE_MID_CONE));
+    .OnTrue(frc2::cmd::Either(
+      m_exArm.MoveArm(ExtendingArmPositions::SCORE_MID_CONE),
+      m_exArm.MoveArm(ExtendingArmPositions::SCORE_MID_CUBE),
+      [this] { return m_mode == RobotMode::CONE; }));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kY)
-    .OnTrue(m_exArm.MoveArm(ExtendingArmPositions::SCORE_HIGH_CONE));
+    .OnTrue(frc2::cmd::Either(
+      m_exArm.MoveArm(ExtendingArmPositions::SCORE_HIGH_CONE),
+      m_exArm.MoveArm(ExtendingArmPositions::SCORE_HIGH_CUBE),
+      [this] { return m_mode == RobotMode::CONE; }));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kX)
     .OnTrue(frc2::InstantCommand(

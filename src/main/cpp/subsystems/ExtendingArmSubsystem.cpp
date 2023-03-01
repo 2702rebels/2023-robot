@@ -480,7 +480,7 @@ frc2::CommandPtr ExtendingArmSubsystem::MoveArm(ExtendingArmPositions position) 
     case SCORE_MID_CUBE:
       return frc2::FunctionalCommand(
                // Initialize
-               [this] { ExtendingArmSubsystem::MoveArmSimple(65.0_deg, 7.0_in); },
+               [this] { ExtendingArmSubsystem::MoveArmSimple(60.0_deg, 0.0_in); },
                // Execute
                [this] {},
                // End
@@ -506,7 +506,7 @@ frc2::CommandPtr ExtendingArmSubsystem::MoveArm(ExtendingArmPositions position) 
     case SCORE_HIGH_CUBE:
       return frc2::FunctionalCommand(
                // Initialize
-               [this] { ExtendingArmSubsystem::MoveArmSimple(75.0_deg, 15.0_in); },
+               [this] { ExtendingArmSubsystem::MoveArmSimple(75.0_deg, 10.0_in); },
                // Execute
                [this] {},
                // End
