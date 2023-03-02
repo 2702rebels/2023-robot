@@ -39,19 +39,6 @@ RobotContainer::RobotContainer() {
   for (int i = 0; i < LEDConstants::kLength; i++) {
     m_ledBuffer[i].SetRGB(255, 0, 0);
   }
-#if 0
-  m_ledBuffer[0].SetRGB(255, 0, 0);
-  m_ledBuffer[1].SetRGB(0, 0, 255);
-  m_ledBuffer[2].SetRGB(0, 0, 0);
-  m_ledBuffer[3].SetRGB(0, 255, 0);
-  m_ledBuffer[4].SetRGB(0, 0, 0);
-  m_ledBuffer[5].SetRGB(255, 0, 0);
-  m_ledBuffer[6].SetRGB(0, 0, 255);
-  m_ledBuffer[7].SetRGB(0, 0, 0);
-  m_ledBuffer[8].SetRGB(0, 255, 0);
-  m_ledBuffer[9].SetRGB(0, 0, 0);
-#endif
-
   m_led.SetData(m_ledBuffer);
 #endif
 
@@ -118,34 +105,51 @@ RobotContainer::RobotContainer() {
 #endif
 }
 
+void RobotContainer::OnTeleEnable() {
+  ToggleRobotMode(RobotMode::CONE);
+}
+
 void RobotContainer::OnDisable() {
 #ifdef EXTENDING_ARM_ENABLED
   m_exArm.OnDisable();
 #endif
+
+#ifdef LED_ENABLED
+  for (int i = 0; i < LEDConstants::kLength; i++) {
+    m_ledBuffer[i].SetRGB(255, 0, 0);
+  }
+  m_led.SetData(m_ledBuffer);
+#endif
 }
 
-void RobotContainer::ToggleRobotMode() {
-  if (m_mode == RobotMode::CONE) {
-    m_mode = RobotMode::CUBE;
+void RobotContainer::ToggleRobotMode(RobotMode mode) {
+  m_mode = mode;
+  if (m_mode == RobotMode::CUBE) {
 #ifdef LED_ENABLED
     for (int i = 0; i < LEDConstants::kLength; i++) {
       m_ledBuffer[i].SetRGB(255, 0, 255);
     }
     m_led.SetData(m_ledBuffer);
 #endif
-  } else {
-    m_mode = RobotMode::CONE;
+  } else if (m_mode == RobotMode::CONE) {
 #ifdef LED_ENABLED
     for (int i = 0; i < LEDConstants::kLength; i++) {
-      // m_ledBuffer[i].SetRGB(255, 255, 0);
-      m_ledBuffer[i].SetRGB(0, 0, 0);
+      m_ledBuffer[i].SetRGB(255, 255, 0);
     }
     m_led.SetData(m_ledBuffer);
 #endif
   }
 }
 
-std::string RobotContainer::GetRobotModeState() {
+void RobotContainer::ToggleRobotMode() {
+  if (m_mode == RobotMode::CONE) {
+    ToggleRobotMode(RobotMode::CUBE);
+  } else {
+    ToggleRobotMode(RobotMode::CONE);
+  }
+}
+
+std::string RobotContainer::GetRobotModeString() {
   if (m_mode == RobotMode::CONE) {
     return "CONE";
   } else if (m_mode == RobotMode::CUBE) {
@@ -161,16 +165,17 @@ void RobotContainer::ConfigureButtonBindings() {
     .OnTrue(frc2::InstantCommand([this] { ToggleRobotMode(); }, {}).ToPtr());
 
 #ifdef DRIVETRAIN_ENABLED
-  frc2::Trigger(
-    m_driverController.POVDown(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
-    .WhileTrue(new frc2::RunCommand([this] { m_drive.SetX(); }, { &m_drive }));
-
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightStick)
     .OnTrue(frc2::InstantCommand([this] { m_drive.ZeroHeading(); }, { &m_drive }).ToPtr());
 
-  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kX)
-    .OnTrue(frc2::InstantCommand([this] { m_drive.ResetOdometry(frc::Pose2d {}); }, { &m_drive })
-              .ToPtr());
+  // Testing or Op stick:
+  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kLeftStick)
+    .WhileTrue(new frc2::RunCommand([this] { m_drive.SetX(); }, { &m_drive }));
+
+  // frc2::Trigger(
+  //   m_driverController.POVDown(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+  //   .OnTrue(frc2::InstantCommand([this] { m_drive.ResetOdometry(frc::Pose2d {}); }, { &m_drive })
+  //             .ToPtr());
 #endif
 
 #ifdef EXTENDING_ARM_ENABLED
@@ -186,15 +191,15 @@ void RobotContainer::ConfigureButtonBindings() {
       },
       { &m_exArm }));
 
-  // frc2::Trigger(
-  //   m_driverController.POVLeft(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
-  //   .OnTrue(frc2::InstantCommand([this] { m_exArm.SetAxis3NextSetpoint(0_deg); }, { &m_exArm
-  //   }).ToPtr());
+  frc2::Trigger(
+    m_driverController.POVLeft(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+    .OnTrue(
+      frc2::InstantCommand([this] { m_exArm.SetAxis3NextSetpoint(0_deg); }, { &m_exArm }).ToPtr());
 
-  // frc2::Trigger(
-  //   m_driverController.POVRight(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
-  //   .OnTrue(frc2::InstantCommand([this] { m_exArm.SetAxis3NextSetpoint(90_deg); },
-  //   {&m_exArm}).ToPtr());
+  frc2::Trigger(
+    m_driverController.POVRight(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+    .OnTrue(
+      frc2::InstantCommand([this] { m_exArm.SetAxis3NextSetpoint(90_deg); }, { &m_exArm }).ToPtr());
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kA)
     .OnTrue(m_exArm.MoveArm(ExtendingArmPositions::STOWED));

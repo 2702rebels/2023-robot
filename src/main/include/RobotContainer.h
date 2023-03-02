@@ -36,11 +36,12 @@ class RobotContainer {
   frc2::Command* GetAutonomousCommand();
 
   void OnDisable();
+  void OnTeleEnable();
 
   void ToggleRobotMode(RobotMode mode);
   void ToggleRobotMode();
 
-  std::string GetRobotModeState();
+  std::string GetRobotModeString();
 
  private:
   // The driver's controller

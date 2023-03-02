@@ -148,6 +148,8 @@ constexpr double kHasGamePieceCurrent = 15;
 }  // namespace IntakeConstants
 
 namespace ExtendingArmConstants {
+constexpr int kWhichRobotJumper = 9;
+
 // Execute cycle time.
 constexpr units::second_t kDt = 20_ms;
 
@@ -170,7 +172,10 @@ constexpr double kAxis1MinOutput = -1.0;
 constexpr double kAxis1MaxOutput = 1;
 // Neo into a versa 45:1 -> sprocket reduction of 26:14 -> sprocket reduction of 60:14.
 constexpr double kAxis1OverallReduction = (9.0 / 1.0) * (5.0 / 1.0) * (26.0 / 14.0) * (60.0 / 14.0);
-constexpr double kAxis1MotorRotationsPerDegree = 360 / kAxis1OverallReduction;
+constexpr double kAxis1MotorRotationsPerDegree = kAxis1OverallReduction / 360;
+constexpr double kAxis1OverallReductionComp =
+  (9.0 / 1.0) * (5.0 / 1.0) * (44.0 / 14.0) * (44.0 / 15.0);
+constexpr double kAxis1MotorRotationsPerDegreeComp = kAxis1OverallReductionComp / 360;
 constexpr double kAxis1ZeroAngle = 0;
 constexpr int kAxis1HomeTimeoutInSeconds = 3;
 constexpr double kAxis1HomeCurrentThreshold = 30;
@@ -205,7 +210,7 @@ constexpr double kAxis3MinOutput = -1;
 constexpr double kAxis3MaxOutput = 1;
 constexpr int kAxis3HomeTimeoutInSeconds = 3;
 constexpr double kAxis3HomeCurrentThreshold = 30;
-constexpr double kAxis3EncoderPulsesPerRevolution = 44.4;
+constexpr double kAxis3EncoderPulsesPerRevolution = 1024;
 
 }  // namespace ExtendingArmConstants
 

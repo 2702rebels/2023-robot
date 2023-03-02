@@ -81,6 +81,10 @@ class ExtendingArmSubsystem : public frc2::SubsystemBase {
     m_intake = intake;
   }
 
+  bool IsCompBot() {
+    return m_whichRobotJumper.Get();
+  }
+
  private:
   bool m_isAxis1ControlEnabled = false;
   bool m_isAxis2ControlEnabled = false;
@@ -109,6 +113,7 @@ class ExtendingArmSubsystem : public frc2::SubsystemBase {
                                 ExtendingArmConstants::kAxis3EncoderChannel2Id };
 
   frc::DigitalInput m_axis1HomeLimitSwitch { ExtendingArmConstants::kAxis1HomeLimitSwitchId };
+  frc::DigitalInput m_whichRobotJumper { ExtendingArmConstants::kWhichRobotJumper };
 
   frc::ArmFeedforward* m_axis1feedforward;
   // frc::TrapezoidProfile<units::degree>* m_axis1TrapezoidalProfile;
