@@ -81,6 +81,11 @@ DriveSubsystem::DriveSubsystem() :
   } {
   frc::SmartDashboard::PutData("Field", &m_field);
   frc::SmartDashboard::PutData("Gyro", &m_gyro);
+
+  auto ntinst = nt::NetworkTableInstance::GetDefault();
+  m_fsXt = ntinst.GetFloatTopic("/Vision/Pose/Xt").Subscribe(-1);
+  m_fsYt = ntinst.GetFloatTopic("/Vision/Pose/Yt").Subscribe(-1);
+  m_fsR = ntinst.GetFloatTopic("/Vision/Pose/Rz").Subscribe(0);
 }
 
 void DriveSubsystem::InitSendable(wpi::SendableBuilder& builder) {
@@ -270,8 +275,17 @@ void DriveSubsystem::UpdateOdometry() {
       m_rearRight.GetPosition(),
     });
 
+#ifdef DRIVETRAIN_ODOMETRY_VISION
   // feed global position from camera
-  // m_odometry.AddVisionMeasurement(pose, timestamp);
+  units::length::meter_t x(m_fsXt.Get());
+  units::length::meter_t y(m_fsYt.Get());
+  units::angle::radian_t r(m_fsR.Get());
+  if (x.value() >= 0.) {
+    frc::Pose2d pose(frc::Translation2d(x, y), frc::Rotation2d(r));
+
+    m_odometry.AddVisionMeasurement(pose, frc::Timer::GetFPGATimestamp());
+  }
+#endif
 
   // update field position for debugging purposes
   m_field.SetRobotPose(GetPose());

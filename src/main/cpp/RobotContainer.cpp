@@ -36,10 +36,10 @@ RobotContainer::RobotContainer() {
   m_led.SetLength(LEDConstants::kLength);
   m_led.SetData(m_ledBuffer);
   m_led.Start();
-  // for (int i = 0; i < LEDConstants::kLength; i++) {
-  //   m_ledBuffer[i].SetRGB(255, 0, 0);
-  // }
-
+  for (int i = 0; i < LEDConstants::kLength; i++) {
+    m_ledBuffer[i].SetRGB(255, 0, 0);
+  }
+#if 0
   m_ledBuffer[0].SetRGB(255, 0, 0);
   m_ledBuffer[1].SetRGB(0, 0, 255);
   m_ledBuffer[2].SetRGB(0, 0, 0);
@@ -50,6 +50,7 @@ RobotContainer::RobotContainer() {
   m_ledBuffer[7].SetRGB(0, 0, 0);
   m_ledBuffer[8].SetRGB(0, 255, 0);
   m_ledBuffer[9].SetRGB(0, 0, 0);
+#endif
 
   m_led.SetData(m_ledBuffer);
 #endif

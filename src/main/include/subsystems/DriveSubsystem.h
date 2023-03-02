@@ -10,6 +10,9 @@
 #include <frc/kinematics/SwerveDriveOdometry.h>
 #include <frc/smartdashboard/Field2d.h>
 #include <frc2/command/SubsystemBase.h>
+#include <networktables/FloatTopic.h>
+#include <networktables/NetworkTable.h>
+#include <networktables/NetworkTableInstance.h>
 
 #include "Constants.h"
 #include "MAXSwerveModule.h"
@@ -171,6 +174,10 @@ class DriveSubsystem : public frc2::SubsystemBase {
 #else
   frc::SwerveDriveOdometry<NUMBER_OF_MODULES> m_odometry;
 #endif
+
+  nt::FloatSubscriber m_fsXt;
+  nt::FloatSubscriber m_fsYt;
+  nt::FloatSubscriber m_fsR;
 
   // Tracks robot position on the field (for debugging via Glass)
   frc::Field2d m_field;
