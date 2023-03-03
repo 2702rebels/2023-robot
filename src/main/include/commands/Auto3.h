@@ -5,8 +5,9 @@
 
 #include "Constants.h"
 #include "subsystems/DriveSubsystem.h"
+#include "subsystems/ExtendingArmSubsystem.h"
 
 class Auto3 : public frc2::CommandHelper<frc2::SequentialCommandGroup, Auto3> {
  public:
-  Auto3(DriveSubsystem* drive);
+  Auto3(DriveSubsystem* drive, ExtendingArmSubsystem* arm);
 };

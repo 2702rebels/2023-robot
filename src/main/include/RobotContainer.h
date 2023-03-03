@@ -71,7 +71,7 @@ class RobotContainer {
   // The autonomous routines
   Auto1 m_auto1 { &m_drive };
   Auto2 m_auto2 { &m_drive };
-  Auto3 m_auto3 { &m_drive };
+  Auto3 m_auto3 { &m_drive, &m_exArm };
 
   // The chooser for the autonomous routines
   frc::SendableChooser<frc2::Command*> m_chooser;

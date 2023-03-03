@@ -34,6 +34,8 @@ REGISTER_DOUBLE(DriveTuneMaxInclination, "Drive/Tune/Max Inclination (deg)", 10)
 REGISTER_DOUBLE(DriveTuneMaxSpeedFactor, "Drive/Tune/Max Speed Factor", 0.5)
 REGISTER_DOUBLE(DriveTuneDeadband, "Drive/Tune/Deadband", 0.2)
 
+static const double defaultVisionPosition[] = { -1.0, -1.0, 0.0 };
+
 DriveSubsystem::DriveSubsystem() :
   m_magLimiter { GetDriveSlewRateMagnitude() / 1_s },
   m_rotLimiter { GetDriveSlewRateRotation() / 1_s },
@@ -82,10 +84,8 @@ DriveSubsystem::DriveSubsystem() :
   frc::SmartDashboard::PutData("Field", &m_field);
   frc::SmartDashboard::PutData("Gyro", &m_gyro);
 
-  auto ntinst = nt::NetworkTableInstance::GetDefault();
-  m_fsXt = ntinst.GetFloatTopic("/Vision/Pose/Xt").Subscribe(-1);
-  m_fsYt = ntinst.GetFloatTopic("/Vision/Pose/Yt").Subscribe(-1);
-  m_fsR = ntinst.GetFloatTopic("/Vision/Pose/Rz").Subscribe(0);
+  const auto ntinst = nt::NetworkTableInstance::GetDefault();
+  m_visionPose = ntinst.GetDoubleArrayTopic("/Vision/PoseArray").Subscribe(defaultVisionPosition);
 }
 
 void DriveSubsystem::InitSendable(wpi::SendableBuilder& builder) {
@@ -277,14 +277,17 @@ void DriveSubsystem::UpdateOdometry() {
 
 #ifdef DRIVETRAIN_ODOMETRY_VISION
   // feed global position from camera
-  units::length::meter_t x(m_fsXt.Get());
-  units::length::meter_t y(m_fsYt.Get());
-  units::angle::radian_t r(m_fsR.Get());
-  if (x.value() >= 0.) {
-    frc::Pose2d pose(frc::Translation2d(x, y), frc::Rotation2d(r));
+  // const auto visionPose = m_visionPose.GetAtomic();
+  // const auto timestamp = frc::Timer::GetFPGATimestamp();
+  //  units::second_t { visionPose.serverTime };
+  // const auto x = units::length::meter_t { visionPose.value[0] };
+  // const auto y = units::length::meter_t { visionPose.value[1] };
+  // const auto r = units::angle::radian_t { visionPose.value[2] };
 
-    m_odometry.AddVisionMeasurement(pose, frc::Timer::GetFPGATimestamp());
-  }
+  // if (x.value() >= 0.0) {
+  //   frc::Pose2d pose(frc::Translation2d(x, y), frc::Rotation2d(r));
+  //   m_odometry.AddVisionMeasurement(pose, timestamp);
+  // }
 #endif
 
   // update field position for debugging purposes

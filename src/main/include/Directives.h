@@ -21,7 +21,7 @@
 // Indicates if the extending arm is instantiated and it's commands are bound.
 #define EXTENDING_ARM_ENABLED
 
-// Inidicates if the intake is instantiated and it's commands are bound.
+// Indicates if the intake is instantiated and it's commands are bound.
 #define INTAKE_ENABLED
 
 // Indicates that autonomous mode chooser via Shuffleboard should be used
