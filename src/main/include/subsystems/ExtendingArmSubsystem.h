@@ -70,6 +70,8 @@ class ExtendingArmSubsystem : public frc2::SubsystemBase {
   frc2::CommandPtr MoveArm(units::degree_t angle, units::inch_t distance);
   frc2::CommandPtr ScoreCone();
   frc2::CommandPtr ScoreCube();
+  frc2::CommandPtr JogUp();
+  frc2::CommandPtr JogDown();
 
   void ReloadConfigs();
 

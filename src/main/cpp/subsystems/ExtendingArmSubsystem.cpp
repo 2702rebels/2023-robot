@@ -44,6 +44,31 @@ REGISTER_DOUBLE(Axis3D, "ExArm/TuningParameters/Axis3 PID/D", 0.0)
 REGISTER_DOUBLE(Axis3CurrentLimit, "ExArm/TuningParameters/Axis3CurrentLimit", 0.0)
 REGISTER_DOUBLE(Axis3CurrentLimitDuration, "ExArm/TuningParameters/Axis3CurrentLimitDuration", 0.0)
 
+REGISTER_DOUBLE(ConeAxis1IntakeFloor, "ExArm/Position/Cone/IntakeFloor/Axis1", 18.0)
+REGISTER_DOUBLE(ConeAxis2IntakeFloor, "ExArm/Position/Cone/IntakeFloor/Axis2", 10.0)
+// REGISTER_DOUBLE(ConeAxis1IntakeStation, "ExArm/Position/Cone/IntakeStation/Axis1", 65.0)
+// REGISTER_DOUBLE(ConeAxis2IntakeStation, "ExArm/Position/Cone/IntakeStation/Axis2", 5.0)
+
+// REGISTER_DOUBLE(ConeAxis1ScoreLow, "ExArm/Position/Cone/ScoreLow/Axis1", 18.0)
+// REGISTER_DOUBLE(ConeAxis2ScoreLow, "ExArm/Position/Cone/ScoreLow/Axis2", 0.0)
+// REGISTER_DOUBLE(ConeAxis1ScoreMid, "ExArm/Position/Cone/ScoreMid/Axis1", 65.0)
+// REGISTER_DOUBLE(ConeAxis2ScoreMid, "ExArm/Position/Cone/ScoreMid/Axis2", 7.0)
+// REGISTER_DOUBLE(ConeAxis1ScoreHigh, "ExArm/Position/Cone/ScoreHigh/Axis1", 80.0)
+// REGISTER_DOUBLE(ConeAxis2ScoreHigh, "ExArm/Position/Cone/ScoreHigh/Axis2", 20.0)
+
+REGISTER_DOUBLE(CubeAxis1IntakeFloor, "ExArm/Position/Cube/IntakeFloor/Axis1", 18.0)
+REGISTER_DOUBLE(CubeAxis2IntakeFloor, "ExArm/Position/Cube/IntakeFloor/Axis2", 10.0)
+
+// REGISTER_DOUBLE(CubeAxis1IntakeStation, "ExArm/Position/Cube/IntakeStation/Axis1", 65.0)
+// REGISTER_DOUBLE(CubeAxis2IntakeStation, "ExArm/Position/Cube/IntakeStation/Axis2", 5.0)
+
+// REGISTER_DOUBLE(CubeAxis1ScoreLow, "ExArm/Position/Cube/ScoreLow/Axis1", 18.0)
+// REGISTER_DOUBLE(CubeAxis2ScoreLow, "ExArm/Position/Cube/ScoreLow/Axis2", 0.0)
+// REGISTER_DOUBLE(CubeAxis1ScoreMid, "ExArm/Position/Cube/ScoreMid/Axis1", 52.0)
+// REGISTER_DOUBLE(CubeAxis2ScoreMid, "ExArm/Position/Cube/ScoreMid/Axis2", 0.0)
+// REGISTER_DOUBLE(CubeAxis1ScoreHigh, "ExArm/Position/Cube/ScoreHigh/Axis1", 70.0)
+// REGISTER_DOUBLE(CubeAxis2ScoreHigh, "ExArm/Position/Cube/ScoreHigh/Axis2", 10.0)
+
 ExtendingArmSubsystem::ExtendingArmSubsystem() {
   frc::DataLogManager::Log(fmt::format("Initializing ExtendingArmSubsystem."));
   m_axis3Encoder.SetDistancePerPulse(360 / kAxis3EncoderPulsesPerRevolution);
@@ -402,7 +427,11 @@ frc2::CommandPtr ExtendingArmSubsystem::MoveArm(ExtendingArmPositions position) 
     case INTAKE_FLOOR_CONE:
       return frc2::FunctionalCommand(
                // Initialize
-               [this] { ExtendingArmSubsystem::MoveArmSimple(18.0_deg, 10.0_in); },
+               [this] {
+                 ExtendingArmSubsystem::MoveArmSimple(
+                   units::degree_t(GetConeAxis1IntakeFloor()),
+                   units::inch_t(GetConeAxis2IntakeFloor()));
+               },
                // Execute
                [this] {},
                // End
@@ -415,7 +444,11 @@ frc2::CommandPtr ExtendingArmSubsystem::MoveArm(ExtendingArmPositions position) 
     case INTAKE_FLOOR_CUBE:
       return frc2::FunctionalCommand(
                // Initialize
-               [this] { ExtendingArmSubsystem::MoveArmSimple(18.0_deg, 5.0_in); },
+               [this] {
+                 ExtendingArmSubsystem::MoveArmSimple(
+                   units::degree_t(GetCubeAxis1IntakeFloor()),
+                   units::inch_t(GetCubeAxis2IntakeFloor()));
+               },
                // Execute
                [this] {},
                // End
@@ -586,7 +619,7 @@ frc2::CommandPtr ExtendingArmSubsystem::ScoreCone() {
       // Require subsystem
       { this })
       .ToPtr(),
-    frc2::InstantCommand([this] { m_intake->StopOuttaking(); }, { m_intake }),
+    frc2::InstantCommand([this] { m_intake->StopOuttaking(); }, { m_intake })/*,
     frc2::FunctionalCommand(
       // Initialize
       [this] { ExtendingArmSubsystem::MoveArmSimple(0.0_deg, 0.0_in); },
@@ -598,7 +631,7 @@ frc2::CommandPtr ExtendingArmSubsystem::ScoreCone() {
       [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
       // Require subsystem
       { this })
-      .ToPtr());
+      .ToPtr()*/);
 }
 
 frc2::CommandPtr ExtendingArmSubsystem::ScoreCube() {
@@ -618,7 +651,7 @@ frc2::CommandPtr ExtendingArmSubsystem::ScoreCube() {
         { this })
         .ToPtr(),
       frc2::WaitCommand(0.2_s).ToPtr()),
-    frc2::InstantCommand([this] { m_intake->StopOuttaking(); }, { m_intake }),
+    frc2::InstantCommand([this] { m_intake->StopOuttaking(); }, { m_intake })/*,
     frc2::FunctionalCommand(
       // Initialize
       [this] { ExtendingArmSubsystem::MoveArmSimple(0.0_deg, 0.0_in); },
@@ -630,7 +663,7 @@ frc2::CommandPtr ExtendingArmSubsystem::ScoreCube() {
       [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
       // Require subsystem
       { this })
-      .ToPtr());
+      .ToPtr()*/);
 }
 
 bool ExtendingArmSubsystem::IsArmAtCommandedPosition() {
@@ -650,4 +683,40 @@ bool ExtendingArmSubsystem::IsArmAtCommandedPosition() {
 
 void ExtendingArmSubsystem::DisableControlAxis2() {
   m_isAxis2ControlEnabled = false;
+}
+
+frc2::CommandPtr ExtendingArmSubsystem::JogUp() {
+  return frc2::FunctionalCommand(
+           // Initialize
+           [this] {
+             ExtendingArmSubsystem::MoveArmSimple(
+               GetAxis1Angle() + units::degree_t(10), GetAxis2Distance());
+           },
+           // Execute
+           [this] {},
+           // End
+           [this](bool interrupted) {},
+           // IsFinished
+           [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+           // Require subsystem
+           { this })
+    .ToPtr();
+}
+
+frc2::CommandPtr ExtendingArmSubsystem::JogDown() {
+  return frc2::FunctionalCommand(
+           // Initialize
+           [this] {
+             ExtendingArmSubsystem::MoveArmSimple(
+               GetAxis1Angle() - units::degree_t(10), GetAxis2Distance());
+           },
+           // Execute
+           [this] {},
+           // End
+           [this](bool interrupted) {},
+           // IsFinished
+           [this] { return ExtendingArmSubsystem::IsArmAtCommandedPosition(); },
+           // Require subsystem
+           { this })
+    .ToPtr();
 }
