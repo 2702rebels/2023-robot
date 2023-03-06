@@ -105,6 +105,10 @@ RobotContainer::RobotContainer() {
 #endif
 }
 
+void RobotContainer::OnAutoEnable() {
+  m_drive.ResetOdometry(frc::Pose2d {});
+}
+
 void RobotContainer::OnTeleEnable() {
   ToggleRobotMode(RobotMode::CONE);
 }
@@ -214,7 +218,9 @@ void RobotContainer::ConfigureButtonBindings() {
   //     }).ToPtr());
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kA)
-    .OnTrue(m_exArm.MoveArm(ExtendingArmPositions::STOWED));
+    .OnTrue(frc2::cmd::Parallel(
+      m_exArm.MoveArm(ExtendingArmPositions::STOWED),
+      frc2::InstantCommand([this] { m_intake.StopOuttaking(); }, { &m_intake }).ToPtr()));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kB)
     .OnTrue(frc2::cmd::Either(
@@ -238,7 +244,7 @@ void RobotContainer::ConfigureButtonBindings() {
 
 #ifdef INTAKE_ENABLED
   // Intake automatically.
-  frc2::Trigger(m_driverController.RightTrigger(
+  frc2::Trigger(m_driverController.LeftTrigger(
                   0.5, frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
     .OnTrue(frc2::cmd::Sequence(
       m_exArm.MoveArm(ExtendingArmPositions::INTAKE_STATION_CONE),
@@ -274,7 +280,7 @@ void RobotContainer::ConfigureButtonBindings() {
       m_exArm.MoveArm(ExtendingArmPositions::STOWED)));
 
   // Score Manually.
-  frc2::Trigger(m_driverController.LeftTrigger(
+  frc2::Trigger(m_driverController.RightTrigger(
                   0.5, frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
     .OnTrue(frc2::cmd::Either(
       m_exArm.ScoreCone(), m_exArm.ScoreCube(), [this] { return m_mode == RobotMode::CONE; }))

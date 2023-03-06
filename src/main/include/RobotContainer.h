@@ -36,6 +36,7 @@ class RobotContainer {
   frc2::Command* GetAutonomousCommand();
 
   void OnDisable();
+  void OnAutoEnable();
   void OnTeleEnable();
 
   void ToggleRobotMode(RobotMode mode);

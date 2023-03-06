@@ -4,6 +4,7 @@
 #include "frc2/command/InstantCommand.h"
 
 Auto2::Auto2(DriveSubsystem* drive) {
+#if 0
   AddCommands(
     DriveTrajectoryCommand(
       {
@@ -29,4 +30,5 @@ Auto2::Auto2(DriveSubsystem* drive) {
       true,  // robot is driving backwards, but will rotate
       false,
       drive));
+#endif
 }

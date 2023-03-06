@@ -2,6 +2,7 @@
 
 #include <frc/TimedRobot.h>
 #include <frc2/command/Command.h>
+#include <networktables/BooleanTopic.h>
 
 #include "RobotContainer.h"
 
@@ -21,6 +22,8 @@ class Robot : public frc::TimedRobot {
   // Have it null by default so that if testing teleop it
   // doesn't have undefined behavior and potentially crash.
   frc2::Command* m_autonomousCommand = nullptr;
+  nt::BooleanPublisher m_bpIsLogging;
 
   RobotContainer m_container;
+  void StartCamera();
 };

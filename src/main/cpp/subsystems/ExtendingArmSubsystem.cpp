@@ -46,28 +46,27 @@ REGISTER_DOUBLE(Axis3CurrentLimitDuration, "ExArm/TuningParameters/Axis3CurrentL
 
 REGISTER_DOUBLE(ConeAxis1IntakeFloor, "ExArm/Position/Cone/IntakeFloor/Axis1", 18.0)
 REGISTER_DOUBLE(ConeAxis2IntakeFloor, "ExArm/Position/Cone/IntakeFloor/Axis2", 10.0)
-// REGISTER_DOUBLE(ConeAxis1IntakeStation, "ExArm/Position/Cone/IntakeStation/Axis1", 65.0)
-// REGISTER_DOUBLE(ConeAxis2IntakeStation, "ExArm/Position/Cone/IntakeStation/Axis2", 5.0)
+REGISTER_DOUBLE(ConeAxis1IntakeStation, "ExArm/Position/Cone/IntakeStation/Axis1", 65.0)
+REGISTER_DOUBLE(ConeAxis2IntakeStation, "ExArm/Position/Cone/IntakeStation/Axis2", 5.0)
 
-// REGISTER_DOUBLE(ConeAxis1ScoreLow, "ExArm/Position/Cone/ScoreLow/Axis1", 18.0)
-// REGISTER_DOUBLE(ConeAxis2ScoreLow, "ExArm/Position/Cone/ScoreLow/Axis2", 0.0)
-// REGISTER_DOUBLE(ConeAxis1ScoreMid, "ExArm/Position/Cone/ScoreMid/Axis1", 65.0)
-// REGISTER_DOUBLE(ConeAxis2ScoreMid, "ExArm/Position/Cone/ScoreMid/Axis2", 7.0)
-// REGISTER_DOUBLE(ConeAxis1ScoreHigh, "ExArm/Position/Cone/ScoreHigh/Axis1", 80.0)
-// REGISTER_DOUBLE(ConeAxis2ScoreHigh, "ExArm/Position/Cone/ScoreHigh/Axis2", 20.0)
+REGISTER_DOUBLE(ConeAxis1ScoreLow, "ExArm/Position/Cone/ScoreLow/Axis1", 18.0)
+REGISTER_DOUBLE(ConeAxis2ScoreLow, "ExArm/Position/Cone/ScoreLow/Axis2", 0.0)
+REGISTER_DOUBLE(ConeAxis1ScoreMid, "ExArm/Position/Cone/ScoreMid/Axis1", 65.0)
+REGISTER_DOUBLE(ConeAxis2ScoreMid, "ExArm/Position/Cone/ScoreMid/Axis2", 7.0)
+REGISTER_DOUBLE(ConeAxis1ScoreHigh, "ExArm/Position/Cone/ScoreHigh/Axis1", 80.0)
+REGISTER_DOUBLE(ConeAxis2ScoreHigh, "ExArm/Position/Cone/ScoreHigh/Axis2", 20.0)
 
 REGISTER_DOUBLE(CubeAxis1IntakeFloor, "ExArm/Position/Cube/IntakeFloor/Axis1", 18.0)
 REGISTER_DOUBLE(CubeAxis2IntakeFloor, "ExArm/Position/Cube/IntakeFloor/Axis2", 10.0)
+REGISTER_DOUBLE(CubeAxis1IntakeStation, "ExArm/Position/Cube/IntakeStation/Axis1", 65.0)
+REGISTER_DOUBLE(CubeAxis2IntakeStation, "ExArm/Position/Cube/IntakeStation/Axis2", 5.0)
 
-// REGISTER_DOUBLE(CubeAxis1IntakeStation, "ExArm/Position/Cube/IntakeStation/Axis1", 65.0)
-// REGISTER_DOUBLE(CubeAxis2IntakeStation, "ExArm/Position/Cube/IntakeStation/Axis2", 5.0)
-
-// REGISTER_DOUBLE(CubeAxis1ScoreLow, "ExArm/Position/Cube/ScoreLow/Axis1", 18.0)
-// REGISTER_DOUBLE(CubeAxis2ScoreLow, "ExArm/Position/Cube/ScoreLow/Axis2", 0.0)
-// REGISTER_DOUBLE(CubeAxis1ScoreMid, "ExArm/Position/Cube/ScoreMid/Axis1", 52.0)
-// REGISTER_DOUBLE(CubeAxis2ScoreMid, "ExArm/Position/Cube/ScoreMid/Axis2", 0.0)
-// REGISTER_DOUBLE(CubeAxis1ScoreHigh, "ExArm/Position/Cube/ScoreHigh/Axis1", 70.0)
-// REGISTER_DOUBLE(CubeAxis2ScoreHigh, "ExArm/Position/Cube/ScoreHigh/Axis2", 10.0)
+REGISTER_DOUBLE(CubeAxis1ScoreLow, "ExArm/Position/Cube/ScoreLow/Axis1", 18.0)
+REGISTER_DOUBLE(CubeAxis2ScoreLow, "ExArm/Position/Cube/ScoreLow/Axis2", 0.0)
+REGISTER_DOUBLE(CubeAxis1ScoreMid, "ExArm/Position/Cube/ScoreMid/Axis1", 52.0)
+REGISTER_DOUBLE(CubeAxis2ScoreMid, "ExArm/Position/Cube/ScoreMid/Axis2", 0.0)
+REGISTER_DOUBLE(CubeAxis1ScoreHigh, "ExArm/Position/Cube/ScoreHigh/Axis1", 70.0)
+REGISTER_DOUBLE(CubeAxis2ScoreHigh, "ExArm/Position/Cube/ScoreHigh/Axis2", 10.0)
 
 ExtendingArmSubsystem::ExtendingArmSubsystem() {
   frc::DataLogManager::Log(fmt::format("Initializing ExtendingArmSubsystem."));
@@ -461,7 +460,11 @@ frc2::CommandPtr ExtendingArmSubsystem::MoveArm(ExtendingArmPositions position) 
     case INTAKE_STATION_CONE:
       return frc2::FunctionalCommand(
                // Initialize
-               [this] { ExtendingArmSubsystem::MoveArmSimple(65.0_deg, 5.0_in); },
+               [this] {
+                 ExtendingArmSubsystem::MoveArmSimple(
+                   units::degree_t(GetConeAxis1IntakeStation()),
+                   units::inch_t(GetConeAxis2IntakeStation()));
+               },
                // Execute
                [this] {},
                // End
@@ -474,7 +477,11 @@ frc2::CommandPtr ExtendingArmSubsystem::MoveArm(ExtendingArmPositions position) 
     case INTAKE_STATION_CUBE:
       return frc2::FunctionalCommand(
                // Initialize
-               [this] { ExtendingArmSubsystem::MoveArmSimple(65.0_deg, 5.0_in); },
+               [this] {
+                 ExtendingArmSubsystem::MoveArmSimple(
+                   units::degree_t(GetCubeAxis1IntakeStation()),
+                   units::inch_t(GetCubeAxis2IntakeStation()));
+               },
                // Execute
                [this] {},
                // End
@@ -487,7 +494,10 @@ frc2::CommandPtr ExtendingArmSubsystem::MoveArm(ExtendingArmPositions position) 
     case SCORE_LOW_CONE:
       return frc2::FunctionalCommand(
                // Initialize
-               [this] { ExtendingArmSubsystem::MoveArmSimple(15.0_deg, 0.0_in); },
+               [this] {
+                 ExtendingArmSubsystem::MoveArmSimple(
+                   units::degree_t(GetConeAxis1ScoreLow()), units::inch_t(GetConeAxis2ScoreLow()));
+               },
                // Execute
                [this] {},
                // End
@@ -500,7 +510,10 @@ frc2::CommandPtr ExtendingArmSubsystem::MoveArm(ExtendingArmPositions position) 
     case SCORE_LOW_CUBE:
       return frc2::FunctionalCommand(
                // Initialize
-               [this] { ExtendingArmSubsystem::MoveArmSimple(15.0_deg, 0.0_in); },
+               [this] {
+                 ExtendingArmSubsystem::MoveArmSimple(
+                   units::degree_t(GetCubeAxis1ScoreLow()), units::inch_t(GetCubeAxis2ScoreLow()));
+               },
                // Execute
                [this] {},
                // End
@@ -513,7 +526,10 @@ frc2::CommandPtr ExtendingArmSubsystem::MoveArm(ExtendingArmPositions position) 
     case SCORE_MID_CONE:
       return frc2::FunctionalCommand(
                // Initialize
-               [this] { ExtendingArmSubsystem::MoveArmSimple(65.0_deg, 7.0_in); },
+               [this] {
+                 ExtendingArmSubsystem::MoveArmSimple(
+                   units::degree_t(GetConeAxis1ScoreMid()), units::inch_t(GetConeAxis2ScoreMid()));
+               },
                // Execute
                [this] {},
                // End
@@ -526,7 +542,10 @@ frc2::CommandPtr ExtendingArmSubsystem::MoveArm(ExtendingArmPositions position) 
     case SCORE_MID_CUBE:
       return frc2::FunctionalCommand(
                // Initialize
-               [this] { ExtendingArmSubsystem::MoveArmSimple(52.0_deg, 0.0_in); },
+               [this] {
+                 ExtendingArmSubsystem::MoveArmSimple(
+                   units::degree_t(GetCubeAxis1ScoreMid()), units::inch_t(GetCubeAxis2ScoreMid()));
+               },
                // Execute
                [this] {},
                // End
@@ -539,7 +558,11 @@ frc2::CommandPtr ExtendingArmSubsystem::MoveArm(ExtendingArmPositions position) 
     case SCORE_HIGH_CONE:
       return frc2::FunctionalCommand(
                // Initialize
-               [this] { ExtendingArmSubsystem::MoveArmSimple(80.0_deg, 20.0_in); },
+               [this] {
+                 ExtendingArmSubsystem::MoveArmSimple(
+                   units::degree_t(GetConeAxis1ScoreHigh()),
+                   units::inch_t(GetConeAxis2ScoreHigh()));
+               },
                // Execute
                [this] {},
                // End
@@ -552,7 +575,11 @@ frc2::CommandPtr ExtendingArmSubsystem::MoveArm(ExtendingArmPositions position) 
     case SCORE_HIGH_CUBE:
       return frc2::FunctionalCommand(
                // Initialize
-               [this] { ExtendingArmSubsystem::MoveArmSimple(70.0_deg, 10.0_in); },
+               [this] {
+                 ExtendingArmSubsystem::MoveArmSimple(
+                   units::degree_t(GetCubeAxis1ScoreHigh()),
+                   units::inch_t(GetCubeAxis2ScoreHigh()));
+               },
                // Execute
                [this] {},
                // End

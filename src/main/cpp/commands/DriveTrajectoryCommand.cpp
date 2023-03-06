@@ -67,7 +67,7 @@ DriveTrajectoryCommand::DriveTrajectoryCommand(
   DriveSubsystem* drive) :
   CommandHelper {
     createTrajectory(start, interiorWaypoints, end, reversed, drive),
-    [drive]() { return drive->GetPose(); },
+    [drive]() { return frc::Pose2d {}; },
     drive->kDriveKinematics,
     frc2::PIDController {
       AutoConstants::kPXController,
@@ -98,7 +98,7 @@ DriveTrajectoryCommand::DriveTrajectoryCommand(
   DriveSubsystem* drive) :
   CommandHelper {
     createTrajectory(waypoints, reversed, drive),
-    [drive]() { return drive->GetPose(); },
+    [drive]() { return frc::Pose2d {}; },
     drive->kDriveKinematics,
     frc2::PIDController {
       AutoConstants::kPXController,

@@ -142,7 +142,7 @@ constexpr int kIntakeFollowerControllerCanId = 11;
 
 // TODO: We might need separate speeds for cube and cone.
 constexpr double kIntakingSpeed = 0.6;
-constexpr double kOuttakingSpeed = -0.7;
+constexpr double kOuttakingSpeed = -0.2;
 constexpr double kIntakeHoldSpeed = 0.2;  // 775's can stall at 20% duty cycle for an entire match.
 constexpr double kHasGamePieceCurrent = 15;
 }  // namespace IntakeConstants
@@ -197,7 +197,7 @@ constexpr double kAxis2MotorRotationsPerMeterOfTravel =
 constexpr int kAxis2HomeTimeoutInSeconds = 3;
 constexpr double kAxis2HomeCurrentThreshold = 15;
 constexpr double kAxis2Deadband = 1.2;
-constexpr units::inch_t kAxis2MaxExtension = units::inch_t(17.75);
+constexpr units::inch_t kAxis2MaxExtension = units::inch_t(18.75);
 
 // Axis 3 (Wrist)
 constexpr int kAxis3CurrentLimit = 30;

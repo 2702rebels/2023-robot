@@ -313,6 +313,7 @@ void DriveSubsystem::UpdateTuningParameters() {
 }
 
 void DriveSubsystem::ResetOdometry(const frc::Pose2d& pose) {
+  frc::DataLogManager::Log("ResetOdometer");
   m_gyro.Reset();
   m_odometry.ResetPosition(
     GetHeading(),

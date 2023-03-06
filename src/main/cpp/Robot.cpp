@@ -9,6 +9,9 @@ void Robot::RobotInit() {
   // Initializes recording of log data to disk and enables logging of
   // DS control and joystick data
   frc::DataLogManager::Start();
+  auto ntinst = nt::NetworkTableInstance::GetDefault();
+  m_bpIsLogging = ntinst.GetBooleanTopic("/Vision/IsLogging").Publish();
+  m_bpIsLogging.Set(false);
 
 #ifdef LOG_DATA_DRIVER_STATION
   frc::DriverStation::StartDataLog(frc::DataLogManager::GetLog());
@@ -41,6 +44,9 @@ void Robot::DisabledPeriodic() {}
  * This autonomous runs the autonomous command selected by your {@link RobotContainer} class.
  */
 void Robot::AutonomousInit() {
+  m_container.OnAutoEnable();
+  StartCamera();
+
   m_autonomousCommand = m_container.GetAutonomousCommand();
 
   if (m_autonomousCommand != nullptr) {
@@ -77,3 +83,9 @@ int main() {
   return frc::StartRobot<Robot>();
 }
 #endif
+
+void Robot::StartCamera() {
+  frc::DataLogManager::Log(
+    "Setting Vision/IsLogging to true. Camera will now log images to memory.");
+  m_bpIsLogging.Set(true);
+}
