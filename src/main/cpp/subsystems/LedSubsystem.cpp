@@ -22,7 +22,10 @@ void LedSubsystem::Periodic() {
   if (m_isNewPattern) {
     m_isNewPattern = false;
     m_periodStart = frc::Timer::GetFPGATimestamp();
-    memcpy(m_ledPatternBuffer.data(), m_ledBuffer.data(), m_ledBuffer.size());
+    for (int i = 0; i < LEDConstants::kLength; i++) {
+      m_ledPatternBuffer[i] = m_ledColourBuffer[i];
+    }
+    // memcpy(m_ledPatternBuffer.data(), m_ledBuffer.data(), m_ledBuffer.size());
   }
 
   double ledBrightness = 0;
@@ -30,13 +33,15 @@ void LedSubsystem::Periodic() {
   switch (m_pattern) {
     case LEDPattern::SOLID:
       break;
-    case LEDPattern::FLASHING:
+    case LEDPattern::FLASH:
       if (frc::Timer::GetFPGATimestamp() > m_periodStart + (m_period / 2)) {
         for (int i = 0; i < LEDConstants::kLength; i++) {
           m_ledPatternBuffer[i].SetRGB(0, 0, 0);
         }
         if (frc::Timer::GetFPGATimestamp() > m_periodStart + m_period) {
-          memcpy(m_ledPatternBuffer.data(), m_ledBuffer.data(), m_ledBuffer.size());
+          for (int i = 0; i < LEDConstants::kLength; i++) {
+            m_ledPatternBuffer[i] = m_ledColourBuffer[i];
+          }
           m_periodStart = frc::Timer::GetFPGATimestamp();
         }
       }
@@ -47,11 +52,17 @@ void LedSubsystem::Periodic() {
         ledBrightness = 1.0 - (ledBrightness - 1.0);
       }
 
+      if (ledBrightness < 0) {
+        ledBrightness = 0;
+      }
+
+      // frc::DataLogManager::Log(fmt::format("ledBrightness: {}", ledBrightness));
+
       for (int i = 0; i < LEDConstants::kLength; i++) {
         m_ledPatternBuffer[i].SetRGB(
-          m_ledBuffer[i].r * ledBrightness,
-          m_ledBuffer[i].g * ledBrightness,
-          m_ledBuffer[i].b * ledBrightness);
+          m_ledColourBuffer[i].r * ledBrightness,
+          m_ledColourBuffer[i].g * ledBrightness,
+          m_ledColourBuffer[i].b * ledBrightness);
       }
 
       if (frc::Timer::GetFPGATimestamp() > m_periodStart + m_period) {
@@ -75,10 +86,10 @@ void LedSubsystem::Periodic() {
 }
 
 void LedSubsystem::SetRGB(int r, int g, int b) {
-  frc::DataLogManager::Log(fmt::format("Setting LEDs to RGB values: ({}, {}, {})", r, g, b));
   for (int i = 0; i < LEDConstants::kLength; i++) {
-    m_ledBuffer[i].SetRGB(r, g, b);
+    m_ledColourBuffer[i].SetRGB(r, g, b);
   }
+  frc::DataLogManager::Log(fmt::format("Set LEDs to RGB values: ({}, {}, {})", r, g, b));
 }
 
 void LedSubsystem::SetPattern(LEDPattern pattern, units::millisecond_t period) {
@@ -87,4 +98,18 @@ void LedSubsystem::SetPattern(LEDPattern pattern, units::millisecond_t period) {
   m_isNewPattern = true;
   frc::DataLogManager::Log(
     fmt::format("Set LEDs pattern to: {} with period: {}", TranslatePattern(m_pattern), m_period));
+}
+
+void LedSubsystem::StorePattern() {
+  memcpy(&m_ledColourBufferStored, &m_ledColourBuffer, m_ledColourBuffer.size() * 4);
+  m_patternStored = m_pattern;
+  m_periodStored = m_period;
+  frc::DataLogManager::Log("Stored LED colours, pattern and period.");
+}
+
+void LedSubsystem::RestorePattern() {
+  memcpy(&m_ledColourBuffer, &m_ledColourBufferStored, m_ledColourBuffer.size() * 4);
+  m_pattern = m_patternStored;
+  m_period = m_periodStored;
+  frc::DataLogManager::Log("Restored LED colours, pattern and period.");
 }

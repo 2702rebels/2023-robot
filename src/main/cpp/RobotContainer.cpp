@@ -20,6 +20,7 @@
 #include "Constants.h"
 #include "commands/HomeAxis1Command.h"
 #include "commands/HomeAxis2Command.h"
+#include "commands/SetLedCommand.h"
 #include "subsystems/DriveSubsystem.h"
 
 using namespace DriveConstants;
@@ -30,11 +31,6 @@ RobotContainer::RobotContainer() {
 #ifdef INTAKE_ENABLED
   m_exArm.SetIntakeReference(&m_intake);
 #endif
-#endif
-
-#ifdef LED_ENABLED
-  m_leds.SetRGB(255, 0, 0);
-  m_leds.SetPattern(LEDPattern::BREATH, 1_s);
 #endif
 
 // register subsystems on the shuffleboard
@@ -118,6 +114,7 @@ void RobotContainer::OnDisable() {
 
 #ifdef LED_ENABLED
   m_leds.SetRGB(255, 0, 0);
+  m_leds.SetPattern(LEDPattern::BREATH, 3_s);
 #endif
 }
 
@@ -196,17 +193,13 @@ void RobotContainer::ConfigureButtonBindings() {
     m_driverController.POVDown(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
     .OnTrue(m_exArm.JogDown());
 
-  // frc2::Trigger(
-  //   m_driverController.POVLeft(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
-  //   .OnTrue(
-  //     frc2::InstantCommand([this] { m_exArm.SetAxis3NextSetpoint(0_deg); }, { &m_exArm
-  //     }).ToPtr());
+  frc2::Trigger(
+    m_driverController.POVLeft(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+    .OnTrue(new SetLedCommand(&m_leds, 255, 255, 255, LEDPattern::FLASH, 200_ms, 3_s));
 
-  // frc2::Trigger(
-  //   m_driverController.POVRight(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
-  //   .OnTrue(
-  //     frc2::InstantCommand([this] { m_exArm.SetAxis3NextSetpoint(90_deg); }, { &m_exArm
-  //     }).ToPtr());
+  frc2::Trigger(
+    m_driverController.POVRight(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+    .OnTrue(new SetLedCommand(&m_leds, 0, 255, 0, LEDPattern::BREATH, 3_s, 0_s));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kA)
     .OnTrue(frc2::cmd::Parallel(

@@ -216,7 +216,6 @@ constexpr double kAxis3EncoderPulsesPerRevolution = 1024;
 
 namespace LEDConstants {
 // Execute cycle time.
-constexpr units::second_t kDt = 20_ms;
 constexpr int kpwmPort = 0;
-constexpr int kLength = 18 * 4;
+constexpr int kLength = 68;
 }  // namespace LEDConstants

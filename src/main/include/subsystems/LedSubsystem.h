@@ -11,7 +11,7 @@
 
 enum LEDPattern {
   SOLID,
-  FLASHING,
+  FLASH,
   BREATH,
   WAVE,
   PONG,
@@ -43,24 +43,35 @@ class LedSubsystem : public frc2::SubsystemBase {
    */
   void SetPattern(LEDPattern pattern, units::millisecond_t period);
 
- private:
-  // Components (e.g. motor controllers and sensors) should generally be
-  // declared private and exposed only through public methods.
+  /**
+   * Stores the pattern & colours to be recalled at a later time.
+   */
+  void StorePattern();
 
+  /**
+   * Restores the previously stored pattern & colours.
+   */
+  void RestorePattern();
+
+ private:
   frc::AddressableLED m_led { LEDConstants::kpwmPort };
-  std::array<frc::AddressableLED::LEDData, LEDConstants::kLength> m_ledBuffer;
+  std::array<frc::AddressableLED::LEDData, LEDConstants::kLength> m_ledColourBuffer;
   std::array<frc::AddressableLED::LEDData, LEDConstants::kLength> m_ledPatternBuffer;
   LEDPattern m_pattern;
   units::millisecond_t m_period;
   units::millisecond_t m_periodStart;
   bool m_isNewPattern;
 
+  LEDPattern m_patternStored;
+  units::millisecond_t m_periodStored;
+  std::array<frc::AddressableLED::LEDData, LEDConstants::kLength> m_ledColourBufferStored;
+
   std::string_view TranslatePattern(LEDPattern pattern) {
     switch (pattern) {
       case SOLID:
         return "SOLID";
-      case FLASHING:
-        return "FLASHING";
+      case FLASH:
+        return "FLASH";
       case BREATH:
         return "BREATH";
       case WAVE:
