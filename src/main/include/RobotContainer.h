@@ -1,6 +1,5 @@
 #pragma once
 
-#include <frc/AddressableLED.h>
 #include <frc/XboxController.h>
 #include <frc/controller/PIDController.h>
 #include <frc/controller/ProfiledPIDController.h>
@@ -15,9 +14,11 @@
 #include "commands/Auto1.h"
 #include "commands/Auto2.h"
 #include "commands/Auto3.h"
+#include "commands/Auto_DoNothing.h"
 #include "subsystems/DriveSubsystem.h"
 #include "subsystems/ExtendingArmSubsystem.h"
 #include "subsystems/IntakeSubsystem.h"
+#include "subsystems/LedSubsystem.h"
 
 /**
  * This class is where the bulk of the robot should be declared.
@@ -39,7 +40,7 @@ class RobotContainer {
   void OnAutoEnable();
   void OnTeleEnable();
 
-  void ToggleRobotMode(RobotMode mode);
+  void SetRobotMode(RobotMode mode);
   void ToggleRobotMode();
 
   std::string GetRobotModeString();
@@ -65,12 +66,12 @@ class RobotContainer {
 #endif
 
 #ifdef LED_ENABLED
-  frc::AddressableLED m_led { LEDConstants::kpwmPort };
-  std::array<frc::AddressableLED::LEDData, LEDConstants::kLength> m_ledBuffer;
+  LedSubsystem m_leds;
 #endif
 
   // The autonomous routines
-  Auto1 m_auto1 { &m_drive };
+  Auto_DoNothing m_auto_doNothing;
+  Auto1 m_auto_driveForwards { &m_drive };
   Auto2 m_auto2 { &m_drive };
   Auto3 m_auto3 { &m_drive, &m_exArm };
 

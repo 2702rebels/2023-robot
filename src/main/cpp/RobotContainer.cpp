@@ -33,13 +33,8 @@ RobotContainer::RobotContainer() {
 #endif
 
 #ifdef LED_ENABLED
-  m_led.SetLength(LEDConstants::kLength);
-  m_led.SetData(m_ledBuffer);
-  m_led.Start();
-  for (int i = 0; i < LEDConstants::kLength; i++) {
-    m_ledBuffer[i].SetRGB(255, 0, 0);
-  }
-  m_led.SetData(m_ledBuffer);
+  m_leds.SetRGB(255, 0, 0);
+  m_leds.SetPattern(LEDPattern::BREATH, 1_s);
 #endif
 
 // register subsystems on the shuffleboard
@@ -98,10 +93,13 @@ RobotContainer::RobotContainer() {
 
   // autonomous command chooser
 #ifdef AUTO_CHOOSER
-  m_chooser.SetDefaultOption("Auto1", &m_auto1);
+  frc::ShuffleboardTab& tab = frc::Shuffleboard::GetTab("Auto");
+  m_chooser.SetDefaultOption("DoNothing", &m_auto_doNothing);
+  m_chooser.AddOption("DriveForwards", &m_auto_driveForwards);
   m_chooser.AddOption("Auto2", &m_auto2);
   m_chooser.AddOption("Auto3", &m_auto3);
-  frc::Shuffleboard::GetTab("Auto").Add(m_chooser);
+  tab.Add(m_chooser);
+  tab.AddPersistent("DriveAutoDistance", 1.0);
 #endif
 }
 
@@ -110,7 +108,7 @@ void RobotContainer::OnAutoEnable() {
 }
 
 void RobotContainer::OnTeleEnable() {
-  ToggleRobotMode(RobotMode::CONE);
+  SetRobotMode(RobotMode::CONE);
 }
 
 void RobotContainer::OnDisable() {
@@ -119,37 +117,30 @@ void RobotContainer::OnDisable() {
 #endif
 
 #ifdef LED_ENABLED
-  for (int i = 0; i < LEDConstants::kLength; i++) {
-    m_ledBuffer[i].SetRGB(255, 0, 0);
-  }
-  m_led.SetData(m_ledBuffer);
+  m_leds.SetRGB(255, 0, 0);
 #endif
 }
 
-void RobotContainer::ToggleRobotMode(RobotMode mode) {
+void RobotContainer::SetRobotMode(RobotMode mode) {
   m_mode = mode;
   if (m_mode == RobotMode::CUBE) {
 #ifdef LED_ENABLED
-    for (int i = 0; i < LEDConstants::kLength; i++) {
-      m_ledBuffer[i].SetRGB(255, 0, 255);
-    }
-    m_led.SetData(m_ledBuffer);
+    m_leds.SetRGB(255, 0, 255);
+    m_leds.SetPattern(LEDPattern::SOLID, 0_s);
 #endif
   } else if (m_mode == RobotMode::CONE) {
 #ifdef LED_ENABLED
-    for (int i = 0; i < LEDConstants::kLength; i++) {
-      m_ledBuffer[i].SetRGB(255, 255, 0);
-    }
-    m_led.SetData(m_ledBuffer);
+    m_leds.SetRGB(255, 255, 0);
+    m_leds.SetPattern(LEDPattern::SOLID, 0_s);
 #endif
   }
 }
 
 void RobotContainer::ToggleRobotMode() {
   if (m_mode == RobotMode::CONE) {
-    ToggleRobotMode(RobotMode::CUBE);
+    SetRobotMode(RobotMode::CUBE);
   } else {
-    ToggleRobotMode(RobotMode::CONE);
+    SetRobotMode(RobotMode::CONE);
   }
 }
 
