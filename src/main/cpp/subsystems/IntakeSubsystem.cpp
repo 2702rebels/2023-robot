@@ -7,6 +7,17 @@
 #include <frc/DataLogManager.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 
+#include "Settings.h"
+
+REGISTER_DOUBLE(IntakeInSpeed, "Intake/InSpeed", 0.6)
+REGISTER_DOUBLE(IntakeOutSpeedCone, "Intake/OutSpeed/Cone", -0.2)
+REGISTER_DOUBLE(IntakeOutSpeedCube, "Intake/OutSpeed/Cube", -0.6)
+
+// TODO: We might need separate speeds for cube and cone.
+constexpr double kIntakingSpeed = 0.6;
+constexpr double kOuttakingSpeedCone = -0.2;
+constexpr double kOuttakingSpeedCube = -0.6;
+
 IntakeSubsystem::IntakeSubsystem() {
   m_followerMotorController.Follow(m_leaderMotorController);
   m_followerMotorController.SetInverted(ctre::phoenix::motorcontrol::InvertType::OpposeMaster);
@@ -24,7 +35,7 @@ void IntakeSubsystem::SetIntakeSpeed(double speed) {
 }
 
 void IntakeSubsystem::Intake() {
-  IntakeSubsystem::SetIntakeSpeed(IntakeConstants::kIntakingSpeed);
+  IntakeSubsystem::SetIntakeSpeed(GetIntakeInSpeed());
 }
 
 // void IntakeSubsystem::StopIntaking() {
@@ -38,11 +49,11 @@ void IntakeSubsystem::Intake() {
 // }
 
 void IntakeSubsystem::OuttakeCone() {
-  IntakeSubsystem::SetIntakeSpeed(IntakeConstants::kOuttakingSpeedCone);
+  IntakeSubsystem::SetIntakeSpeed(GetIntakeOutSpeedCone());
 }
 
 void IntakeSubsystem::OuttakeCube() {
-  IntakeSubsystem::SetIntakeSpeed(IntakeConstants::kOuttakingSpeedCube);
+  IntakeSubsystem::SetIntakeSpeed(GetIntakeOutSpeedCube());
 }
 
 void IntakeSubsystem::Stop() {
