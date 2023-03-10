@@ -30,7 +30,7 @@ void ArmScoreConeCommand::Execute() {
   if (!m_isRetracting && m_isPlaced && m_intake->IsAtCommandedPosition()) {
     m_isRetracting = true;
     m_arm->Move(m_arm->GetAxis1Angle(), 0.0_in);
-    m_intake->Outtake();
+    m_intake->OuttakeCone();
     m_outtakingStartTime = frc::Timer::GetFPGATimestamp();
   }
 }

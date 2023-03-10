@@ -37,8 +37,12 @@ void IntakeSubsystem::Intake() {
 //   }
 // }
 
-void IntakeSubsystem::Outtake() {
-  IntakeSubsystem::SetIntakeSpeed(IntakeConstants::kOuttakingSpeed);
+void IntakeSubsystem::OuttakeCone() {
+  IntakeSubsystem::SetIntakeSpeed(IntakeConstants::kOuttakingSpeedCone);
+}
+
+void IntakeSubsystem::OuttakeCube() {
+  IntakeSubsystem::SetIntakeSpeed(IntakeConstants::kOuttakingSpeedCube);
 }
 
 void IntakeSubsystem::Stop() {

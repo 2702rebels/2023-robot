@@ -142,8 +142,9 @@ constexpr int kIntakeFollowerControllerCanId = 11;
 
 // TODO: We might need separate speeds for cube and cone.
 constexpr double kIntakingSpeed = 0.6;
-constexpr double kOuttakingSpeed = -0.2;
-constexpr units::millisecond_t kOuttakingTime = 200_ms;
+constexpr double kOuttakingSpeedCone = -0.2;
+constexpr double kOuttakingSpeedCube = -0.6;
+constexpr units::millisecond_t kOuttakingTime = 400_ms;
 
 constexpr double kIntakeHoldSpeed = 0.2;  // 775's can stall at 20% duty cycle for an entire match.
 constexpr double kHasGamePieceCurrent = 15;

@@ -16,7 +16,7 @@ ArmScoreCubeCommand::ArmScoreCubeCommand(ArmSubsystem* arm, IntakeSubsystem* int
 
 // Called when the command is initially scheduled.
 void ArmScoreCubeCommand::Initialize() {
-  m_intake->Outtake();
+  m_intake->OuttakeCube();
   m_arm->Move(m_arm->GetAxis1Angle(), 0.0_in);
   m_startTime = frc::Timer::GetFPGATimestamp();
 }

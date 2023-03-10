@@ -22,7 +22,8 @@ class IntakeSubsystem : public frc2::SubsystemBase {
 
   void SetIntakeSpeed(double speed);
   void Intake();
-  void Outtake();
+  void OuttakeCone();
+  void OuttakeCube();
   void Stop();
 
   void OpenCone();
