@@ -143,11 +143,13 @@ constexpr int kIntakeFollowerControllerCanId = 11;
 // TODO: We might need separate speeds for cube and cone.
 constexpr double kIntakingSpeed = 0.6;
 constexpr double kOuttakingSpeed = -0.2;
+constexpr units::millisecond_t kOuttakingTime = 200_ms;
+
 constexpr double kIntakeHoldSpeed = 0.2;  // 775's can stall at 20% duty cycle for an entire match.
 constexpr double kHasGamePieceCurrent = 15;
 }  // namespace IntakeConstants
 
-namespace ExtendingArmConstants {
+namespace ArmConstants {
 constexpr int kWhichRobotJumper = 9;
 
 // Execute cycle time.
@@ -197,7 +199,7 @@ constexpr double kAxis2MotorRotationsPerMeterOfTravel =
 constexpr int kAxis2HomeTimeoutInSeconds = 3;
 constexpr double kAxis2HomeCurrentThreshold = 15;
 constexpr double kAxis2Deadband = 1.2;
-constexpr units::inch_t kAxis2MaxExtension = units::inch_t(18.75);
+constexpr units::inch_t kAxis2MaxExtension = 18.75_in;
 
 // Axis 3 (Wrist)
 constexpr int kAxis3CurrentLimit = 30;
@@ -212,7 +214,10 @@ constexpr int kAxis3HomeTimeoutInSeconds = 3;
 constexpr double kAxis3HomeCurrentThreshold = 30;
 constexpr double kAxis3EncoderPulsesPerRevolution = 1024;
 
-}  // namespace ExtendingArmConstants
+// Position
+constexpr units::degree_t kConePlacementDistance = 12.0_deg;
+
+}  // namespace ArmConstants
 
 namespace LEDConstants {
 // Execute cycle time.

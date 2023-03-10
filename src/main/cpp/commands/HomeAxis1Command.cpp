@@ -7,7 +7,7 @@
 #include <frc/DataLogManager.h>
 #include <frc/Timer.h>
 
-HomeAxis1Command::HomeAxis1Command(ExtendingArmSubsystem* arm) : m_arm(arm) {
+HomeAxis1Command::HomeAxis1Command(ArmSubsystem* arm) : m_arm(arm) {
   // Use addRequirements() here to declare subsystem dependencies.
   AddRequirements(arm);
 }
@@ -47,12 +47,12 @@ void HomeAxis1Command::Execute() {
     m_isHomed = true;
   }
 
-  if (m_arm->GetAxis1Current() >= ExtendingArmConstants::kAxis1HomeCurrentThreshold) {
+  if (m_arm->GetAxis1Current() >= ArmConstants::kAxis1HomeCurrentThreshold) {
     m_isWorkingHardProtection = true;
   }
 
   if (
-    m_homingStartTime + units::second_t(ExtendingArmConstants::kAxis1HomeTimeoutInSeconds) <=
+    m_homingStartTime + units::second_t(ArmConstants::kAxis1HomeTimeoutInSeconds) <=
     frc::Timer::GetFPGATimestamp()) {
     m_isTimedOut = true;
   }

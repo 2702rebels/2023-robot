@@ -6,7 +6,7 @@
 
 #include <frc/Timer.h>
 
-HomeArmCommand::HomeArmCommand(ExtendingArmSubsystem* arm) : m_arm(arm) {
+HomeArmCommand::HomeArmCommand(ArmSubsystem* arm) : m_arm(arm) {
   AddRequirements(arm);
   // Use addRequirements() here to declare subsystem dependencies.
 }

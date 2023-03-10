@@ -7,7 +7,7 @@
 #include <frc2/command/CommandBase.h>
 #include <frc2/command/CommandHelper.h>
 
-#include "subsystems/ExtendingArmSubsystem.h"
+#include "subsystems/ArmSubsystem.h"
 
 /**
  * An example command.
@@ -18,7 +18,7 @@
  */
 class HomeAxis1Command : public frc2::CommandHelper<frc2::CommandBase, HomeAxis1Command> {
  public:
-  HomeAxis1Command(ExtendingArmSubsystem* arm);
+  HomeAxis1Command(ArmSubsystem* arm);
 
   void Initialize() override;
 
@@ -37,7 +37,7 @@ class HomeAxis1Command : public frc2::CommandHelper<frc2::CommandBase, HomeAxis1
   }
 
  private:
-  ExtendingArmSubsystem* m_arm;
+  ArmSubsystem* m_arm;
   units::second_t m_homingStartTime;
   bool m_isHomed = false;
   bool m_isTimedOut = false;

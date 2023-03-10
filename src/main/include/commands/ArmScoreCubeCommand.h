@@ -6,7 +6,9 @@
 
 #include <frc2/command/CommandBase.h>
 #include <frc2/command/CommandHelper.h>
-#include <frc2/command/SequentialCommandGroup.h>
+
+#include "subsystems/ArmSubsystem.h"
+#include "subsystems/IntakeSubsystem.h"
 
 /**
  * An example command.
@@ -15,7 +17,20 @@
  * directly; this is crucially important, or else the decorator functions in
  * Command will *not* work!
  */
-class Auto_DoNothing : public frc2::CommandHelper<frc2::SequentialCommandGroup, Auto_DoNothing> {
+class ArmScoreCubeCommand : public frc2::CommandHelper<frc2::CommandBase, ArmScoreCubeCommand> {
  public:
-  Auto_DoNothing();
+  ArmScoreCubeCommand(ArmSubsystem* arm, IntakeSubsystem* intake);
+
+  void Initialize() override;
+
+  void Execute() override;
+
+  void End(bool interrupted) override;
+
+  bool IsFinished() override;
+
+ private:
+  ArmSubsystem* m_arm;
+  IntakeSubsystem* m_intake;
+  units::millisecond_t m_startTime;
 };

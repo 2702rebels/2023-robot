@@ -1,12 +1,12 @@
-#include "commands/Auto3.h"
+#include "commands/auto/Auto3.h"
 
 #include "commands/DriveRotateCommand.h"
 #include "commands/DriveTrajectoryCommand.h"
 #include "frc2/command/InstantCommand.h"
 
-Auto3::Auto3(DriveSubsystem* drive, ExtendingArmSubsystem* arm) {
+Auto3::Auto3(DriveSubsystem* drive, ArmSubsystem* arm) {
   AddCommands(
-    frc2::InstantCommand([arm] { arm->MoveArm(ExtendingArmPositions::SCORE_MID_CONE); }, { arm }),
+    // frc2::InstantCommand([arm] { arm->MoveArm(ArmPositions::SCORE_MID_CONE); }, { arm }),
     DriveTrajectoryCommand(
       {
         frc::Pose2d { 0_m, 0_m, 180_deg },
@@ -17,7 +17,7 @@ Auto3::Auto3(DriveSubsystem* drive, ExtendingArmSubsystem* arm) {
       false,
       true,
       drive),
-    frc2::InstantCommand([arm] { arm->ScoreCone(); }, { arm }),
+    // frc2::InstantCommand([arm] { arm->ScoreCone(); }, { arm }),
     DriveRotateCommand(frc::Rotation2d { 0_deg }, drive),
     DriveTrajectoryCommand(
       {

@@ -15,7 +15,7 @@
 
 #include "subsystems/IntakeSubsystem.h"
 
-enum ExtendingArmPositions {
+enum ArmPosition {
   STOWED,
   INTAKE_FLOOR_CONE,
   INTAKE_FLOOR_CUBE,
@@ -29,9 +29,9 @@ enum ExtendingArmPositions {
   SCORE_HIGH_CUBE,
 };
 
-class ExtendingArmSubsystem : public frc2::SubsystemBase {
+class ArmSubsystem : public frc2::SubsystemBase {
  public:
-  ExtendingArmSubsystem();
+  ArmSubsystem();
   void ConfigureTuningParams();
   /**
    * Will be called periodically whenever the CommandScheduler runs.
@@ -65,11 +65,10 @@ class ExtendingArmSubsystem : public frc2::SubsystemBase {
   void SetAxis2DutyCycle(double dutyCycle);
   void SetAxis3DutyCycle(double dutyCycle);
 
-  frc2::CommandPtr Home();
-  frc2::CommandPtr MoveArm(ExtendingArmPositions position);
-  frc2::CommandPtr MoveArm(units::degree_t angle, units::inch_t distance);
-  frc2::CommandPtr ScoreCone();
-  frc2::CommandPtr ScoreCube();
+  void Move(units::degree_t angle, units::inch_t distance);
+  void Move(ArmPosition position);
+  bool IsAtCommandedPosition();
+
   frc2::CommandPtr JogUp();
   frc2::CommandPtr JogDown();
 
@@ -99,11 +98,11 @@ class ExtendingArmSubsystem : public frc2::SubsystemBase {
   units::degree_t m_axis3SetPoint;
   // Components (e.g. motor controllers and sensors) should generally be
   // declared private and exposed only through public methods.
-  rev::CANSparkMax m_axis1Motor { ExtendingArmConstants::kExtendingArmAxis1MotorControllerCanId,
+  rev::CANSparkMax m_axis1Motor { ArmConstants::kExtendingArmAxis1MotorControllerCanId,
                                   rev::CANSparkMax::MotorType::kBrushless };
-  rev::CANSparkMax m_axis2Motor { ExtendingArmConstants::kExtendingArmAxis2MotorControllerCanId,
+  rev::CANSparkMax m_axis2Motor { ArmConstants::kExtendingArmAxis2MotorControllerCanId,
                                   rev::CANSparkMax::MotorType::kBrushless };
-  TalonSRX m_axis3Motor { ExtendingArmConstants::kExtendingArmAxis3MotorControllerCanId };
+  TalonSRX m_axis3Motor { ArmConstants::kExtendingArmAxis3MotorControllerCanId };
 
   rev::SparkMaxPIDController m_axis1PIDController = m_axis1Motor.GetPIDController();
   rev::SparkMaxPIDController m_axis2PIDController = m_axis2Motor.GetPIDController();
@@ -111,11 +110,11 @@ class ExtendingArmSubsystem : public frc2::SubsystemBase {
 
   rev::SparkMaxRelativeEncoder m_axis1Encoder = m_axis1Motor.GetEncoder();
   rev::SparkMaxRelativeEncoder m_axis2Encoder = m_axis2Motor.GetEncoder();
-  frc::Encoder m_axis3Encoder { ExtendingArmConstants::kAxis3EncoderChannel1Id,
-                                ExtendingArmConstants::kAxis3EncoderChannel2Id };
+  frc::Encoder m_axis3Encoder { ArmConstants::kAxis3EncoderChannel1Id,
+                                ArmConstants::kAxis3EncoderChannel2Id };
 
-  frc::DigitalInput m_axis1HomeLimitSwitch { ExtendingArmConstants::kAxis1HomeLimitSwitchId };
-  frc::DigitalInput m_whichRobotJumper { ExtendingArmConstants::kWhichRobotJumper };
+  frc::DigitalInput m_axis1HomeLimitSwitch { ArmConstants::kAxis1HomeLimitSwitchId };
+  frc::DigitalInput m_whichRobotJumper { ArmConstants::kWhichRobotJumper };
 
   frc::ArmFeedforward* m_axis1feedforward;
   // frc::TrapezoidProfile<units::degree>* m_axis1TrapezoidalProfile;
@@ -129,9 +128,6 @@ class ExtendingArmSubsystem : public frc2::SubsystemBase {
   void SetAxis1NextSetpoint(units::degree_t setPoint);
   void SetAxis2NextSetpoint(units::inch_t setPoint);
   // void SetAxis3NextSetpoint(units::degree_t setPoint);
-
-  void MoveArmSimple(units::degree_t angle, units::inch_t distance);
-  bool IsArmAtCommandedPosition();
 
   double debug_calcVal = 0;
   double debug_setpntVal = 0;

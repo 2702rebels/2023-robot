@@ -1,4 +1,4 @@
-#include "commands/Auto1.h"
+#include "commands/auto/Auto1.h"
 
 #include "commands/DriveRotateCommand.h"
 #include "commands/DriveTrajectoryCommand.h"

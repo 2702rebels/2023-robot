@@ -23,24 +23,45 @@ void IntakeSubsystem::SetIntakeSpeed(double speed) {
   m_leaderMotorController.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, speed);
 }
 
-void IntakeSubsystem::StartIntaking() {
+void IntakeSubsystem::Intake() {
   IntakeSubsystem::SetIntakeSpeed(IntakeConstants::kIntakingSpeed);
 }
 
-void IntakeSubsystem::StopIntaking() {
-  if (m_leaderMotorController.GetStatorCurrent() >= IntakeConstants::kHasGamePieceCurrent) {
-    m_isHasGamePiece = true;
-    IntakeSubsystem::SetIntakeSpeed(IntakeConstants::kIntakeHoldSpeed);
-  } else {
-    IntakeSubsystem::SetIntakeSpeed(0.0);
-    m_isHasGamePiece = false;
-  }
-}
+// void IntakeSubsystem::StopIntaking() {
+//   if (m_leaderMotorController.GetStatorCurrent() >= IntakeConstants::kHasGamePieceCurrent) {
+//     m_isHasGamePiece = true;
+//     IntakeSubsystem::SetIntakeSpeed(IntakeConstants::kIntakeHoldSpeed);
+//   } else {
+//     IntakeSubsystem::SetIntakeSpeed(0.0);
+//     m_isHasGamePiece = false;
+//   }
+// }
 
-void IntakeSubsystem::StartOuttaking() {
+void IntakeSubsystem::Outtake() {
   IntakeSubsystem::SetIntakeSpeed(IntakeConstants::kOuttakingSpeed);
 }
 
-void IntakeSubsystem::StopOuttaking() {
+void IntakeSubsystem::Stop() {
   IntakeSubsystem::SetIntakeSpeed(0.0);
+}
+
+void IntakeSubsystem::OpenCone() {
+  frc::DataLogManager::Log("Not Implemented: OpenCone");
+}
+
+void IntakeSubsystem::CloseCone() {
+  frc::DataLogManager::Log("Not Implemented: CloseCone");
+}
+
+void IntakeSubsystem::OpenCube() {
+  frc::DataLogManager::Log("Not Implemented: OpenCube");
+}
+
+void IntakeSubsystem::CloseCube() {
+  frc::DataLogManager::Log("Not Implemented: CloseCube");
+}
+
+bool IntakeSubsystem::IsAtCommandedPosition() {
+  // TODO: implement this when new gripper is available.
+  return true;
 }

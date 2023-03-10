@@ -18,9 +18,9 @@
 #include <utility>
 
 #include "Constants.h"
-#include "commands/HomeAxis1Command.h"
-#include "commands/HomeAxis2Command.h"
-#include "commands/SetLedCommand.h"
+#include "commands/ArmMoveCommand.h"
+#include "commands/ArmScoreConeCommand.h"
+#include "commands/ArmScoreCubeCommand.h"
 #include "subsystems/DriveSubsystem.h"
 
 using namespace DriveConstants;
@@ -29,8 +29,13 @@ RobotContainer::RobotContainer() {
   // initialize all of your commands and subsystems here
 #ifdef EXTENDING_ARM_ENABLED
 #ifdef INTAKE_ENABLED
-  m_exArm.SetIntakeReference(&m_intake);
+  m_arm.SetIntakeReference(&m_intake);
 #endif
+#endif
+
+#ifdef LED_ENABLED
+  m_leds.SetRGB(255, 0, 0);
+  m_leds.SetPattern(LEDPattern::BREATH, 1_s);
 #endif
 
 // register subsystems on the shuffleboard
@@ -38,7 +43,7 @@ RobotContainer::RobotContainer() {
   frc::Shuffleboard::GetTab("Drivetrain").Add(m_drive);
 #endif
 #ifdef EXTENDING_ARM_ENABLED
-  frc::Shuffleboard::GetTab("Arm").Add(m_exArm);
+  frc::Shuffleboard::GetTab("Arm").Add(m_arm);
 #endif
 
 #ifdef TRACE_LOG
@@ -109,12 +114,11 @@ void RobotContainer::OnTeleEnable() {
 
 void RobotContainer::OnDisable() {
 #ifdef EXTENDING_ARM_ENABLED
-  m_exArm.OnDisable();
+  m_arm.OnDisable();
 #endif
 
 #ifdef LED_ENABLED
   m_leds.SetRGB(255, 0, 0);
-  m_leds.SetPattern(LEDPattern::BREATH, 3_s);
 #endif
 }
 
@@ -174,53 +178,53 @@ void RobotContainer::ConfigureButtonBindings() {
 
 #ifdef EXTENDING_ARM_ENABLED
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kStart)
-    .OnTrue(new frc2::InstantCommand([this] { m_exArm.ConfigureTuningParams(); }, { &m_exArm }));
+    .OnTrue(new frc2::InstantCommand([this] { m_arm.ConfigureTuningParams(); }, { &m_arm }));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kBack)
     .OnTrue(new frc2::InstantCommand(
       [this] {
-        m_exArm.ZeroAxis1();
-        m_exArm.ZeroAxis2();
-        m_exArm.ZeroAxis3();
+        m_arm.ZeroAxis1();
+        m_arm.ZeroAxis2();
+        m_arm.ZeroAxis3();
       },
-      { &m_exArm }));
+      { &m_arm }));
 
   frc2::Trigger(
     m_driverController.POVUp(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
-    .OnTrue(m_exArm.JogUp());
+    .OnTrue(m_arm.JogUp());
 
   frc2::Trigger(
     m_driverController.POVDown(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
-    .OnTrue(m_exArm.JogDown());
+    .OnTrue(m_arm.JogDown());
 
   frc2::Trigger(
     m_driverController.POVLeft(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
-    .OnTrue(new SetLedCommand(&m_leds, 255, 255, 255, LEDPattern::FLASH, 200_ms, 3_s));
+    .OnTrue(
+      frc2::InstantCommand([this] { m_arm.SetAxis3NextSetpoint(0_deg); }, { &m_arm }).ToPtr());
 
   frc2::Trigger(
     m_driverController.POVRight(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
-    .OnTrue(new SetLedCommand(&m_leds, 0, 255, 0, LEDPattern::BREATH, 3_s, 0_s));
+    .OnTrue(
+      frc2::InstantCommand([this] { m_arm.SetAxis3NextSetpoint(90_deg); }, { &m_arm }).ToPtr());
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kA)
-    .OnTrue(frc2::cmd::Parallel(
-      m_exArm.MoveArm(ExtendingArmPositions::STOWED),
-      frc2::InstantCommand([this] { m_intake.StopOuttaking(); }, { &m_intake }).ToPtr()));
+    .OnTrue(ArmMoveCommand(&m_arm, ArmPosition::STOWED).ToPtr());
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kB)
     .OnTrue(frc2::cmd::Either(
-      m_exArm.MoveArm(ExtendingArmPositions::SCORE_MID_CONE),
-      m_exArm.MoveArm(ExtendingArmPositions::SCORE_MID_CUBE),
+      ArmMoveCommand(&m_arm, ArmPosition::SCORE_MID_CONE).ToPtr(),
+      ArmMoveCommand(&m_arm, ArmPosition::SCORE_MID_CUBE).ToPtr(),
       [this] { return m_mode == RobotMode::CONE; }));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kY)
     .OnTrue(frc2::cmd::Either(
-      m_exArm.MoveArm(ExtendingArmPositions::SCORE_HIGH_CONE),
-      m_exArm.MoveArm(ExtendingArmPositions::SCORE_HIGH_CUBE),
+      ArmMoveCommand(&m_arm, ArmPosition::SCORE_HIGH_CONE).ToPtr(),
+      ArmMoveCommand(&m_arm, ArmPosition::SCORE_HIGH_CUBE).ToPtr(),
       [this] { return m_mode == RobotMode::CONE; }));
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kX)
     .OnTrue(frc2::cmd::Sequence(
-      m_exArm.MoveArm(ExtendingArmPositions::SCORE_LOW_CUBE),
+      ArmMoveCommand(&m_arm, ArmPosition::SCORE_LOW_CUBE),
       frc2::InstantCommand(
         [this] { m_intake.SetIntakeSpeed(IntakeConstants::kIntakingSpeed); }, { &m_intake })
         .ToPtr()))
@@ -231,11 +235,11 @@ void RobotContainer::ConfigureButtonBindings() {
   frc2::Trigger(m_driverController.LeftTrigger(
                   0.5, frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
     .OnTrue(frc2::cmd::Sequence(
-      m_exArm.MoveArm(ExtendingArmPositions::INTAKE_STATION_CONE),
-      frc2::InstantCommand([this] { m_intake.StartIntaking(); }, { &m_intake })))
+      ArmMoveCommand(&m_arm, ArmPosition::INTAKE_STATION_CONE),
+      frc2::InstantCommand([this] { m_intake.Intake(); }, { &m_intake })))
     .OnFalse(frc2::cmd::Sequence(
-      frc2::InstantCommand([this] { m_intake.StopIntaking(); }, { &m_intake }),
-      m_exArm.MoveArm(ExtendingArmPositions::STOWED)));
+      frc2::InstantCommand([this] { m_intake.Stop(); }, { &m_intake }),
+      ArmMoveCommand(&m_arm, ArmPosition::STOWED)));
 
   // Score automatically.
   // frc2::Trigger(m_driverController.LeftTrigger(
@@ -252,23 +256,25 @@ void RobotContainer::ConfigureButtonBindings() {
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightBumper)
     .OnTrue(frc2::cmd::Either(
       frc2::cmd::Sequence(
-        m_exArm.MoveArm(ExtendingArmPositions::INTAKE_FLOOR_CONE),
-        frc2::InstantCommand([this] { m_intake.StartIntaking(); }, { &m_intake })),
+        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CONE),
+        frc2::InstantCommand([this] { m_intake.Intake(); }, { &m_intake })),
       frc2::cmd::Sequence(
-        m_exArm.MoveArm(ExtendingArmPositions::INTAKE_FLOOR_CUBE),
+        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CUBE),
         frc2::InstantCommand(
           [this] { m_intake.SetIntakeSpeed(IntakeConstants::kIntakingSpeed); }, { &m_intake })),
       [this] { return m_mode == RobotMode::CONE; }))
     .OnFalse(frc2::cmd::Sequence(
-      frc2::InstantCommand([this] { m_intake.StopIntaking(); }, { &m_intake }),
-      m_exArm.MoveArm(ExtendingArmPositions::STOWED)));
+      frc2::InstantCommand([this] { m_intake.Stop(); }, { &m_intake }),
+      ArmMoveCommand(&m_arm, ArmPosition::STOWED)));
 
   // Score Manually.
   frc2::Trigger(m_driverController.RightTrigger(
                   0.5, frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
     .OnTrue(frc2::cmd::Either(
-      m_exArm.ScoreCone(), m_exArm.ScoreCube(), [this] { return m_mode == RobotMode::CONE; }))
-    .OnFalse(m_exArm.MoveArm(ExtendingArmPositions::STOWED));
+      ArmScoreConeCommand(&m_arm, &m_intake).ToPtr(),
+      ArmScoreCubeCommand(&m_arm, &m_intake).ToPtr(),
+      [this] { return m_mode == RobotMode::CONE; }))
+    .OnFalse(ArmMoveCommand(&m_arm, ArmPosition::STOWED).ToPtr());
 
   // Score manually.
   // frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kLeftBumper)

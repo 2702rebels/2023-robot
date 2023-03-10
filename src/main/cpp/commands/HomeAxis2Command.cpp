@@ -7,7 +7,7 @@
 #include <frc/DataLogManager.h>
 #include <frc/Timer.h>
 
-HomeAxis2Command::HomeAxis2Command(ExtendingArmSubsystem* arm) : m_arm(arm) {
+HomeAxis2Command::HomeAxis2Command(ArmSubsystem* arm) : m_arm(arm) {
   SetName("HomeAxis2");
   AddRequirements(arm);
   // Use addRequirements() here to declare subsystem dependencies.
@@ -25,7 +25,7 @@ void HomeAxis2Command::Initialize() {
 
 // Called repeatedly when this Command is scheduled to run
 void HomeAxis2Command::Execute() {
-  if (m_arm->GetAxis2Current() >= ExtendingArmConstants::kAxis2HomeCurrentThreshold) {
+  if (m_arm->GetAxis2Current() >= ArmConstants::kAxis2HomeCurrentThreshold) {
     if (m_cyclesAboveCurrentLimit++ > 5) {
       m_arm->ZeroAxis2();
       m_isHomed = true;
@@ -35,7 +35,7 @@ void HomeAxis2Command::Execute() {
   }
 
   if (
-    m_homingStartTime + units::second_t(ExtendingArmConstants::kAxis2HomeTimeoutInSeconds) <=
+    m_homingStartTime + units::second_t(ArmConstants::kAxis2HomeTimeoutInSeconds) <=
     frc::Timer::GetFPGATimestamp()) {
     m_isTimedOut = true;
   }

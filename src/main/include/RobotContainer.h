@@ -11,12 +11,12 @@
 #include <frc2/command/RunCommand.h>
 
 #include "Constants.h"
-#include "commands/Auto1.h"
-#include "commands/Auto2.h"
-#include "commands/Auto3.h"
-#include "commands/Auto_DoNothing.h"
+#include "commands/auto/Auto1.h"
+#include "commands/auto/Auto2.h"
+#include "commands/auto/Auto3.h"
+#include "commands/auto/Auto_DoNothing.h"
+#include "subsystems/ArmSubsystem.h"
 #include "subsystems/DriveSubsystem.h"
-#include "subsystems/ExtendingArmSubsystem.h"
 #include "subsystems/IntakeSubsystem.h"
 #include "subsystems/LedSubsystem.h"
 
@@ -56,7 +56,7 @@ class RobotContainer {
 #endif
 
 #ifdef EXTENDING_ARM_ENABLED
-  ExtendingArmSubsystem m_exArm;
+  ArmSubsystem m_arm;
 #endif
 
 #ifdef EXTENDING_ARM_ENABLED
@@ -73,7 +73,7 @@ class RobotContainer {
   Auto_DoNothing m_auto_doNothing;
   Auto1 m_auto_driveForwards { &m_drive };
   Auto2 m_auto2 { &m_drive };
-  Auto3 m_auto3 { &m_drive, &m_exArm };
+  Auto3 m_auto3 { &m_drive, &m_arm };
 
   // The chooser for the autonomous routines
   frc::SendableChooser<frc2::Command*> m_chooser;

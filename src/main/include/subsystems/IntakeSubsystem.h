@@ -21,10 +21,15 @@ class IntakeSubsystem : public frc2::SubsystemBase {
   void Periodic() override;
 
   void SetIntakeSpeed(double speed);
-  void StartIntaking();
-  void StopIntaking();
-  void StartOuttaking();
-  void StopOuttaking();
+  void Intake();
+  void Outtake();
+  void Stop();
+
+  void OpenCone();
+  void CloseCone();
+  void OpenCube();
+  void CloseCube();
+  bool IsAtCommandedPosition();
 
  private:
   // Components (e.g. motor controllers and sensors) should generally be
