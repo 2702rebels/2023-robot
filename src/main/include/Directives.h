@@ -19,7 +19,7 @@
 // #define DRIVETRAIN_ODOMETRY_VISION
 
 // Indicates if the extending arm is instantiated and it's commands are bound.
-#define EXTENDING_ARM_ENABLED
+#define ARM_ENABLED
 
 // Indicates if the intake is instantiated and it's commands are bound.
 #define INTAKE_ENABLED

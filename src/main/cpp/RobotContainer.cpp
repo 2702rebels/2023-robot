@@ -21,13 +21,14 @@
 #include "commands/ArmMoveCommand.h"
 #include "commands/ArmScoreConeCommand.h"
 #include "commands/ArmScoreCubeCommand.h"
+#include "commands/SetLedCommand.h"
 #include "subsystems/DriveSubsystem.h"
 
 using namespace DriveConstants;
 
 RobotContainer::RobotContainer() {
   // initialize all of your commands and subsystems here
-#ifdef EXTENDING_ARM_ENABLED
+#ifdef ARM_ENABLED
 #ifdef INTAKE_ENABLED
   m_arm.SetIntakeReference(&m_intake);
 #endif
@@ -42,7 +43,7 @@ RobotContainer::RobotContainer() {
 #ifdef DRIVETRAIN_ENABLED
   frc::Shuffleboard::GetTab("Drivetrain").Add(m_drive);
 #endif
-#ifdef EXTENDING_ARM_ENABLED
+#ifdef ARM_ENABLED
   frc::Shuffleboard::GetTab("Arm").Add(m_arm);
 #endif
 
@@ -113,12 +114,13 @@ void RobotContainer::OnTeleEnable() {
 }
 
 void RobotContainer::OnDisable() {
-#ifdef EXTENDING_ARM_ENABLED
+#ifdef ARM_ENABLED
   m_arm.OnDisable();
 #endif
 
 #ifdef LED_ENABLED
   m_leds.SetRGB(255, 0, 0);
+  m_leds.SetPattern(LEDPattern::BREATH, 3_s);
 #endif
 }
 
@@ -162,6 +164,14 @@ void RobotContainer::ConfigureButtonBindings() {
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kLeftBumper)
     .OnTrue(frc2::InstantCommand([this] { ToggleRobotMode(); }, {}).ToPtr());
 
+  frc2::Trigger(
+    m_driverController.POVLeft(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+    .OnTrue(new SetLedCommand(&m_leds, 255, 255, 255, LEDPattern::FLASH, 200_ms, 3_s));
+
+  frc2::Trigger(
+    m_driverController.POVRight(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+    .OnTrue(new SetLedCommand(&m_leds, 0, 255, 0, LEDPattern::BREATH, 3_s, 0_s));
+
 #ifdef DRIVETRAIN_ENABLED
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightStick)
     .OnTrue(frc2::InstantCommand([this] { m_drive.ZeroHeading(); }, { &m_drive }).ToPtr());
@@ -176,7 +186,7 @@ void RobotContainer::ConfigureButtonBindings() {
   //             .ToPtr());
 #endif
 
-#ifdef EXTENDING_ARM_ENABLED
+#ifdef ARM_ENABLED
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kStart)
     .OnTrue(new frc2::InstantCommand([this] { m_arm.ConfigureTuningParams(); }, { &m_arm }));
 
@@ -196,16 +206,6 @@ void RobotContainer::ConfigureButtonBindings() {
   frc2::Trigger(
     m_driverController.POVDown(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
     .OnTrue(m_arm.JogDown());
-
-  frc2::Trigger(
-    m_driverController.POVLeft(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
-    .OnTrue(
-      frc2::InstantCommand([this] { m_arm.SetAxis3NextSetpoint(0_deg); }, { &m_arm }).ToPtr());
-
-  frc2::Trigger(
-    m_driverController.POVRight(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
-    .OnTrue(
-      frc2::InstantCommand([this] { m_arm.SetAxis3NextSetpoint(90_deg); }, { &m_arm }).ToPtr());
 
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kA)
     .OnTrue(ArmMoveCommand(&m_arm, ArmPosition::STOWED).ToPtr());

@@ -33,5 +33,6 @@ class ArmScoreConeCommand : public frc2::CommandHelper<frc2::CommandBase, ArmSco
   ArmSubsystem* m_arm;
   IntakeSubsystem* m_intake;
   bool m_isPlaced = false;
+  bool m_isRetracting = false;
   units::millisecond_t m_outtakingStartTime;
 };

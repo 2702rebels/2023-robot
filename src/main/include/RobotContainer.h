@@ -55,11 +55,11 @@ class RobotContainer {
   DriveSubsystem m_drive;
 #endif
 
-#ifdef EXTENDING_ARM_ENABLED
+#ifdef ARM_ENABLED
   ArmSubsystem m_arm;
 #endif
 
-#ifdef EXTENDING_ARM_ENABLED
+#ifdef ARM_ENABLED
 #ifdef INTAKE_ENABLED
   IntakeSubsystem m_intake;
 #endif

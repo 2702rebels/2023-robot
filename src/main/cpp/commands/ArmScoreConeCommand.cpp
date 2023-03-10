@@ -15,6 +15,7 @@ ArmScoreConeCommand::ArmScoreConeCommand(ArmSubsystem* arm, IntakeSubsystem* int
 // Called when the command is initially scheduled.
 void ArmScoreConeCommand::Initialize() {
   m_isPlaced = false;
+  m_isRetracting = false;
   m_arm->Move(
     m_arm->GetAxis1Angle() - ArmConstants::kConePlacementDistance, m_arm->GetAxis2Distance());
 }
@@ -26,7 +27,8 @@ void ArmScoreConeCommand::Execute() {
     m_intake->OpenCone();
   }
 
-  if (m_isPlaced && m_intake->IsAtCommandedPosition()) {
+  if (!m_isRetracting && m_isPlaced && m_intake->IsAtCommandedPosition()) {
+    m_isRetracting = true;
     m_arm->Move(m_arm->GetAxis1Angle(), 0.0_in);
     m_intake->Outtake();
     m_outtakingStartTime = frc::Timer::GetFPGATimestamp();
@@ -41,7 +43,7 @@ void ArmScoreConeCommand::End(bool interrupted) {
 // Returns true when the command should end.
 bool ArmScoreConeCommand::IsFinished() {
   if (
-    m_isPlaced &&
+    m_isRetracting &&
     frc::Timer::GetFPGATimestamp() > m_outtakingStartTime + IntakeConstants::kOuttakingTime) {
     return true;
   }
