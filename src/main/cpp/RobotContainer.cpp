@@ -237,9 +237,14 @@ void RobotContainer::ConfigureButtonBindings() {
   // Intake automatically.
   frc2::Trigger(m_driverController.LeftTrigger(
                   0.5, frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
-    .OnTrue(frc2::cmd::Sequence(
-      ArmMoveCommand(&m_arm, ArmPosition::INTAKE_STATION_CONE),
-      frc2::InstantCommand([this] { m_intake.Intake(); }, { &m_intake })))
+    .OnTrue(frc2::cmd::Either(
+      frc2::cmd::Sequence(
+        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_STATION_CONE),
+        frc2::InstantCommand([this] { m_intake.IntakeCone(); }, { &m_intake })),
+      frc2::cmd::Sequence(
+        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_STATION_CUBE),
+        frc2::InstantCommand([this] { m_intake.IntakeCube(); }, { &m_intake })),
+      [this] { return m_mode == RobotMode::CONE; }))
     .OnFalse(frc2::cmd::Sequence(
       frc2::InstantCommand([this] { m_intake.Stop(); }, { &m_intake }),
       ArmMoveCommand(&m_arm, ArmPosition::STOWED)));
@@ -260,10 +265,10 @@ void RobotContainer::ConfigureButtonBindings() {
     .OnTrue(frc2::cmd::Either(
       frc2::cmd::Sequence(
         ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CONE),
-        frc2::InstantCommand([this] { m_intake.Intake(); }, { &m_intake })),
+        frc2::InstantCommand([this] { m_intake.IntakeCone(); }, { &m_intake })),
       frc2::cmd::Sequence(
         ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CUBE),
-        frc2::InstantCommand([this] { m_intake.SetIntakeSpeed(0.7); }, { &m_intake })),
+        frc2::InstantCommand([this] { m_intake.IntakeCube(); }, { &m_intake })),
       [this] { return m_mode == RobotMode::CONE; }))
     .OnFalse(frc2::cmd::Sequence(
       frc2::InstantCommand([this] { m_intake.Stop(); }, { &m_intake }),

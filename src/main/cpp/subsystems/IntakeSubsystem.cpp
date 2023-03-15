@@ -20,11 +20,10 @@ REGISTER_DOUBLE(GripperCurrentLimitDuration, "Intake/Gripper/CurrentLimitDuratio
 REGISTER_DOUBLE(GripperP, "Intake/Gripper/PID/P", 0.0005)
 REGISTER_DOUBLE(GripperI, "Intake/Gripper/PID/I", 0.0)
 REGISTER_DOUBLE(GripperD, "Intake/Gripper/PID/D", 0.0)
-
-// TODO: We might need separate speeds for cube and cone.
-constexpr double kIntakingSpeed = 0.6;
-constexpr double kOuttakingSpeedCone = -0.2;
-constexpr double kOuttakingSpeedCube = -0.6;
+REGISTER_DOUBLE(GripperConeOpen, "Intake/Gripper/Positions/Cone/Open", 0);
+REGISTER_DOUBLE(GripperConeClosed, "Intake/Gripper/Positions/Cone/Closed", 0);
+REGISTER_DOUBLE(GripperCubeOpen, "Intake/Gripper/Positions/Cube/Open", 0);
+REGISTER_DOUBLE(GripperCubeClosed, "Intake/Gripper/Positions/Cube/Closed", 0);
 
 IntakeSubsystem::IntakeSubsystem() {
   m_followerMotorController.Follow(m_leaderMotorController);
@@ -60,8 +59,8 @@ void IntakeSubsystem::ConfigureTuningParams() {
 void IntakeSubsystem::Periodic() {
   frc::SmartDashboard::PutNumber("IntakeCurrent", m_leaderMotorController.GetStatorCurrent());
   frc::SmartDashboard::PutBoolean("HasGamePiece", m_isHasGamePiece);
-  frc::SmartDashboard::PutNumber("Axis3Angle", GetGripperAngle().value());
-  frc::SmartDashboard::PutNumber("Axis3Current", GetGripperCurrent());
+  frc::SmartDashboard::PutNumber("GripperAngle", GetGripperAngle().value());
+  frc::SmartDashboard::PutNumber("GripperCurrent", GetGripperCurrent());
 
   // Axis 3 control loop.
   if (m_isGripperControlEnabled) {
@@ -101,12 +100,13 @@ void IntakeSubsystem::SetGripperNextSetpoint(units::degree_t setPoint) {
   m_isGripperControlEnabled = true;
 }
 
-void IntakeSubsystem::SetIntakeSpeed(double speed) {
-  frc::DataLogManager::Log(fmt::format("Setting intake speed to: {}", speed));
-  m_leaderMotorController.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, speed);
+void IntakeSubsystem::SetGripperDutyCycle(double dutyCycle) {
+  m_isGripperControlEnabled = false;
+  m_gripperMotor.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, dutyCycle);
 }
 
 void IntakeSubsystem::SetGripperOff() {
+  m_isGripperControlEnabled = false;
   m_gripperMotor.Set(ctre::phoenix::motorcontrol::ControlMode::Disabled, 0);
   frc::DataLogManager::Log(
     fmt::format("Gripper: Disabled motor by commanding motor control mode to 'Disabled'."));
@@ -114,13 +114,22 @@ void IntakeSubsystem::SetGripperOff() {
 
 void IntakeSubsystem::ZeroGripper() {
   m_gripperMotorEncoder.Reset();
-  m_gripperMotor.Set(
-    ctre::phoenix::motorcontrol::ControlMode::PercentOutput,
-    m_gripperMotorPIDController.Calculate(IntakeSubsystem::GetGripperAngle().value(), 0));
+  SetGripperNextSetpoint(0_deg);
   frc::DataLogManager::Log(fmt::format("Gripper: Zeroed and started position pid at 0."));
 }
 
-void IntakeSubsystem::Intake() {
+void IntakeSubsystem::SetIntakeSpeed(double speed) {
+  frc::DataLogManager::Log(fmt::format("Setting intake speed to: {}", speed));
+  m_leaderMotorController.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, speed);
+}
+
+void IntakeSubsystem::IntakeCone() {
+  IntakeSubsystem::OpenCone();
+  IntakeSubsystem::SetIntakeSpeed(GetIntakeInSpeed());
+}
+
+void IntakeSubsystem::IntakeCube() {
+  IntakeSubsystem::OpenCube();
   IntakeSubsystem::SetIntakeSpeed(GetIntakeInSpeed());
 }
 
@@ -136,6 +145,7 @@ void IntakeSubsystem::Intake() {
 
 void IntakeSubsystem::OuttakeCone() {
   IntakeSubsystem::SetIntakeSpeed(GetIntakeOutSpeedCone());
+  IntakeSubsystem::OpenCone();
 }
 
 void IntakeSubsystem::OuttakeCube() {
@@ -147,22 +157,21 @@ void IntakeSubsystem::Stop() {
 }
 
 void IntakeSubsystem::OpenCone() {
-  frc::DataLogManager::Log("Not Implemented: OpenCone");
+  IntakeSubsystem::SetGripperNextSetpoint(units::degree_t(GetGripperConeOpen()));
 }
 
 void IntakeSubsystem::CloseCone() {
-  frc::DataLogManager::Log("Not Implemented: CloseCone");
+  IntakeSubsystem::SetGripperNextSetpoint(units::degree_t(GetGripperConeClosed()));
 }
 
 void IntakeSubsystem::OpenCube() {
-  frc::DataLogManager::Log("Not Implemented: OpenCube");
+  IntakeSubsystem::SetGripperNextSetpoint(units::degree_t(GetGripperCubeOpen()));
 }
 
 void IntakeSubsystem::CloseCube() {
-  frc::DataLogManager::Log("Not Implemented: CloseCube");
+  IntakeSubsystem::SetGripperNextSetpoint(units::degree_t(GetGripperCubeClosed()));
 }
 
 bool IntakeSubsystem::IsAtCommandedPosition() {
-  // TODO: implement this when new gripper is available.
-  return true;
+  return m_gripperMotorPIDController.AtSetpoint();
 }

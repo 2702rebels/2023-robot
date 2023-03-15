@@ -24,13 +24,12 @@ void ArmScoreConeCommand::Initialize() {
 void ArmScoreConeCommand::Execute() {
   if (!m_isPlaced && m_arm->IsAtCommandedPosition()) {
     m_isPlaced = true;
-    m_intake->OpenCone();
+    m_intake->OuttakeCone();
   }
 
-  if (!m_isRetracting && m_isPlaced && m_intake->IsAtCommandedPosition()) {
+  if (!m_isRetracting && m_isPlaced) {
     m_isRetracting = true;
     m_arm->Move(m_arm->GetAxis1Angle(), 0.0_in);
-    m_intake->OuttakeCone();
     m_outtakingStartTime = frc::Timer::GetFPGATimestamp();
   }
 }

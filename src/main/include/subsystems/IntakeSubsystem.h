@@ -24,7 +24,8 @@ class IntakeSubsystem : public frc2::SubsystemBase {
   void ConfigureTuningParams();
 
   void SetIntakeSpeed(double speed);
-  void Intake();
+  void IntakeCone();
+  void IntakeCube();
   void OuttakeCone();
   void OuttakeCube();
   void Stop();
@@ -40,6 +41,7 @@ class IntakeSubsystem : public frc2::SubsystemBase {
   void SetGripperOff();
   void ZeroGripper();
   void SetGripperNextSetpoint(units::degree_t setPoint);
+  void SetGripperDutyCycle(double dutyCycle);
 
  private:
   // Components (e.g. motor controllers and sensors) should generally be

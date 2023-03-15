@@ -148,6 +148,7 @@ constexpr units::millisecond_t kOuttakingTime = 400_ms;
 constexpr int kGripperEncoderChannel1Id = 1;
 constexpr int kGripperEncoderChannel2Id = 2;
 constexpr int kGripperEncoderPulsesPerRevolution = 1024;
+constexpr double kGripperZeroOffset = 45.0;
 }  // namespace IntakeConstants
 
 namespace ArmConstants {
