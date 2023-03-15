@@ -28,11 +28,6 @@ using namespace DriveConstants;
 
 RobotContainer::RobotContainer() {
   // initialize all of your commands and subsystems here
-#ifdef ARM_ENABLED
-#ifdef INTAKE_ENABLED
-  m_arm.SetIntakeReference(&m_intake);
-#endif
-#endif
 
 #ifdef LED_ENABLED
   m_leds.SetRGB(255, 0, 0);
@@ -157,26 +152,39 @@ std::string RobotContainer::GetRobotModeString() {
 }
 
 void RobotContainer::ConfigureButtonBindings() {
+#ifdef ARM_ENABLED
+#ifdef INTAKE_ENABLED
+  // Reload parameters.
+  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kStart)
+    .OnTrue(new frc2::InstantCommand(
+      [this] {
+        m_arm.ConfigureTuningParams();
+        m_intake.ConfigureTuningParams();
+      },
+      {}));
+#endif
+#endif
+
   // Toggle robot mode.
-  // frc2::Trigger(
-  //   m_driverController.POVUp(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
-  //   .OnTrue(frc2::InstantCommand([this] { ToggleRobotMode(); }, {}).ToPtr());
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kLeftBumper)
     .OnTrue(frc2::InstantCommand([this] { ToggleRobotMode(); }, {}).ToPtr());
 
+  // Testing LEDs
   frc2::Trigger(
     m_driverController.POVLeft(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
     .OnTrue(new SetLedCommand(&m_leds, 255, 255, 255, LEDPattern::FLASH, 200_ms, 3_s));
 
+  // Testing LEDs
   frc2::Trigger(
     m_driverController.POVRight(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
     .OnTrue(new SetLedCommand(&m_leds, 0, 255, 0, LEDPattern::BREATH, 3_s, 0_s));
 
 #ifdef DRIVETRAIN_ENABLED
+  // Reset swerve heading by zeroing the gyro.
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightStick)
     .OnTrue(frc2::InstantCommand([this] { m_drive.ZeroHeading(); }, { &m_drive }).ToPtr());
 
-  // Testing or Op stick:
+  // Lock the wheels.
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kLeftStick)
     .WhileTrue(new frc2::RunCommand([this] { m_drive.SetX(); }, { &m_drive }));
 
@@ -187,15 +195,12 @@ void RobotContainer::ConfigureButtonBindings() {
 #endif
 
 #ifdef ARM_ENABLED
-  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kStart)
-    .OnTrue(new frc2::InstantCommand([this] { m_arm.ConfigureTuningParams(); }, { &m_arm }));
-
+  // Zero's the arm axis. TODO: Change this to run the homing command.
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kBack)
     .OnTrue(new frc2::InstantCommand(
       [this] {
         m_arm.ZeroAxis1();
         m_arm.ZeroAxis2();
-        m_arm.ZeroAxis3();
       },
       { &m_arm }));
 

@@ -11,10 +11,10 @@
 #include <frc2/command/RunCommand.h>
 
 #include "Constants.h"
-#include "commands/auto/Auto1.h"
 #include "commands/auto/Auto2.h"
 #include "commands/auto/Auto3.h"
 #include "commands/auto/Auto_DoNothing.h"
+#include "commands/auto/Auto_DriveDistance.h"
 #include "subsystems/ArmSubsystem.h"
 #include "subsystems/DriveSubsystem.h"
 #include "subsystems/IntakeSubsystem.h"
@@ -71,7 +71,7 @@ class RobotContainer {
 
   // The autonomous routines
   Auto_DoNothing m_auto_doNothing;
-  Auto1 m_auto_driveForwards { &m_drive };
+  Auto_DriveDistance m_auto_driveForwards { &m_drive };
   Auto2 m_auto2 { &m_drive };
   Auto3 m_auto3 { &m_drive, &m_arm };
 

@@ -16,9 +16,9 @@
  * directly; this is crucially important, or else the decorator functions in
  * Command will *not* work!
  */
-class HomeAxis1Command : public frc2::CommandHelper<frc2::CommandBase, HomeAxis1Command> {
+class ArmHomeAxis1Command : public frc2::CommandHelper<frc2::CommandBase, ArmHomeAxis1Command> {
  public:
-  HomeAxis1Command(ArmSubsystem* arm);
+  ArmHomeAxis1Command(ArmSubsystem* arm);
 
   void Initialize() override;
 

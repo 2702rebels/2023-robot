@@ -5,6 +5,8 @@
 #pragma once
 
 #include <ctre/Phoenix.h>
+#include <frc/Encoder.h>
+#include <frc/controller/PIDController.h>
 #include <frc2/command/SubsystemBase.h>
 
 #include "Constants.h"
@@ -19,6 +21,7 @@ class IntakeSubsystem : public frc2::SubsystemBase {
    * Will be called periodically whenever the CommandScheduler runs.
    */
   void Periodic() override;
+  void ConfigureTuningParams();
 
   void SetIntakeSpeed(double speed);
   void Intake();
@@ -32,11 +35,23 @@ class IntakeSubsystem : public frc2::SubsystemBase {
   void CloseCube();
   bool IsAtCommandedPosition();
 
+  units::degree_t GetGripperAngle();
+  double GetGripperCurrent();
+  void SetGripperOff();
+  void ZeroGripper();
+  void SetGripperNextSetpoint(units::degree_t setPoint);
+
  private:
   // Components (e.g. motor controllers and sensors) should generally be
   // declared private and exposed only through public methods.
   bool m_isHasGamePiece = false;
+  bool m_isGripperControlEnabled = false;
 
   TalonSRX m_leaderMotorController { kIntakeLeaderControllerCanId };
   VictorSPX m_followerMotorController { kIntakeFollowerControllerCanId };
+
+  TalonSRX m_gripperMotor { ArmConstants::kExtendingArmAxis3MotorControllerCanId };
+  frc2::PIDController m_gripperMotorPIDController { 0, 0, 0 };
+  frc::Encoder m_gripperMotorEncoder { IntakeConstants::kGripperEncoderChannel1Id,
+                                       IntakeConstants::kGripperEncoderChannel2Id };
 };

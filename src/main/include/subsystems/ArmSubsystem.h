@@ -5,11 +5,8 @@
 #pragma once
 
 #include <Constants.h>
-#include <ctre/Phoenix.h>
 #include <frc/DigitalInput.h>
-#include <frc/Encoder.h>
 #include <frc/controller/ArmFeedforward.h>
-#include <frc/controller/PIDController.h>
 #include <frc2/command/SubsystemBase.h>
 #include <rev/CANSparkMax.h>
 
@@ -44,26 +41,21 @@ class ArmSubsystem : public frc2::SubsystemBase {
   units::degrees_per_second_t GetAxis1Velocity();
   units::inch_t GetAxis2Distance();
   units::meters_per_second_t GetAxis2Velocity();
-  units::degree_t GetAxis3Angle();
 
   bool GetAxis1LimitSwitch();
 
   double GetAxis1Current();
   double GetAxis2Current();
-  double GetAxis3Current();
 
   void SetAxis1Off();
   void SetAxis2Off();
-  void SetAxis3Off();
   void SetArmOff();
 
   void ZeroAxis1();
   void ZeroAxis2();
-  void ZeroAxis3();
 
   void SetAxis1DutyCycle(double dutyCycle);
   void SetAxis2DutyCycle(double dutyCycle);
-  void SetAxis3DutyCycle(double dutyCycle);
 
   void Move(units::degree_t angle, units::inch_t distance);
   void Move(ArmPosition position);
@@ -76,12 +68,6 @@ class ArmSubsystem : public frc2::SubsystemBase {
 
   void DisableControlAxis2();
 
-  void SetAxis3NextSetpoint(units::degree_t setPoint);
-
-  void SetIntakeReference(IntakeSubsystem* intake) {
-    m_intake = intake;
-  }
-
   bool IsCompBot() {
     return m_whichRobotJumper.Get();
   }
@@ -89,29 +75,21 @@ class ArmSubsystem : public frc2::SubsystemBase {
  private:
   bool m_isAxis1ControlEnabled = false;
   bool m_isAxis2ControlEnabled = false;
-  bool m_isAxis3ControlEnabled = false;
-
-  IntakeSubsystem* m_intake;
 
   units::degree_t m_axis1SetPoint;
   units::inch_t m_axis2SetPoint;
-  units::degree_t m_axis3SetPoint;
   // Components (e.g. motor controllers and sensors) should generally be
   // declared private and exposed only through public methods.
   rev::CANSparkMax m_axis1Motor { ArmConstants::kExtendingArmAxis1MotorControllerCanId,
                                   rev::CANSparkMax::MotorType::kBrushless };
   rev::CANSparkMax m_axis2Motor { ArmConstants::kExtendingArmAxis2MotorControllerCanId,
                                   rev::CANSparkMax::MotorType::kBrushless };
-  TalonSRX m_axis3Motor { ArmConstants::kExtendingArmAxis3MotorControllerCanId };
 
   rev::SparkMaxPIDController m_axis1PIDController = m_axis1Motor.GetPIDController();
   rev::SparkMaxPIDController m_axis2PIDController = m_axis2Motor.GetPIDController();
-  frc2::PIDController m_axis3PIDController { 0, 0, 0 };
 
   rev::SparkMaxRelativeEncoder m_axis1Encoder = m_axis1Motor.GetEncoder();
   rev::SparkMaxRelativeEncoder m_axis2Encoder = m_axis2Motor.GetEncoder();
-  frc::Encoder m_axis3Encoder { ArmConstants::kAxis3EncoderChannel1Id,
-                                ArmConstants::kAxis3EncoderChannel2Id };
 
   frc::DigitalInput m_axis1HomeLimitSwitch { ArmConstants::kAxis1HomeLimitSwitchId };
   frc::DigitalInput m_whichRobotJumper { ArmConstants::kWhichRobotJumper };
@@ -127,9 +105,4 @@ class ArmSubsystem : public frc2::SubsystemBase {
 
   void SetAxis1NextSetpoint(units::degree_t setPoint);
   void SetAxis2NextSetpoint(units::inch_t setPoint);
-  // void SetAxis3NextSetpoint(units::degree_t setPoint);
-
-  double debug_calcVal = 0;
-  double debug_setpntVal = 0;
-  double debug_angleVal = 0;
 };

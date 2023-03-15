@@ -144,6 +144,10 @@ constexpr double kIntakeHoldSpeed = 0.2;  // 775's can stall at 20% duty cycle f
 constexpr double kHasGamePieceCurrent = 15;
 
 constexpr units::millisecond_t kOuttakingTime = 400_ms;
+
+constexpr int kGripperEncoderChannel1Id = 1;
+constexpr int kGripperEncoderChannel2Id = 2;
+constexpr int kGripperEncoderPulsesPerRevolution = 1024;
 }  // namespace IntakeConstants
 
 namespace ArmConstants {
@@ -158,8 +162,6 @@ constexpr int kExtendingArmAxis2MotorControllerCanId = 13;
 constexpr int kExtendingArmAxis3MotorControllerCanId = 9;
 
 constexpr int kAxis1HomeLimitSwitchId = 0;
-constexpr int kAxis3EncoderChannel1Id = 1;
-constexpr int kAxis3EncoderChannel2Id = 2;
 
 // Self Avoidance constants
 constexpr double kPastBumperAngle = 15;
@@ -197,19 +199,6 @@ constexpr int kAxis2HomeTimeoutInSeconds = 3;
 constexpr double kAxis2HomeCurrentThreshold = 15;
 constexpr double kAxis2Deadband = 1.2;
 constexpr units::inch_t kAxis2MaxExtension = 18.75_in;
-
-// Axis 3 (Wrist)
-constexpr int kAxis3CurrentLimit = 30;
-constexpr int kAxis3CurrentLimitDuration = 200;
-constexpr double kAxis3P = 0.05;
-constexpr double kAxis3I = 0;
-constexpr double kAxis3D = 0;
-constexpr double kAxis3FF = 0;
-constexpr double kAxis3MinOutput = -1;
-constexpr double kAxis3MaxOutput = 1;
-constexpr int kAxis3HomeTimeoutInSeconds = 3;
-constexpr double kAxis3HomeCurrentThreshold = 30;
-constexpr double kAxis3EncoderPulsesPerRevolution = 1024;
 
 // Position
 constexpr units::degree_t kConePlacementDistance = 12.0_deg;

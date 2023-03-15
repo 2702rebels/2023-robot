@@ -38,12 +38,6 @@ REGISTER_DOUBLE(
   Axis2MaxAcceletration, "ExArm/TuningParameters/Axis2 MotionProfile/MaxAccelInchPerSec", 60.0)
 REGISTER_DOUBLE(Axis2CurrentLimit, "ExArm/TuningParameters/Axis2CurrentLimit", 20.0)
 
-REGISTER_DOUBLE(Axis3P, "ExArm/TuningParameters/Axis3 PID/P", 0.0)
-REGISTER_DOUBLE(Axis3I, "ExArm/TuningParameters/Axis3 PID/I", 0.0)
-REGISTER_DOUBLE(Axis3D, "ExArm/TuningParameters/Axis3 PID/D", 0.0)
-REGISTER_DOUBLE(Axis3CurrentLimit, "ExArm/TuningParameters/Axis3CurrentLimit", 0.0)
-REGISTER_DOUBLE(Axis3CurrentLimitDuration, "ExArm/TuningParameters/Axis3CurrentLimitDuration", 0.0)
-
 REGISTER_DOUBLE(ConeAxis1IntakeFloor, "ExArm/Position/Cone/IntakeFloor/Axis1", 18.0)
 REGISTER_DOUBLE(ConeAxis2IntakeFloor, "ExArm/Position/Cone/IntakeFloor/Axis2", 10.0)
 REGISTER_DOUBLE(ConeAxis1IntakeStation, "ExArm/Position/Cone/IntakeStation/Axis1", 65.0)
@@ -70,7 +64,6 @@ REGISTER_DOUBLE(CubeAxis2ScoreHigh, "ExArm/Position/Cube/ScoreHigh/Axis2", 10.0)
 
 ArmSubsystem::ArmSubsystem() {
   frc::DataLogManager::Log(fmt::format("Initializing ArmSubsystem."));
-  m_axis3Encoder.SetDistancePerPulse(360 / kAxis3EncoderPulsesPerRevolution);
   ArmSubsystem::ConfigureTuningParams();
 }
 
@@ -141,34 +134,14 @@ void ArmSubsystem::ConfigureTuningParams() {
     kAxis2MaxOutput,
     GetAxis2MaxVelocity(),
     GetAxis2MaxAcceletration()));
-
-  // Axis 3
-  m_axis3Motor.ConfigFactoryDefault(50);
-  m_axis3Motor.SetNeutralMode(ctre::phoenix::motorcontrol::NeutralMode::Brake);
-  m_axis3Motor.ConfigPeakCurrentLimit(GetAxis3CurrentLimit());
-  m_axis3Motor.ConfigPeakCurrentDuration(GetAxis3CurrentLimitDuration());
-  m_axis3Motor.ConfigContinuousCurrentLimit(GetAxis3CurrentLimit());
-  // m_axis3Motor.EnableCurrentLimit(true);
-  m_axis3PIDController.SetP(GetAxis3P());
-  m_axis3PIDController.SetI(GetAxis3I());
-  m_axis3PIDController.SetD(GetAxis3D());
-  frc::DataLogManager::Log(fmt::format(
-    "Configured Axis2 with parameters: P={}, I={}, D={}, CurrentLimit={}, CurrentLimitDuration={}",
-    GetAxis3P(),
-    GetAxis3I(),
-    GetAxis3D(),
-    GetAxis3CurrentLimit(),
-    GetAxis3CurrentLimitDuration()));
 }
 
 // This method will be called once per scheduler run
 void ArmSubsystem::Periodic() {
   frc::SmartDashboard::PutNumber("Axis1Angle", GetAxis1Angle().value());
   frc::SmartDashboard::PutNumber("Axis2Distance", GetAxis2Distance().value());
-  frc::SmartDashboard::PutNumber("Axis3Angle", GetAxis3Angle().value());
   frc::SmartDashboard::PutNumber("Axis1Current", GetAxis1Current());
   frc::SmartDashboard::PutNumber("Axis2Current", GetAxis2Current());
-  frc::SmartDashboard::PutNumber("Axis3Current", GetAxis3Current());
   frc::SmartDashboard::PutBoolean("Axis1HomeLimitSwitch", GetAxis1LimitSwitch());
   frc::SmartDashboard::PutNumber("Axis1SetPoint", m_axis1SetPoint.value());
   frc::SmartDashboard::PutNumber("Axis2SetPoint", m_axis2SetPoint.value());
@@ -212,28 +185,11 @@ void ArmSubsystem::Periodic() {
     m_axis2TrapezoidalProfileState = axis2Profile.Calculate(ArmConstants::kDt);
     ArmSubsystem::SetAxis2NextSetpoint(m_axis2TrapezoidalProfileState.position);
   }
-
-  // Axis 3 control loop.
-  if (m_isAxis3ControlEnabled) {
-    double calcVal = m_axis3PIDController.Calculate(ArmSubsystem::GetAxis3Angle().value());
-    double setpntVal = m_axis3PIDController.GetSetpoint();
-    double angleVal = ArmSubsystem::GetAxis3Angle().value();
-    m_axis3Motor.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, calcVal);
-
-    if (calcVal != debug_calcVal || setpntVal != debug_setpntVal || angleVal != debug_angleVal) {
-      debug_calcVal = calcVal;
-      debug_setpntVal = setpntVal;
-      debug_angleVal = angleVal;
-      frc::DataLogManager::Log(
-        fmt::format("Axis3 Set Point: {} PID: {} Position: {}", setpntVal, calcVal, angleVal));
-    }
-  }
 }
 
 void ArmSubsystem::OnDisable() {
   m_isAxis1ControlEnabled = false;
   m_isAxis2ControlEnabled = false;
-  m_isAxis3ControlEnabled = false;
   ArmSubsystem::SetArmOff();
 }
 
@@ -257,10 +213,6 @@ units::meters_per_second_t ArmSubsystem::GetAxis2Velocity() {
   return units::meters_per_second_t(m_axis2Encoder.GetVelocity());
 }
 
-units::degree_t ArmSubsystem::GetAxis3Angle() {
-  return units::degree_t(m_axis3Encoder.GetDistance());
-}
-
 bool ArmSubsystem::GetAxis1LimitSwitch() {
   return m_axis1HomeLimitSwitch.Get();
 }
@@ -271,10 +223,6 @@ double ArmSubsystem::GetAxis1Current() {
 
 double ArmSubsystem::GetAxis2Current() {
   return m_axis2Motor.GetOutputCurrent();
-}
-
-double ArmSubsystem::GetAxis3Current() {
-  return m_axis3Motor.GetStatorCurrent();
 }
 
 void ArmSubsystem::SetAxis1NextSetpoint(units::degree_t setPoint) {
@@ -312,28 +260,12 @@ void ArmSubsystem::SetAxis2NextSetpoint(units::inch_t setPoint) {
   m_axis2PIDController.SetReference(rotations, rev::CANSparkMax::ControlType::kPosition);
 }
 
-void ArmSubsystem::SetAxis3NextSetpoint(units::degree_t setPoint) {
-  double rotations = setPoint.value();
-#ifdef VERBOSE_LOG
-  frc::DataLogManager::Log(
-    fmt::format("Axis3: Setting setpoint to: {}, Setting rotations to: {}", setPoint, rotations));
-#endif
-  m_axis3Motor.Set(
-    ctre::phoenix::motorcontrol::ControlMode::PercentOutput,
-    m_axis3PIDController.Calculate(ArmSubsystem::GetAxis3Angle().value(), rotations));
-  m_isAxis3ControlEnabled = true;
-}
-
 void ArmSubsystem::SetAxis1DutyCycle(double dutyCycle) {
   m_axis1PIDController.SetReference(dutyCycle, rev::CANSparkMax::ControlType::kDutyCycle);
 }
 
 void ArmSubsystem::SetAxis2DutyCycle(double dutyCycle) {
   m_axis2PIDController.SetReference(dutyCycle, rev::CANSparkMax::ControlType::kDutyCycle);
-}
-
-void ArmSubsystem::SetAxis3DutyCycle(double dutyCycle) {
-  m_axis3Motor.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, dutyCycle);
 }
 
 void ArmSubsystem::SetAxis1Off() {
@@ -346,16 +278,9 @@ void ArmSubsystem::SetAxis2Off() {
   frc::DataLogManager::Log(fmt::format("Axis2: Disabled motor by commanding voltage to 0."));
 }
 
-void ArmSubsystem::SetAxis3Off() {
-  m_axis3Motor.Set(ctre::phoenix::motorcontrol::ControlMode::Disabled, 0);
-  frc::DataLogManager::Log(
-    fmt::format("Axis3: Disabled motor by commanding motor control mode to 'Disabled'."));
-}
-
 void ArmSubsystem::SetArmOff() {
   ArmSubsystem::SetAxis1Off();
   ArmSubsystem::SetAxis2Off();
-  ArmSubsystem::SetAxis3Off();
 }
 
 void ArmSubsystem::ZeroAxis1() {
@@ -368,14 +293,6 @@ void ArmSubsystem::ZeroAxis2() {
   m_axis2Encoder.SetPosition(0);
   m_axis2PIDController.SetReference(0, rev::CANSparkMax::ControlType::kPosition);
   frc::DataLogManager::Log(fmt::format("Axis2: Zero'd and started position pid at 0."));
-}
-
-void ArmSubsystem::ZeroAxis3() {
-  m_axis3Encoder.Reset();
-  m_axis3Motor.Set(
-    ctre::phoenix::motorcontrol::ControlMode::PercentOutput,
-    m_axis3PIDController.Calculate(ArmSubsystem::GetAxis3Angle().value(), 0));
-  frc::DataLogManager::Log(fmt::format("Axis3: Zero'd and started position pid at 0."));
 }
 
 void ArmSubsystem::Move(units::degree_t angle, units::inch_t distance) {

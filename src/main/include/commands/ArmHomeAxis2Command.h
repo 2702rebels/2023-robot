@@ -16,9 +16,9 @@
  * directly; this is crucially important, or else the decorator functions in
  * Command will *not* work!
  */
-class HomeArmCommand : public frc2::CommandHelper<frc2::CommandBase, HomeArmCommand> {
+class ArmHomeAxis2Command : public frc2::CommandHelper<frc2::CommandBase, ArmHomeAxis2Command> {
  public:
-  HomeArmCommand(ArmSubsystem* arm);
+  ArmHomeAxis2Command(ArmSubsystem* arm);
 
   void Initialize() override;
 
@@ -31,5 +31,7 @@ class HomeArmCommand : public frc2::CommandHelper<frc2::CommandBase, HomeArmComm
  private:
   ArmSubsystem* m_arm;
   units::second_t m_homingStartTime;
+  int m_cyclesAboveCurrentLimit = 0;
+  bool m_isHomed = false;
   bool m_isTimedOut = false;
 };

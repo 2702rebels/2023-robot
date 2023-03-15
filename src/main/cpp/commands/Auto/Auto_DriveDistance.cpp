@@ -1,9 +1,9 @@
-#include "commands/auto/Auto1.h"
+#include "commands/auto/Auto_DriveDistance.h"
 
 #include "commands/DriveRotateCommand.h"
 #include "commands/DriveTrajectoryCommand.h"
 
-Auto1::Auto1(DriveSubsystem* drive) {
+Auto_DriveDistance::Auto_DriveDistance(DriveSubsystem* drive) {
   AddCommands(DriveTrajectoryCommand(
     {
       frc::Pose2d { 0_m, 0_m, 0_deg }, frc::Pose2d { 1_m, 0_m, 0_deg },

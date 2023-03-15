@@ -6,7 +6,8 @@
 #include "Constants.h"
 #include "subsystems/DriveSubsystem.h"
 
-class Auto1 : public frc2::CommandHelper<frc2::SequentialCommandGroup, Auto1> {
+class Auto_DriveDistance
+  : public frc2::CommandHelper<frc2::SequentialCommandGroup, Auto_DriveDistance> {
  public:
-  Auto1(DriveSubsystem* drive);
+  Auto_DriveDistance(DriveSubsystem* drive);
 };

@@ -2,18 +2,18 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-#include "commands/HomeAxis1Command.h"
+#include "commands/ArmHomeAxis1Command.h"
 
 #include <frc/DataLogManager.h>
 #include <frc/Timer.h>
 
-HomeAxis1Command::HomeAxis1Command(ArmSubsystem* arm) : m_arm(arm) {
+ArmHomeAxis1Command::ArmHomeAxis1Command(ArmSubsystem* arm) : m_arm(arm) {
   // Use addRequirements() here to declare subsystem dependencies.
   AddRequirements(arm);
 }
 
 // Called when the command is initially scheduled.
-void HomeAxis1Command::Initialize() {
+void ArmHomeAxis1Command::Initialize() {
   frc::DataLogManager::Log(fmt::format("HomeAxis1Command: Initialize"));
   m_isHomed = false;
   m_isTimedOut = false;
@@ -31,7 +31,7 @@ void HomeAxis1Command::Initialize() {
 }
 
 // Called repeatedly when this Command is scheduled to run
-void HomeAxis1Command::Execute() {
+void ArmHomeAxis1Command::Execute() {
   if (!m_isLimitHit && m_arm->GetAxis1LimitSwitch()) {
     frc::DataLogManager::Log(
       fmt::format("LimitSwitchState: {} Inside First If", m_arm->GetAxis1LimitSwitch()));
@@ -59,7 +59,7 @@ void HomeAxis1Command::Execute() {
 }
 
 // Called once the command ends or is interrupted.
-void HomeAxis1Command::End(bool interrupted) {
+void ArmHomeAxis1Command::End(bool interrupted) {
   frc::DataLogManager::Log(fmt::format("HomeAxis1Command: End"));
   if (interrupted) {
     m_arm->SetAxis1Off();
@@ -75,7 +75,7 @@ void HomeAxis1Command::End(bool interrupted) {
 }
 
 // Returns true when the command should end.
-bool HomeAxis1Command::IsFinished() {
+bool ArmHomeAxis1Command::IsFinished() {
   if (m_isHomed || m_isTimedOut || m_isWorkingHardProtection) {
     return true;
   }
