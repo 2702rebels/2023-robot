@@ -225,9 +225,7 @@ void RobotContainer::ConfigureButtonBindings() {
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kX)
     .OnTrue(frc2::cmd::Sequence(
       ArmMoveCommand(&m_arm, ArmPosition::SCORE_LOW_CUBE),
-      frc2::InstantCommand(
-        [this] { m_intake.SetIntakeSpeed(IntakeConstants::kIntakingSpeed); }, { &m_intake })
-        .ToPtr()))
+      frc2::InstantCommand([this] { m_intake.SetIntakeSpeed(-0.5); }, { &m_intake }).ToPtr()))
     .OnFalse(frc2::InstantCommand([this] { m_intake.SetIntakeSpeed(0.0); }, { &m_intake }).ToPtr());
 
 #ifdef INTAKE_ENABLED
@@ -260,8 +258,7 @@ void RobotContainer::ConfigureButtonBindings() {
         frc2::InstantCommand([this] { m_intake.Intake(); }, { &m_intake })),
       frc2::cmd::Sequence(
         ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CUBE),
-        frc2::InstantCommand(
-          [this] { m_intake.SetIntakeSpeed(IntakeConstants::kIntakingSpeed); }, { &m_intake })),
+        frc2::InstantCommand([this] { m_intake.SetIntakeSpeed(0.7); }, { &m_intake })),
       [this] { return m_mode == RobotMode::CONE; }))
     .OnFalse(frc2::cmd::Sequence(
       frc2::InstantCommand([this] { m_intake.Stop(); }, { &m_intake }),

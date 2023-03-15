@@ -409,7 +409,8 @@ void ArmSubsystem::Move(units::degree_t angle, units::inch_t distance) {
 }
 
 void ArmSubsystem::Move(ArmPosition position) {
-  double axis1, axis2;
+  double axis1 = 0;
+  double axis2 = 0;
 
   switch (position) {
     case STOWED:
