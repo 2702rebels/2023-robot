@@ -2,9 +2,9 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-#include "commands/ArmScoreConeCommand.h"
+#include "commands/ScoreConeCommand.h"
 
-ArmScoreConeCommand::ArmScoreConeCommand(ArmSubsystem* arm, IntakeSubsystem* intake) :
+ScoreConeCommand::ScoreConeCommand(ArmSubsystem* arm, IntakeSubsystem* intake) :
   m_arm(arm),
   m_intake(intake) {
   // Use addRequirements() here to declare subsystem dependencies.
@@ -13,7 +13,7 @@ ArmScoreConeCommand::ArmScoreConeCommand(ArmSubsystem* arm, IntakeSubsystem* int
 }
 
 // Called when the command is initially scheduled.
-void ArmScoreConeCommand::Initialize() {
+void ScoreConeCommand::Initialize() {
   m_isPlaced = false;
   m_isRetracting = false;
   m_arm->Move(
@@ -21,7 +21,7 @@ void ArmScoreConeCommand::Initialize() {
 }
 
 // Called repeatedly when this Command is scheduled to run
-void ArmScoreConeCommand::Execute() {
+void ScoreConeCommand::Execute() {
   if (!m_isPlaced && m_arm->IsAtCommandedPosition()) {
     m_isPlaced = true;
     m_intake->OuttakeCone();
@@ -35,12 +35,12 @@ void ArmScoreConeCommand::Execute() {
 }
 
 // Called once the command ends or is interrupted.
-void ArmScoreConeCommand::End(bool interrupted) {
+void ScoreConeCommand::End(bool interrupted) {
   m_intake->Stop();
 }
 
 // Returns true when the command should end.
-bool ArmScoreConeCommand::IsFinished() {
+bool ScoreConeCommand::IsFinished() {
   if (
     m_isRetracting &&
     frc::Timer::GetFPGATimestamp() > m_outtakingStartTime + IntakeConstants::kOuttakingTime) {

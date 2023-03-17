@@ -10,7 +10,7 @@ IntakeHomeGripperCommand::IntakeHomeGripperCommand(IntakeSubsystem* intake) : m_
 
 // Called when the command is initially scheduled.
 void IntakeHomeGripperCommand::Initialize() {
-  m_intake->SetGripperDutyCycle(0.2);
+  m_intake->SetGripperDutyCycle(-0.2);
 }
 
 // Called repeatedly when this Command is scheduled to run
@@ -18,7 +18,7 @@ void IntakeHomeGripperCommand::Execute() {}
 
 // Called once the command ends or is interrupted.
 void IntakeHomeGripperCommand::End(bool interrupted) {
-  if (interrupted) {
+  if (interrupted || m_timedOut) {
     m_intake->SetGripperOff();
   } else {
     m_intake->ZeroGripper();
@@ -27,5 +27,8 @@ void IntakeHomeGripperCommand::End(bool interrupted) {
 
 // Returns true when the command should end.
 bool IntakeHomeGripperCommand::IsFinished() {
+  if (abs(m_intake->GetGripperCurrent()) > IntakeConstants::kGripperHomeCurrent) {
+    return true;
+  }
   return false;
 }

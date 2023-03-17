@@ -17,9 +17,9 @@
  * directly; this is crucially important, or else the decorator functions in
  * Command will *not* work!
  */
-class ArmScoreCubeCommand : public frc2::CommandHelper<frc2::CommandBase, ArmScoreCubeCommand> {
+class ScoreConeCommand : public frc2::CommandHelper<frc2::CommandBase, ScoreConeCommand> {
  public:
-  ArmScoreCubeCommand(ArmSubsystem* arm, IntakeSubsystem* intake);
+  ScoreConeCommand(ArmSubsystem* arm, IntakeSubsystem* intake);
 
   void Initialize() override;
 
@@ -32,5 +32,7 @@ class ArmScoreCubeCommand : public frc2::CommandHelper<frc2::CommandBase, ArmSco
  private:
   ArmSubsystem* m_arm;
   IntakeSubsystem* m_intake;
-  units::millisecond_t m_startTime;
+  bool m_isPlaced = false;
+  bool m_isRetracting = false;
+  units::millisecond_t m_outtakingStartTime;
 };

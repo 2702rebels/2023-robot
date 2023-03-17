@@ -5,6 +5,7 @@
 #pragma once
 
 #include <ctre/Phoenix.h>
+#include <frc/DigitalInput.h>
 #include <frc/Encoder.h>
 #include <frc/controller/PIDController.h>
 #include <frc2/command/SubsystemBase.h>
@@ -22,6 +23,7 @@ class IntakeSubsystem : public frc2::SubsystemBase {
    */
   void Periodic() override;
   void ConfigureTuningParams();
+  void OnDisable();
 
   void SetIntakeSpeed(double speed);
   void IntakeCone();
@@ -29,6 +31,7 @@ class IntakeSubsystem : public frc2::SubsystemBase {
   void OuttakeCone();
   void OuttakeCube();
   void Stop();
+  void HoldGamePiece();
 
   void OpenCone();
   void CloseCone();

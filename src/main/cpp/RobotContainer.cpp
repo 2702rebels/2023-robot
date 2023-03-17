@@ -19,8 +19,11 @@
 
 #include "Constants.h"
 #include "commands/ArmMoveCommand.h"
-#include "commands/ArmScoreConeCommand.h"
-#include "commands/ArmScoreCubeCommand.h"
+#include "commands/IntakeConeCommand.h"
+#include "commands/IntakeCubeCommand.h"
+#include "commands/IntakeHomeGripperCommand.h"
+#include "commands/ScoreConeCommand.h"
+#include "commands/ScoreCubeCommand.h"
 #include "commands/SetLedCommand.h"
 #include "subsystems/DriveSubsystem.h"
 
@@ -94,7 +97,9 @@ RobotContainer::RobotContainer() {
   m_chooser.SetDefaultOption("DoNothing", &m_auto_doNothing);
   m_chooser.AddOption("DriveForwards", &m_auto_driveForwards);
   m_chooser.AddOption("Auto2", &m_auto2);
+#ifdef ARM_ENABLED
   m_chooser.AddOption("Auto3", &m_auto3);
+#endif
   tab.Add(m_chooser);
   tab.AddPersistent("DriveAutoDistance", 1.0);
 #endif
@@ -111,6 +116,10 @@ void RobotContainer::OnTeleEnable() {
 void RobotContainer::OnDisable() {
 #ifdef ARM_ENABLED
   m_arm.OnDisable();
+#endif
+
+#ifdef INTAKE_ENABLED
+  m_intake.OnDisable();
 #endif
 
 #ifdef LED_ENABLED
@@ -169,16 +178,6 @@ void RobotContainer::ConfigureButtonBindings() {
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kLeftBumper)
     .OnTrue(frc2::InstantCommand([this] { ToggleRobotMode(); }, {}).ToPtr());
 
-  // Testing LEDs
-  frc2::Trigger(
-    m_driverController.POVLeft(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
-    .OnTrue(new SetLedCommand(&m_leds, 255, 255, 255, LEDPattern::FLASH, 200_ms, 3_s));
-
-  // Testing LEDs
-  frc2::Trigger(
-    m_driverController.POVRight(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
-    .OnTrue(new SetLedCommand(&m_leds, 0, 255, 0, LEDPattern::BREATH, 3_s, 0_s));
-
 #ifdef DRIVETRAIN_ENABLED
   // Reset swerve heading by zeroing the gyro.
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightStick)
@@ -197,12 +196,7 @@ void RobotContainer::ConfigureButtonBindings() {
 #ifdef ARM_ENABLED
   // Zero's the arm axis. TODO: Change this to run the homing command.
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kBack)
-    .OnTrue(new frc2::InstantCommand(
-      [this] {
-        m_arm.ZeroAxis1();
-        m_arm.ZeroAxis2();
-      },
-      { &m_arm }));
+    .OnTrue(IntakeHomeGripperCommand(&m_intake).ToPtr());
 
   frc2::Trigger(
     m_driverController.POVUp(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
@@ -239,15 +233,11 @@ void RobotContainer::ConfigureButtonBindings() {
                   0.5, frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
     .OnTrue(frc2::cmd::Either(
       frc2::cmd::Sequence(
-        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_STATION_CONE),
-        frc2::InstantCommand([this] { m_intake.IntakeCone(); }, { &m_intake })),
+        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_STATION_CONE), IntakeConeCommand(&m_intake)),
       frc2::cmd::Sequence(
-        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_STATION_CUBE),
-        frc2::InstantCommand([this] { m_intake.IntakeCube(); }, { &m_intake })),
+        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_STATION_CUBE), IntakeCubeCommand(&m_intake)),
       [this] { return m_mode == RobotMode::CONE; }))
-    .OnFalse(frc2::cmd::Sequence(
-      frc2::InstantCommand([this] { m_intake.Stop(); }, { &m_intake }),
-      ArmMoveCommand(&m_arm, ArmPosition::STOWED)));
+    .OnFalse(frc2::cmd::Sequence(ArmMoveCommand(&m_arm, ArmPosition::STOWED)));
 
   // Score automatically.
   // frc2::Trigger(m_driverController.LeftTrigger(
@@ -264,11 +254,9 @@ void RobotContainer::ConfigureButtonBindings() {
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightBumper)
     .OnTrue(frc2::cmd::Either(
       frc2::cmd::Sequence(
-        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CONE),
-        frc2::InstantCommand([this] { m_intake.IntakeCone(); }, { &m_intake })),
+        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CONE), IntakeConeCommand(&m_intake)),
       frc2::cmd::Sequence(
-        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CUBE),
-        frc2::InstantCommand([this] { m_intake.IntakeCube(); }, { &m_intake })),
+        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CUBE), IntakeCubeCommand(&m_intake)),
       [this] { return m_mode == RobotMode::CONE; }))
     .OnFalse(frc2::cmd::Sequence(
       frc2::InstantCommand([this] { m_intake.Stop(); }, { &m_intake }),
@@ -278,10 +266,11 @@ void RobotContainer::ConfigureButtonBindings() {
   frc2::Trigger(m_driverController.RightTrigger(
                   0.5, frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
     .OnTrue(frc2::cmd::Either(
-      ArmScoreConeCommand(&m_arm, &m_intake).ToPtr(),
-      ArmScoreCubeCommand(&m_arm, &m_intake).ToPtr(),
+      ScoreConeCommand(&m_arm, &m_intake).ToPtr(),
+      ScoreCubeCommand(&m_arm, &m_intake).ToPtr(),
       [this] { return m_mode == RobotMode::CONE; }))
-    .OnFalse(ArmMoveCommand(&m_arm, ArmPosition::STOWED).ToPtr());
+    .OnFalse(frc2::cmd::Parallel(
+      IntakeHomeGripperCommand(&m_intake), ArmMoveCommand(&m_arm, ArmPosition::STOWED)));
 
   // Score manually.
   // frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kLeftBumper)

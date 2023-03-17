@@ -31,4 +31,5 @@ class IntakeHomeGripperCommand
 
  private:
   IntakeSubsystem* m_intake;
+  bool m_timedOut = false;
 };

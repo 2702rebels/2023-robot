@@ -149,6 +149,10 @@ constexpr int kGripperEncoderChannel1Id = 1;
 constexpr int kGripperEncoderChannel2Id = 2;
 constexpr int kGripperEncoderPulsesPerRevolution = 1024;
 constexpr double kGripperZeroOffset = 45.0;
+
+constexpr double kGripperReduction = 9 / 1 * 4 / 1;
+
+constexpr double kGripperHomeCurrent = 15;
 }  // namespace IntakeConstants
 
 namespace ArmConstants {

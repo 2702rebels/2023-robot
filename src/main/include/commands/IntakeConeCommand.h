@@ -7,7 +7,6 @@
 #include <frc2/command/CommandBase.h>
 #include <frc2/command/CommandHelper.h>
 
-#include "subsystems/ArmSubsystem.h"
 #include "subsystems/IntakeSubsystem.h"
 
 /**
@@ -17,9 +16,9 @@
  * directly; this is crucially important, or else the decorator functions in
  * Command will *not* work!
  */
-class ArmScoreConeCommand : public frc2::CommandHelper<frc2::CommandBase, ArmScoreConeCommand> {
+class IntakeConeCommand : public frc2::CommandHelper<frc2::CommandBase, IntakeConeCommand> {
  public:
-  ArmScoreConeCommand(ArmSubsystem* arm, IntakeSubsystem* intake);
+  IntakeConeCommand(IntakeSubsystem* intake);
 
   void Initialize() override;
 
@@ -30,9 +29,5 @@ class ArmScoreConeCommand : public frc2::CommandHelper<frc2::CommandBase, ArmSco
   bool IsFinished() override;
 
  private:
-  ArmSubsystem* m_arm;
   IntakeSubsystem* m_intake;
-  bool m_isPlaced = false;
-  bool m_isRetracting = false;
-  units::millisecond_t m_outtakingStartTime;
 };

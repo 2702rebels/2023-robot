@@ -59,10 +59,8 @@ class RobotContainer {
   ArmSubsystem m_arm;
 #endif
 
-#ifdef ARM_ENABLED
 #ifdef INTAKE_ENABLED
   IntakeSubsystem m_intake;
-#endif
 #endif
 
 #ifdef LED_ENABLED
@@ -73,7 +71,10 @@ class RobotContainer {
   Auto_DoNothing m_auto_doNothing;
   Auto_DriveDistance m_auto_driveForwards { &m_drive };
   Auto2 m_auto2 { &m_drive };
+
+#ifdef ARM_ENABLED
   Auto3 m_auto3 { &m_drive, &m_arm };
+#endif
 
   // The chooser for the autonomous routines
   frc::SendableChooser<frc2::Command*> m_chooser;
