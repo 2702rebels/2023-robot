@@ -12,6 +12,9 @@
 // Currently the drivetrain object is still instantiated.
 #define DRIVETRAIN_ENABLED
 
+// Indicates use of second-order swerve kinematics
+#define SWERVE_SECOND_ORDER_KINEMATICS
+
 // Indicates that drivetrain odometry should use pose estimation coupled with
 // an external vision system that can provide global positioning estimates;
 // if not enabled, then basic odometry tracking based on encoders and gyro only

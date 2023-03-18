@@ -26,12 +26,13 @@ namespace DriveConstants {
 // Driving Parameters
 // Note that these are not the maximum capable speeds of the robot, rather the
 // allowed maximum speeds
-constexpr units::meters_per_second_t kMaxSpeed = 3_mps;
+constexpr units::meters_per_second_t kMaxSpeed = 4_mps;
 constexpr units::radians_per_second_t kMaxAngularSpeed { 2 * std::numbers::pi };
 
-constexpr double kDirectionSlewRate = 1.2;   // radians per second
-constexpr double kMagnitudeSlewRate = 1.8;   // percent per second (1 = 100%)
-constexpr double kRotationalSlewRate = 2.0;  // percent per second (1 = 100%)
+constexpr double kDirectionSlewRate = std::numbers::pi / 2;  // radians per second
+constexpr double kAccelerateSlewRate = 0.8;                  // percent per second (1 = 100%)
+constexpr double kDecelerateSlewRate = 1.5;                  // percent per second (1 = 100%)
+constexpr double kRotationalSlewRate = 1.5;                  // percent per second (1 = 100%)
 
 // Chassis configuration
 // Distances between centers of wheels on robot
@@ -39,10 +40,10 @@ constexpr units::meter_t kTrackWidth = 0.5461_m;  // right and left wheels
 constexpr units::meter_t kWheelBase = 0.5461_m;   // front and back wheels
 
 // Angular offsets of the modules relative to the chassis in radians
-constexpr double kFrontLeftChassisAngularOffset = -std::numbers::pi / 2;
-constexpr double kFrontRightChassisAngularOffset = 0;
-constexpr double kRearLeftChassisAngularOffset = std::numbers::pi;
-constexpr double kRearRightChassisAngularOffset = std::numbers::pi / 2;
+constexpr units::radian_t kFrontLeftChassisAngularOffset { -std::numbers::pi / 2 };
+constexpr units::radian_t kFrontRightChassisAngularOffset { 0 };
+constexpr units::radian_t kRearLeftChassisAngularOffset { std::numbers::pi };
+constexpr units::radian_t kRearRightChassisAngularOffset { std::numbers::pi / 2 };
 
 // SPARK MAX CAN IDs
 constexpr int kFrontLeftDrivingCanId = 6;
@@ -70,34 +71,50 @@ constexpr int kDrivingMotorPinionTeeth = 14;
 constexpr double kDrivingMotorFreeSpeedRps = 5676.0 / 60;  // NEO free speed is 5676 RPM
 constexpr units::meter_t kWheelDiameter = 0.0762_m;
 constexpr units::meter_t kWheelCircumference = kWheelDiameter * std::numbers::pi;
+
 // 45 teeth on the wheel's bevel gear, 22 teeth on the first-stage spur gear, 15
 // teeth on the bevel pinion
-constexpr double kDrivingMotorReduction = (45.0 * 22) / (kDrivingMotorPinionTeeth * 15);
-constexpr double kDriveWheelFreeSpeedRps =
-  (kDrivingMotorFreeSpeedRps * kWheelCircumference.value()) / kDrivingMotorReduction;
+constexpr double kDrivingMotorReduction = (45.0 * 22.0) / (kDrivingMotorPinionTeeth * 15.0);
+
+constexpr double kTurningMotorFreeSpeedRps = 11000.0 / 60;  // NEO550 free speed is 11000 RPM
+
+// azimuth ratio from REV specification
+// https://www.revrobotics.com/rev-21-3005/
+constexpr double KTurningMotorReduction = 9424.0 / 203.0;
 
 constexpr double kDrivingEncoderPositionFactor =
-  (kWheelDiameter.value() * std::numbers::pi) / kDrivingMotorReduction;  // meters
+  kWheelCircumference.value() / kDrivingMotorReduction;  // meters
+
 constexpr double kDrivingEncoderVelocityFactor =
-  ((kWheelDiameter.value() * std::numbers::pi) / kDrivingMotorReduction) /
-  60.0;  // meters per second
+  kDrivingEncoderPositionFactor / 60.0;  // meters per second
+
+constexpr double kDrivingWheelFreeSpeedRps =
+  kDrivingMotorFreeSpeedRps * kDrivingEncoderPositionFactor;
 
 constexpr double kTurningEncoderPositionFactor = (2 * std::numbers::pi);  // radians
 constexpr double kTurningEncoderVelocityFactor =
-  (2 * std::numbers::pi) / 60.0;  // radians per second
+  kTurningEncoderPositionFactor / 60.0;  // radians per second
+
+constexpr units::radians_per_second_t kTurningMotorMaxAngularVelocity =
+  units::radians_per_second_t { kTurningEncoderPositionFactor * kTurningMotorFreeSpeedRps /
+                                KTurningMotorReduction };
 
 constexpr units::radian_t kTurningEncoderPositionPIDMinInput = 0_rad;
 constexpr units::radian_t kTurningEncoderPositionPIDMaxInput =
   units::radian_t { kTurningEncoderPositionFactor };
 
-constexpr double kDrivingP = 0.04;
+constexpr uint32_t kDrivingVelocityMeasurementPeriodMs = 20;
+constexpr uint32_t kDrivingVelocityMeasurementDepth = 4;
+
+constexpr double kDrivingP = 0.09;
 constexpr double kDrivingI = 0;
 constexpr double kDrivingD = 0;
-constexpr double kDrivingFF = (1 / kDriveWheelFreeSpeedRps);
+constexpr double kDrivingFF =
+  (1 / kDrivingWheelFreeSpeedRps) * 1.05;  // add +5% to overshoot and pull down with P
 constexpr double kDrivingMinOutput = -1;
 constexpr double kDrivingMaxOutput = 1;
 
-constexpr double kTurningP = 0.5;
+constexpr double kTurningP = 2.5;
 constexpr double kTurningI = 0;
 constexpr double kTurningD = 0;
 constexpr double kTurningFF = 0;
@@ -107,32 +124,35 @@ constexpr double kTurningMaxOutput = 1;
 constexpr rev::CANSparkMax::IdleMode kDrivingMotorIdleMode = rev::CANSparkMax::IdleMode::kBrake;
 constexpr rev::CANSparkMax::IdleMode kTurningMotorIdleMode = rev::CANSparkMax::IdleMode::kBrake;
 
-constexpr units::ampere_t kDrivingMotorCurrentLimit = 50_A;
+constexpr units::ampere_t kDrivingMotorCurrentLimit = 40_A;
 constexpr units::ampere_t kTurningMotorCurrentLimit = 20_A;
+
+constexpr units::volt_t kVoltageNominal = 12_V;
+constexpr units::volt_t kVoltageCompensation = 12_V;
 }  // namespace ModuleConstants
 
 namespace AutoConstants {
-constexpr auto kMaxSpeed = 3_mps;
+constexpr auto kMaxSpeed = 1.5_mps;
 constexpr auto kMaxAcceleration = 2_mps_sq;
-constexpr auto kMaxAngularSpeed = 540_deg_per_s;
-constexpr auto kMaxAngularAcceleration = 480_deg_per_s_sq;
+constexpr auto kMaxAngularSpeed = 120_deg_per_s;
+constexpr auto kMaxAngularAcceleration = 180_deg_per_s_sq;
 
-constexpr double kPXController = 0.5;
+constexpr double kPXController = 1.5;
 constexpr double kIXController = 0.0;
-constexpr double kDXController = 0.1;
-constexpr double kPYController = 0.5;
+constexpr double kDXController = 0.0;
+constexpr double kPYController = 1.5;
 constexpr double kIYController = 0.0;
-constexpr double kDYController = 0.1;
-constexpr double kPThetaController = 1.5;
+constexpr double kDYController = 0.0;
+constexpr double kPThetaController = 4.5;
 constexpr double kIThetaController = 0.0;
-constexpr double kDThetaController = 0.3;
+constexpr double kDThetaController = 0.0;
 
 extern const frc::TrapezoidProfile<units::radians>::Constraints kThetaControllerConstraints;
 }  // namespace AutoConstants
 
 namespace OIConstants {
 constexpr int kDriverControllerPort = 0;
-constexpr int koperatorControllerPort = 1;
+constexpr int kOperatorControllerPort = 1;
 constexpr double kDriveDeadband = 0.1;
 }  // namespace OIConstants
 

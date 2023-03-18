@@ -4,31 +4,16 @@
 #include "frc2/command/InstantCommand.h"
 
 Auto2::Auto2(DriveSubsystem* drive) {
-#if 0
-  AddCommands(
-    DriveTrajectoryCommand(
-      {
-        frc::Pose2d { 0_m, 0_m, 0_deg },
-        frc::Pose2d { 1_m, 0_m, 0_deg },
-        frc::Pose2d { 2_m, 0_m, 0_deg },
-        frc::Pose2d { 3_m, 0_m, 0_deg },
-        frc::Pose2d { 4_m, 0_m, 0_deg },
-      },
-      frc::Rotation2d { 0_deg },
-      false,
-      true,
-      drive),
-    DriveTrajectoryCommand(
-      {
-        frc::Pose2d { 4_m, 0_m, 0_deg },
-        frc::Pose2d { 3_m, 0_m, 0_deg },
-        frc::Pose2d { 2_m, 0_m, 0_deg },
-        frc::Pose2d { 1_m, 0_m, 0_deg },
-        frc::Pose2d { 0_m, 0_m, 0_deg },
-      },
-      frc::Rotation2d { 180_deg },
-      true,  // robot is driving backwards, but will rotate
-      false,
-      drive));
-#endif
+  AddCommands(DriveTrajectoryCommand(
+    {
+      Waypoint(frc::Pose2d { 0_m, 0_m, 0_deg }, frc::Rotation2d(180_deg)),
+      Waypoint(frc::Pose2d { 1_m, 0_m, 0_deg }),
+      Waypoint(frc::Pose2d { 2_m, 0_m, 0_deg }),
+      Waypoint(frc::Pose2d { 3_m, 0_m, 0_deg }),
+      Waypoint(frc::Pose2d { 4.6_m, 0_m, 0_deg }, frc::Rotation2d(0_deg)),
+    },
+    frc::Translation2d { 0_m, 0_m },
+    false,
+    true,
+    drive));
 }

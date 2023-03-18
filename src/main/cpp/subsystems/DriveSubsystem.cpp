@@ -1,6 +1,7 @@
 #include "subsystems/DriveSubsystem.h"
 
 #include <frc/DataLogManager.h>
+#include <frc/MathUtil.h>
 #include <frc/StateSpaceUtil.h>
 #include <frc/controller/PIDController.h>
 #include <frc/geometry/Rotation2d.h>
@@ -18,6 +19,7 @@
 
 using namespace DriveConstants;
 
+// clang-format off
 REGISTER_DOUBLE(DrivePoseStdDevStateX, "Drive/Pose/StdDev State/X", 0.1)
 REGISTER_DOUBLE(DrivePoseStdDevStateY, "Drive/Pose/StdDev State/Y", 0.1)
 REGISTER_DOUBLE(DrivePoseStdDevStateH, "Drive/Pose/StdDev State/θ", 0.1)
@@ -25,41 +27,49 @@ REGISTER_DOUBLE(DrivePoseStdDevVisionX, "Drive/Pose/StdDev Vision/X", 0.1)
 REGISTER_DOUBLE(DrivePoseStdDevVisionY, "Drive/Pose/StdDev Vision/Y", 0.1)
 REGISTER_DOUBLE(DrivePoseStdDevVisionH, "Drive/Pose/StdDev Vision/θ", 0.1)
 REGISTER_DOUBLE(DriveSlewRateDirection, "Drive/Slew/Direction", DriveConstants::kDirectionSlewRate)
-REGISTER_DOUBLE(DriveSlewRateMagnitude, "Drive/Slew/Magnitude", DriveConstants::kMagnitudeSlewRate)
+REGISTER_DOUBLE(DriveSlewRateAccelerate, "Drive/Slew/Accelerate", DriveConstants::kAccelerateSlewRate)
+REGISTER_DOUBLE(DriveSlewRateDecelerate, "Drive/Slew/Decelerate", DriveConstants::kDecelerateSlewRate)
 REGISTER_DOUBLE(DriveSlewRateRotation, "Drive/Slew/Rotation", DriveConstants::kRotationalSlewRate)
-REGISTER_DOUBLE(DriveTuneTranslationStep, "Drive/Tune/Translation Step", 5)
+REGISTER_DOUBLE(DriveTuneHeadingStep, "Drive/Tune/Heading Step", 5)
 REGISTER_DOUBLE(DriveTuneMaxSpeed, "Drive/Tune/Max Speed (mps)", 3)
 REGISTER_DOUBLE(DriveTuneMaxAngularSpeed, "Drive/Tune/Max Angular Speed (dps)", 360)
-REGISTER_DOUBLE(DriveTuneMaxInclination, "Drive/Tune/Max Inclination (deg)", 10)
-REGISTER_DOUBLE(DriveTuneMaxSpeedFactor, "Drive/Tune/Max Speed Factor", 0.5)
 REGISTER_DOUBLE(DriveTuneDeadband, "Drive/Tune/Deadband", 0.2)
+
+// clang-format on
+
+double to180(units::radian_t value) {
+  return MathUtils::ClampAngle(value).convert<units::degree>().value();
+}
+
+double to90(units::radian_t value) {
+  const auto v = fabs(value.convert<units::degree>().value());
+  return v - ((int) v / 90.0) * 90.0;  // modulus 90
+}
 
 static const double defaultVisionPosition[] = { -1.0, -1.0, 0.0 };
 
 DriveSubsystem::DriveSubsystem() :
-  m_magLimiter { GetDriveSlewRateMagnitude() / 1_s },
-  m_rotLimiter { GetDriveSlewRateRotation() / 1_s },
-  m_slewRateDirection { GetDriveSlewRateDirection() },
+  m_rotLimiter(GetDriveSlewRateRotation() / 1_s),
+  m_magLimiter(GetDriveSlewRateAccelerate() / 1_s, -fabs(GetDriveSlewRateDecelerate()) / 1_s),
+  m_dirLimiter { units::radian_t { GetDriveSlewRateDirection() } / 1_s },
   m_deadband { GetDriveTuneDeadband() },
   m_maxSpeed { units::meters_per_second_t { GetDriveTuneMaxSpeed() } },
   m_maxAngularSpeed { units::degrees_per_second_t { GetDriveTuneMaxAngularSpeed() } },
-  m_translationStep { units::convert<units::degree, units::radian>(GetDriveTuneTranslationStep()) },
-  m_maxSpeedFactor { GetDriveTuneMaxSpeedFactor() },
-  m_maxInclination { GetDriveTuneMaxInclination() },
+  m_headingStep { units::convert<units::degree, units::radian>(GetDriveTuneHeadingStep()) },
   m_frontLeft {
     kFrontLeftDrivingCanId,
     kFrontLeftTurningCanId,
     kFrontLeftChassisAngularOffset,
   },
-  m_rearLeft {
-    kRearLeftDrivingCanId,
-    kRearLeftTurningCanId,
-    kRearLeftChassisAngularOffset,
-  },
   m_frontRight {
     kFrontRightDrivingCanId,
     kFrontRightTurningCanId,
     kFrontRightChassisAngularOffset,
+  },
+  m_rearLeft {
+    kRearLeftDrivingCanId,
+    kRearLeftTurningCanId,
+    kRearLeftChassisAngularOffset,
   },
   m_rearRight {
     kRearRightDrivingCanId,
@@ -94,17 +104,29 @@ void DriveSubsystem::InitSendable(wpi::SendableBuilder& builder) {
   builder.SetSmartDashboardType("Drive");
 
   builder.AddDoubleProperty(
-    "Telemetry/Translation Heading", [this] { return m_currentTranslationDir; }, nullptr);
+    "Telemetry/Lateral Heading",
+    [this] { return m_currentHeading.convert<units::degree>().value(); },
+    nullptr);
   builder.AddDoubleProperty(
-    "Telemetry/Translation Magnitude", [this] { return m_currentTranslationMag; }, nullptr);
+    "Telemetry/Lateral Magnitude", [this] { return m_currentSpeed; }, nullptr);
   builder.AddDoubleProperty(
-    "Telemetry/Current Rotation", [this] { return m_currentRotation; }, nullptr);
+    "Telemetry/Rotation", [this] { return m_currentRotation; }, nullptr);
   builder.AddDoubleProperty(
-    "Telemetry/Turn Rate", [this] { return GetTurnRate(); }, nullptr);
+    "Telemetry/Input Lateral Heading",
+    [this] { return m_inputHeading.convert<units::degree>().value(); },
+    nullptr);
   builder.AddDoubleProperty(
-    "Telemetry/Heading", [this] { return GetHeading().Degrees().value(); }, nullptr);
+    "Telemetry/Input Lateral Magnitude", [this] { return m_inputSpeed; }, nullptr);
   builder.AddDoubleProperty(
-    "Telemetry/Fused Heading", [this] { return m_gyro.GetFusedHeading(); }, nullptr);
+    "Telemetry/Input Rotation", [this] { return m_inputRotation; }, nullptr);
+  builder.AddDoubleProperty(
+    "Telemetry/Vx", [this] { return m_currentVx.value(); }, nullptr);
+  builder.AddDoubleProperty(
+    "Telemetry/Vy", [this] { return m_currentVy.value(); }, nullptr);
+  builder.AddDoubleProperty(
+    "Telemetry/ω", [this] { return m_currentOmega.value(); }, nullptr);
+  builder.AddDoubleProperty(
+    "Telemetry/Heading", [this] { return to180(GetHeading().Radians()); }, nullptr);
   builder.AddDoubleProperty(
     "Telemetry/Yaw", [this] { return m_gyro.GetYaw(); }, nullptr);
   builder.AddDoubleProperty(
@@ -112,8 +134,48 @@ void DriveSubsystem::InitSendable(wpi::SendableBuilder& builder) {
   builder.AddDoubleProperty(
     "Telemetry/Roll", [this] { return m_gyro.GetRoll(); }, nullptr);
   builder.AddBooleanProperty(
+    "Telemetry/X formation", [this] { return m_stopX; }, nullptr);
+  builder.AddBooleanProperty(
     "Telemetry/IMU Ready",
     [this] { return m_gyro.GetState() == ctre::phoenix::sensors::PigeonIMU::PigeonState::Ready; },
+    nullptr);
+  builder.AddDoubleProperty(
+    "Telemetry/Swerve States/Driving Current",
+    [this] {
+      return std::max(
+        std::max(m_frontLeft.GetDrivingCurrent(), m_frontRight.GetDrivingCurrent()),
+        std::max(m_rearLeft.GetDrivingCurrent(), m_rearRight.GetDrivingCurrent()));
+    },
+    nullptr);
+  builder.AddDoubleProperty(
+    "Telemetry/Swerve States/Turning Current",
+    [this] {
+      return std::max(
+        std::max(m_frontLeft.GetTurningCurrent(), m_frontRight.GetTurningCurrent()),
+        std::max(m_rearLeft.GetTurningCurrent(), m_rearRight.GetTurningCurrent()));
+    },
+    nullptr);
+  builder.AddDoubleArrayProperty(
+    "Telemetry/Swerve States/Measured",
+    [this] {
+      return std::vector<double> {
+        to90(m_frontLeft.GetState().angle.Radians()),  fabs(m_frontLeft.GetState().speed.value()),
+        to90(m_frontRight.GetState().angle.Radians()), fabs(m_frontRight.GetState().speed.value()),
+        to90(m_rearLeft.GetState().angle.Radians()),   fabs(m_rearLeft.GetState().speed.value()),
+        to90(m_rearRight.GetState().angle.Radians()),  fabs(m_rearRight.GetState().speed.value()),
+      };
+    },
+    nullptr);
+  builder.AddDoubleArrayProperty(
+    "Telemetry/Swerve States/Desired",
+    [this] {
+      return std::vector<double> {
+        to90(m_frontLeft.GetDesiredAngle()),  fabs(m_frontLeft.GetDesiredSpeed().value()),
+        to90(m_frontRight.GetDesiredAngle()), fabs(m_frontRight.GetDesiredSpeed().value()),
+        to90(m_rearLeft.GetDesiredAngle()),   fabs(m_rearLeft.GetDesiredSpeed().value()),
+        to90(m_rearRight.GetDesiredAngle()),  fabs(m_rearRight.GetDesiredSpeed().value()),
+      };
+    },
     nullptr);
 }
 
@@ -121,102 +183,137 @@ void DriveSubsystem::Periodic() {
   UpdateOdometry();
 }
 
-void DriveSubsystem::Drive(
-  units::meters_per_second_t xSpeed,
-  units::meters_per_second_t ySpeed,
-  units::radians_per_second_t rot,
-  bool fieldRelative,
-  bool rateLimit) {
-  double xSpeedCommanded;
-  double ySpeedCommanded;
+void DriveSubsystem::Drive(double xSpeed, double ySpeed, double rotSpeed, bool fieldRelative) {
+  // convert XY to polar for rate limiting
 
-  if (rateLimit) {
-    // convert XY to polar for rate limiting
-    auto inputTranslationDir = atan2(ySpeed.value(), xSpeed.value());
-    const auto inputTranslationMag = sqrt(pow(xSpeed.value(), 2) + pow(ySpeed.value(), 2));
+  // clamp vector to unit circle, since joystick reports values that
+  // overshoot slightly when not aligned with X or Y axis
+  m_inputSpeed = std::clamp(sqrt(pow(xSpeed, 2) + pow(ySpeed, 2)), -1.0, 1.0);
 
-    if (m_translationStep > 0) {
-      inputTranslationDir = MathUtils::RoundToStep(inputTranslationDir, m_translationStep);
-    }
-
-    // calculate the direction slew rate based on an estimate of the lateral acceleration
-    const auto directionSlewRate =
-      m_currentTranslationMag != 0.0
-        ? abs(m_slewRateDirection / m_currentTranslationMag)
-        : 500.0;  // some high number that means the slew rate is effectively instantaneous
-
-    const auto currentTime = wpi::Now() * 1e-6;
-    const auto elapsedTime = currentTime - m_prevTime;
-    const auto angleDiff =
-      SwerveUtils::AngleDifference(inputTranslationDir, m_currentTranslationDir);
-
-    if (angleDiff < 0.45 * std::numbers::pi) {
-      m_currentTranslationDir = SwerveUtils::StepTowardsCircular(
-        m_currentTranslationDir, inputTranslationDir, directionSlewRate * elapsedTime);
-      m_currentTranslationMag = m_magLimiter.Calculate(inputTranslationMag);
-    } else if (angleDiff > 0.85 * std::numbers::pi) {
-      // some small number to avoid floating-point errors with equality checking
-      if (m_currentTranslationMag > 1e-4) {
-        // keep currentTranslationDir unchanged
-        m_currentTranslationMag = m_magLimiter.Calculate(0.0);
-      } else {
-        m_currentTranslationDir =
-          SwerveUtils::WrapAngle(m_currentTranslationDir + std::numbers::pi);
-        m_currentTranslationMag = m_magLimiter.Calculate(inputTranslationMag);
-      }
-    } else {
-      m_currentTranslationDir = SwerveUtils::StepTowardsCircular(
-        m_currentTranslationDir, inputTranslationDir, directionSlewRate * elapsedTime);
-      m_currentTranslationMag = m_magLimiter.Calculate(0.0);
-    }
-
-    m_prevTime = currentTime;
-
-    xSpeedCommanded = m_currentTranslationMag * cos(m_currentTranslationDir);
-    ySpeedCommanded = m_currentTranslationMag * sin(m_currentTranslationDir);
-    m_currentRotation = m_rotLimiter.Calculate(rot.value());
-  } else {
-    xSpeedCommanded = xSpeed.value();
-    ySpeedCommanded = ySpeed.value();
-    m_currentRotation = rot.value();
+  // maintain last heading at stop / very low speeds to prevent
+  // abrupt changes to lateral direction that causes the robot
+  // to jerk when the joystick is released
+  if (!MathUtils::IsZero(m_inputSpeed, 0.01)) {
+    m_inputHeading = MathUtils::ClampAngle(units::radian_t {
+      MathUtils::RoundToStep(atan2(ySpeed, xSpeed), m_headingStep),
+    });
   }
 
-  const auto maxSpeed = GetMaxSpeed();
+  m_inputRotation = rotSpeed;
+
+  // reset X wheel formation when input is received
+  if (m_stopX && (!MathUtils::IsZero(m_inputRotation) || !MathUtils::IsZero(m_inputSpeed))) {
+    m_stopX = false;
+  }
+
+  // apply rate limiting to rotation
+  m_currentRotation = m_rotLimiter.Calculate(m_inputRotation);
+
+  // make heading slew rate dependent on the magnitude of lateral "speed"
+  // when the robot is moving slowly we should allow for much faster changes
+  // to the directional heading, while clamping it down at higher speeds
+  //
+  // here we calculate a "damping" factor as the inverse of the lateral "speed";
+  // at maximum "speed" (1) the factor is 1, forcing the limiter to apply
+  // the maximum constraints; as the speed decreases the factor increases
+  // effectively increasing the maximum allowed slew rate
+  const auto factor = MathUtils::IsZero(m_currentSpeed) ? 1000.0 : fabs(1.0 / m_currentSpeed);
+
+  // we consider three scenarios based on the angular sectors where
+  // new heading falls in relative to the current heading (last commanded):
+  // 1. the 80° sector in front
+  // 2. the 80° sector in rear
+  // 3. the 100° left and right sectors
+  //
+  // - in the first case we continue maintaining commanded speed and steer
+  // as usual (subject to dumping factor);
+  // - in the second case we keep current heading while slowing down to
+  // a full stop then flip the heading 180° and start accelerating to
+  // the commanded speed (places us back to case 1.)
+  // - in the third case we start slowing down to a full stop while steering
+  // towards new heading until we are back to the case 1.
+
+  const auto headingDelta =
+    units::math::fabs(MathUtils::ClampAngle(m_inputHeading - m_currentHeading));
+
+  constexpr auto sectorF = units::radian_t { 0.22 * std::numbers::pi };
+  constexpr auto sectorR = units::radian_t { 0.78 * std::numbers::pi };
+
+  if (headingDelta < sectorF) {
+    m_currentSpeed = m_magLimiter.Calculate(m_inputSpeed);
+    m_currentHeading = m_dirLimiter.Calculate(m_inputHeading, factor);
+  } else if (headingDelta > sectorR) {
+    if (!MathUtils::IsZero(m_currentSpeed)) {
+      // keep heading
+      m_currentSpeed = m_magLimiter.Calculate(0.0);
+    } else {
+      m_currentSpeed = m_magLimiter.Calculate(m_inputSpeed);
+      m_currentHeading =
+        MathUtils::ClampAngle(m_currentHeading + units::radian_t { std::numbers::pi });
+    }
+  } else {
+    m_currentSpeed = m_magLimiter.Calculate(0.0);
+    m_currentHeading = m_dirLimiter.Calculate(m_inputHeading, factor);
+  }
+
+  const auto xSpeedCommanded = m_currentSpeed * units::math::cos(m_currentHeading);
+  const auto ySpeedCommanded = m_currentSpeed * units::math::sin(m_currentHeading);
 
   // convert the commanded speeds into the correct units for the drivetrain
+  const auto maxSpeed = GetMaxSpeed();
   const auto xSpeedDelivered = xSpeedCommanded * maxSpeed;
   const auto ySpeedDelivered = ySpeedCommanded * maxSpeed;
   const auto rotDelivered = m_currentRotation * m_maxAngularSpeed;
 
-  auto states = kDriveKinematics.ToSwerveModuleStates(
-    fieldRelative ? frc::ChassisSpeeds::FromFieldRelativeSpeeds(
-                      xSpeedDelivered, ySpeedDelivered, rotDelivered, GetHeading())
-                  : frc::ChassisSpeeds { xSpeedDelivered, ySpeedDelivered, rotDelivered });
+  const auto speeds = fieldRelative
+                      ? frc::ChassisSpeeds::FromFieldRelativeSpeeds(
+                          xSpeedDelivered, ySpeedDelivered, rotDelivered, GetHeading())
+                      : frc::ChassisSpeeds { xSpeedDelivered, ySpeedDelivered, rotDelivered };
 
-  kDriveKinematics.DesaturateWheelSpeeds(&states, maxSpeed);
-
-  const auto [fl, fr, bl, br] = states;
-
-  m_frontLeft.SetDesiredState(fl);
-  m_frontRight.SetDesiredState(fr);
-  m_rearLeft.SetDesiredState(bl);
-  m_rearRight.SetDesiredState(br);
+  SetChassisSpeeds(speeds);
 }
 
 void DriveSubsystem::SetX() {
-  m_frontLeft.SetDesiredState(frc::SwerveModuleState { 0_mps, frc::Rotation2d { 45_deg } });
-  m_frontRight.SetDesiredState(frc::SwerveModuleState { 0_mps, frc::Rotation2d { -45_deg } });
-  m_rearLeft.SetDesiredState(frc::SwerveModuleState { 0_mps, frc::Rotation2d { -45_deg } });
-  m_rearRight.SetDesiredState(frc::SwerveModuleState { 0_mps, frc::Rotation2d { 45_deg } });
+  m_stopX = true;
+  Stop();
+}
+
+void DriveSubsystem::SetChassisSpeeds(const frc::ChassisSpeeds& speeds) {
+  m_currentVx = speeds.vx;
+  m_currentVy = speeds.vy;
+  m_currentOmega = speeds.omega;
+
+#ifdef SWERVE_SECOND_ORDER_KINEMATICS
+  const auto states = kDriveKinematics.ToSwerveModuleStates2(speeds);
+#else
+  const auto states = kDriveKinematics.ToSwerveModuleStates(speeds);
+#endif
+  const auto stopped = MathUtils::IsZero(speeds.vx.value()) &&
+                       MathUtils::IsZero(speeds.vy.value()) &&
+                       MathUtils::IsZero(speeds.omega.value());
+
+  SetModuleStates(states, stopped);
 }
 
 void DriveSubsystem::SetModuleStates(
-  wpi::array<frc::SwerveModuleState, NUMBER_OF_MODULES> desiredStates) {
-  kDriveKinematics.DesaturateWheelSpeeds(&desiredStates, m_maxSpeed);
-  m_frontLeft.SetDesiredState(desiredStates[0]);
-  m_frontRight.SetDesiredState(desiredStates[1]);
-  m_rearLeft.SetDesiredState(desiredStates[2]);
-  m_rearRight.SetDesiredState(desiredStates[3]);
+  wpi::array<SwerveModuleState, NUMBER_OF_MODULES> desiredStates, bool stopped) {
+  kDriveKinematics.DesaturateWheelSpeeds(&desiredStates, GetMaxSpeed());
+
+  // X wheel formation when stopped
+  if (stopped && m_stopX) {
+    desiredStates[0] = SwerveModuleState { 0_mps, frc::Rotation2d { 45_deg } };
+    desiredStates[1] = SwerveModuleState { 0_mps, frc::Rotation2d { -45_deg } };
+    desiredStates[2] = SwerveModuleState { 0_mps, frc::Rotation2d { -45_deg } };
+    desiredStates[3] = SwerveModuleState { 0_mps, frc::Rotation2d { 45_deg } };
+  }
+
+  m_desiredStates = desiredStates;
+  const auto [fl, fr, rl, rr] = desiredStates;
+
+  m_frontLeft.SetDesiredState(fl);
+  m_frontRight.SetDesiredState(fr);
+  m_rearLeft.SetDesiredState(rl);
+  m_rearRight.SetDesiredState(rr);
 }
 
 void DriveSubsystem::ResetEncoders() {
@@ -227,21 +324,6 @@ void DriveSubsystem::ResetEncoders() {
 }
 
 units::meters_per_second_t DriveSubsystem::GetMaxSpeed() const {
-  if (m_maxInclination <= 0.0) {
-    return m_maxSpeed;
-  }
-
-  // reduce max speed when pitch / roll are too high to help reduce
-  // chances of robot tipping over
-  double ypr[3];
-  m_gyro.GetYawPitchRoll(ypr);
-  const auto pitch = ypr[1];
-  const auto roll = ypr[2];
-
-  if (fabs(pitch) >= m_maxInclination || fabs(roll) >= m_maxInclination) {
-    return m_maxSpeed * m_maxSpeedFactor;
-  }
-
   return m_maxSpeed;
 }
 
@@ -303,18 +385,28 @@ frc::Pose2d DriveSubsystem::GetPose() const {
 }
 
 void DriveSubsystem::UpdateTuningParameters() {
-  m_slewRateDirection = GetDriveSlewRateDirection();
+  frc::DataLogManager::Log("Drive: Retuning");
+
   m_deadband = GetDriveTuneDeadband();
   m_maxSpeed = units::meters_per_second_t { GetDriveTuneMaxSpeed() };
   m_maxAngularSpeed = units::degrees_per_second_t { GetDriveTuneMaxAngularSpeed() };
-  m_translationStep = units::convert<units::degree, units::radian>(GetDriveTuneTranslationStep());
-  m_maxInclination = GetDriveTuneMaxInclination();
-  m_maxSpeedFactor = GetDriveTuneMaxSpeedFactor();
+  m_headingStep = units::convert<units::degree, units::radian>(GetDriveTuneHeadingStep());
+
+  // re-create slew rate limiters for translation magnitude and rotation
+  // since these do not have a mechanism to update rate limits at runtime
+  m_rotLimiter = frc::SlewRateLimiter<units::scalar>(GetDriveSlewRateRotation() / 1_s);
+  m_magLimiter = frc::SlewRateLimiter<units::scalar>(
+    GetDriveSlewRateAccelerate() / 1_s, -fabs(GetDriveSlewRateDecelerate()) / 1_s);
+  m_dirLimiter.SetLimit(units::radian_t { GetDriveSlewRateDirection() } / 1_s);
+
+  // update modules
+  m_frontLeft.UpdateTuningParameters();
+  m_frontRight.UpdateTuningParameters();
+  m_rearLeft.UpdateTuningParameters();
+  m_rearRight.UpdateTuningParameters();
 }
 
 void DriveSubsystem::ResetOdometry(const frc::Pose2d& pose) {
-  frc::DataLogManager::Log("ResetOdometer");
-  m_gyro.Reset();
   m_odometry.ResetPosition(
     GetHeading(),
     {
@@ -327,5 +419,5 @@ void DriveSubsystem::ResetOdometry(const frc::Pose2d& pose) {
 }
 
 void DriveSubsystem::Stop() {
-  Drive(0_mps, 0_mps, 0_rad_per_s, true, true);
+  Drive(0, 0, 0, true);
 }

@@ -16,6 +16,16 @@
 
 #include "Constants.h"
 #include "MAXSwerveModule.h"
+#include "utils/AngleSlewRateLimiter.h"
+#include "utils/SwerveDriveKinematics2.h"
+
+#ifdef SWERVE_SECOND_ORDER_KINEMATICS
+template <size_t NumModules>
+using SwerveDriveKinematics = SwerveDriveKinematics2<NumModules>;
+#else
+template <size_t NumModules>
+using SwerveDriveKinematics = frc::SwerveDriveKinematics<NumModules>;
+#endif
 
 // number of MAXSwerveModule managed by drive subsystem
 #define NUMBER_OF_MODULES 4
@@ -34,24 +44,16 @@ class DriveSubsystem : public frc2::SubsystemBase {
    */
   void Periodic() override;
 
-  // Subsystem methods go here.
-
   /**
    * Drives the robot at given x, y and theta speeds. Speeds range from [-1, 1]
    * and the linear speeds have no effect on the angular speed.
    *
-   * @param xSpeed        Speed of the robot in the x direction (forward/backwards).
-   * @param ySpeed        Speed of the robot in the y direction (sideways).
-   * @param rot           Angular rate of the robot.
-   * @param fieldRelative Whether the provided x and y speeds are relative to the field.
-   * @param rateLimit     Whether to enable rate limiting for smoother control.
+   * @param xSpeed Input speed of the robot in the x direction (forward/backwards).
+   * @param ySpeed Input speed of the robot in the y direction (sideways).
+   * @param rotSpeed Angular speed of the robot.
+   * @param fieldRelative Indicates that provided x and y speeds are relative to the field.
    */
-  void Drive(
-    units::meters_per_second_t xSpeed,
-    units::meters_per_second_t ySpeed,
-    units::radians_per_second_t rot,
-    bool fieldRelative,
-    bool rateLimit);
+  void Drive(double xSpeed, double ySpeed, double rotSpeed, bool fieldRelative);
 
   /**
    * Re-reads and re-assigns various tuning parameters.
@@ -69,13 +71,8 @@ class DriveSubsystem : public frc2::SubsystemBase {
   void ResetEncoders();
 
   /**
-   * Sets the drive MotorControllers to a power from -1 to 1.
-   */
-  void SetModuleStates(wpi::array<frc::SwerveModuleState, NUMBER_OF_MODULES> desiredStates);
-
-  /**
    * Returns the heading of the robot.
-   * @return the robot's heading in degrees, from 180 to 180
+   * @return The robot's heading.
    */
   frc::Rotation2d GetHeading() const;
 
@@ -113,7 +110,26 @@ class DriveSubsystem : public frc2::SubsystemBase {
    */
   void Stop();
 
-  frc::SwerveDriveKinematics<NUMBER_OF_MODULES> kDriveKinematics {
+  /**
+   * Sets the drive subsystem to the specified chassis speeds.
+   *
+   * @param speeds Chassis speeds.
+   */
+  void SetChassisSpeeds(const frc::ChassisSpeeds& speeds);
+
+  /**
+   * Sets the drive motor controllers to the specified speeds and orientations.
+   *
+   * @param desiredStates Drive module states.
+   * @param stopped Indicates that robot is stopped.
+   */
+  void SetModuleStates(
+    wpi::array<SwerveModuleState, NUMBER_OF_MODULES> desiredStates, bool stopped = false);
+
+  /**
+   * Kinematics describing the drive type.
+   */
+  SwerveDriveKinematics<NUMBER_OF_MODULES> kDriveKinematics {
     frc::Translation2d { DriveConstants::kWheelBase / 2, DriveConstants::kTrackWidth / 2 },
     frc::Translation2d { DriveConstants::kWheelBase / 2, -DriveConstants::kTrackWidth / 2 },
     frc::Translation2d { -DriveConstants::kWheelBase / 2, DriveConstants::kTrackWidth / 2 },
@@ -132,38 +148,50 @@ class DriveSubsystem : public frc2::SubsystemBase {
    */
   units::meters_per_second_t GetMaxSpeed() const;
 
-  frc::SlewRateLimiter<units::scalar> m_magLimiter;
   frc::SlewRateLimiter<units::scalar> m_rotLimiter;
+  frc::SlewRateLimiter<units::scalar> m_magLimiter;
+  AngleSlewRateLimiter m_dirLimiter;
 
   double m_currentRotation = 0.0;
+  double m_currentSpeed = 0.0;
+  units::radian_t m_currentHeading = 0_rad;
 
-  // Slew rate filter variables for controlling lateral acceleration
-  double m_currentTranslationDir = 0.0;
-  double m_currentTranslationMag = 0.0;
-  double m_slewRateDirection = DriveConstants::kDirectionSlewRate;
+  double m_inputRotation = 0.0;  // [-1, +1]
+  double m_inputSpeed = 0.0;     // [-1,+ 1]
+  units::radian_t m_inputHeading = 0_rad;
+
+  units::meters_per_second_t m_currentVx;
+  units::meters_per_second_t m_currentVy;
+  units::radians_per_second_t m_currentOmega;
+
   double m_deadband = 0.2;
-
   units::meters_per_second_t m_maxSpeed = DriveConstants::kMaxSpeed;
   units::radians_per_second_t m_maxAngularSpeed = DriveConstants::kMaxAngularSpeed;
 
-  // Constrain translational direction heading to a discrete step values (in radians)
-  double m_translationStep = 0.0;
-  double m_maxSpeedFactor = 1.0;
-  double m_maxInclination = 0.0;
+  // constrain translational direction heading to a discrete step values (in radians)
+  double m_headingStep = 0.0;
 
-  // Components (e.g. motor controllers and sensors) should generally be
-  // declared private and exposed only through public methods.
+  // indicates that robot should maintain X wheel formation when stopped
+  bool m_stopX;
+
+  // components (e.g. motor controllers and sensors) should generally be
+  // declared private and exposed only through public methods
   MAXSwerveModule m_frontLeft;
-  MAXSwerveModule m_rearLeft;
   MAXSwerveModule m_frontRight;
+  MAXSwerveModule m_rearLeft;
   MAXSwerveModule m_rearRight;
+
+  wpi::array<SwerveModuleState, NUMBER_OF_MODULES> m_desiredStates = {
+    SwerveModuleState(),
+    SwerveModuleState(),
+    SwerveModuleState(),
+    SwerveModuleState(),
+  };
 
   TalonSRX m_gyroController { IntakeConstants::kIntakeLeaderControllerCanId };
   WPI_PigeonIMU m_gyro { m_gyroController };
 
-  double m_prevTime = wpi::Now() * 1e-6;
-
-  // Odometry tracking can be based on either XxxOdometry or XxxPoseEstimator
+  // odometry tracking can be based on either XxxOdometry or XxxPoseEstimator
   // XxxOdometry relies only on encoders and gyro to estimate the pose
   // XxxPoseEstimator extends basic odometry tracking by accepting pose from
   // external vision system to compensate for the drift

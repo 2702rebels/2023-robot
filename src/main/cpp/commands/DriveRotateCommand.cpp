@@ -29,10 +29,9 @@ void DriveRotateCommand::Execute() {
   const auto thetaFF =
     units::radians_per_second_t { m_controller.Calculate(rotation, m_desiredRotation.Radians()) };
 
-  const auto targetModuleStates = m_drive->kDriveKinematics.ToSwerveModuleStates(
-    frc::ChassisSpeeds::FromFieldRelativeSpeeds(0_mps, 0_mps, thetaFF, rotation));
+  const auto speeds = frc::ChassisSpeeds::FromFieldRelativeSpeeds(0_mps, 0_mps, thetaFF, rotation);
 
-  m_drive->SetModuleStates(targetModuleStates);
+  m_drive->SetChassisSpeeds(speeds);
 }
 
 void DriveRotateCommand::End(bool interrupted) {
@@ -44,7 +43,7 @@ bool DriveRotateCommand::IsFinished() {
   const auto rotation = m_drive->GetPose().Rotation().Degrees();
 
   // keep track of the timestamp when the rotation has stabilized
-  if (units::math::abs(rotation - m_lastRotation) > 1_deg) {
+  if (units::math::fabs(rotation - m_lastRotation) > 1_deg) {
     m_lastRotationAt = m_timer.Get();
   }
 
@@ -53,5 +52,5 @@ bool DriveRotateCommand::IsFinished() {
   // we are finished if we have stopped rotating for at least 1 second
   // or we are at the objective within 2 degrees
   return (m_timer.Get() - m_lastRotationAt > 1_s) ||
-         units::math::abs(rotation - m_desiredRotation.Degrees()) < 2_deg;
+         units::math::fabs(rotation - m_desiredRotation.Degrees()) < 2_deg;
 }

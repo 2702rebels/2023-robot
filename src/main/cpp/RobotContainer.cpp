@@ -1,19 +1,12 @@
 #include "RobotContainer.h"
 
 #include <frc/DataLogManager.h>
-#include <frc/controller/PIDController.h>
-#include <frc/geometry/Translation2d.h>
 #include <frc/shuffleboard/Shuffleboard.h>
-#include <frc/trajectory/Trajectory.h>
-#include <frc/trajectory/TrajectoryGenerator.h>
 #include <frc2/command/CommandScheduler.h>
 #include <frc2/command/Commands.h>
 #include <frc2/command/InstantCommand.h>
 #include <frc2/command/SequentialCommandGroup.h>
-#include <frc2/command/SwerveControllerCommand.h>
 #include <frc2/command/button/JoystickButton.h>
-#include <units/angle.h>
-#include <units/velocity.h>
 
 #include <utility>
 
@@ -79,13 +72,9 @@ RobotContainer::RobotContainer() {
   m_drive.SetDefaultCommand(frc2::RunCommand(
     [this] {
       m_drive.Drive(
-        -units::meters_per_second_t {
-          frc::ApplyDeadband(m_driverController.GetLeftY(), m_drive.GetDeadband()) },
-        -units::meters_per_second_t {
-          frc::ApplyDeadband(m_driverController.GetLeftX(), m_drive.GetDeadband()) },
-        -units::radians_per_second_t {
-          frc::ApplyDeadband(m_driverController.GetRightX(), m_drive.GetDeadband()) },
-        true,
+        -frc::ApplyDeadband(m_driverController.GetLeftY(), m_drive.GetDeadband()),
+        -frc::ApplyDeadband(m_driverController.GetLeftX(), m_drive.GetDeadband()),
+        -frc::ApplyDeadband(m_driverController.GetRightX(), m_drive.GetDeadband()),
         true);
     },
     { &m_drive }));
@@ -185,7 +174,12 @@ void RobotContainer::ConfigureButtonBindings() {
 
   // Lock the wheels.
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kLeftStick)
-    .WhileTrue(new frc2::RunCommand([this] { m_drive.SetX(); }, { &m_drive }));
+    .WhileTrue(frc2::RunCommand([this] { m_drive.SetX(); }, { &m_drive }).ToPtr());
+
+  frc2::Trigger(
+    m_driverController.POVLeft(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+    .OnTrue(
+      frc2::InstantCommand([this] { m_drive.UpdateTuningParameters(); }, { &m_drive }).ToPtr());
 
   // frc2::Trigger(
   //   m_driverController.POVDown(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
@@ -284,59 +278,6 @@ frc2::Command* RobotContainer::GetAutonomousCommand() {
 #ifdef AUTO_CHOOSER
   return m_chooser.GetSelected();
 #else
-#ifdef DRIVETRAIN_ENABLED
-  // set up config for trajectory
-  frc::TrajectoryConfig config(AutoConstants::kMaxSpeed, AutoConstants::kMaxAcceleration);
-
-  // add kinematics to ensure max speed is actually obeyed
-  config.SetKinematics(m_drive.kDriveKinematics);
-
-  // an example trajectory to follow (all units in meters)
-  const auto exampleTrajectory = frc::TrajectoryGenerator::GenerateTrajectory(
-    {
-      frc::Pose2d { 0_m, 0_m, 0_deg },
-      frc::Pose2d { 1_m, 0_m, 0_deg },
-      frc::Pose2d { 2_m, 0_m, 0_deg },
-      frc::Pose2d { 3_m, 0_m, 0_deg },
-      frc::Pose2d { 4_m, 0_m, 0_deg },
-    },
-    // pass the config
-    config);
-
-  frc::ProfiledPIDController<units::radians> thetaController {
-    AutoConstants::kPThetaController,
-    AutoConstants::kIThetaController,
-    AutoConstants::kDThetaController,
-    AutoConstants::kThetaControllerConstraints
-  };
-
-  thetaController.EnableContinuousInput(
-    units::radian_t { -std::numbers::pi }, units::radian_t { std::numbers::pi });
-
-  const auto rotation = frc::Rotation2d { 180_deg };
-  frc2::SwerveControllerCommand<NUMBER_OF_MODULES> swerveControllerCommand(
-    exampleTrajectory,
-    [this]() { return m_drive.GetPose(); },
-    m_drive.kDriveKinematics,
-    frc2::PIDController {
-      AutoConstants::kPXController, AutoConstants::kIXController, AutoConstants::kDXController },
-    frc2::PIDController {
-      AutoConstants::kPYController, AutoConstants::kIYController, AutoConstants::kDYController },
-    thetaController,
-    [rotation]() { return rotation; },
-    [this](auto moduleStates) { m_drive.SetModuleStates(moduleStates); },
-    { &m_drive });
-
-  // reset odometry to the starting pose of the trajectory
-  m_drive.ResetOdometry(exampleTrajectory.InitialPose());
-
-  // no auto
-  return new frc2::SequentialCommandGroup(
-    std::move(swerveControllerCommand),
-    frc2::InstantCommand([this]() { m_drive.Drive(0_mps, 0_mps, 0_rad_per_s, true, true); }, {}));
-#else
-  return new frc2::InstantCommand(
-    [this] { frc::DataLogManager::Log("Drivetrain disabled. Auto not run."); });
-#endif
+  return new frc2::InstantCommand([this] { frc::DataLogManager::Log("No autonomous code"); });
 #endif
 }

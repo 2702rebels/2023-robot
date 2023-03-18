@@ -89,14 +89,20 @@
     "thread": "cpp",
     "cinttypes": "cpp",
     "typeindex": "cpp",
-    "typeinfo": "cpp"
+    "typeinfo": "cpp",
+    "qr": "cpp",
+    "jacobi": "cpp",
+    "matrixfunctions": "cpp"
   },
   "cSpell.words": [
     "Brushless",
     "Deadband",
     "discretize",
+    "Holonomic",
+    "Matrixd",
     "odometry",
-    "teleop"
+    "teleop",
+    "timeframe"
   ],
   "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx2G -Xms100m -Xlog:disable"
 }

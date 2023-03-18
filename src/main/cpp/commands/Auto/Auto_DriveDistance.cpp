@@ -6,11 +6,10 @@
 Auto_DriveDistance::Auto_DriveDistance(DriveSubsystem* drive) {
   AddCommands(DriveTrajectoryCommand(
     {
-      frc::Pose2d { 0_m, 0_m, 0_deg }, frc::Pose2d { 1_m, 0_m, 0_deg },
-      //  frc::Pose2d { 2_m, 0_m, 0_deg },
-      // frc::Pose2d { 3_m, 0_m, 0_deg },
+      Waypoint(frc::Pose2d { 0_m, 0_m, 0_deg }, frc::Rotation2d(0_deg)),
+      Waypoint(frc::Pose2d { 1_m, 0_m, 0_deg }, frc::Rotation2d(0_deg)),
     },
-    frc::Rotation2d { 0_deg },
+    frc::Translation2d { 0_m, 0_m },
     false,
     true,
     drive));
