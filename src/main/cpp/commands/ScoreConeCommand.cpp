@@ -14,36 +14,28 @@ ScoreConeCommand::ScoreConeCommand(ArmSubsystem* arm, IntakeSubsystem* intake) :
 
 // Called when the command is initially scheduled.
 void ScoreConeCommand::Initialize() {
-  m_isPlaced = false;
-  m_isRetracting = false;
-  m_arm->Move(
-    m_arm->GetAxis1Angle() - ArmConstants::kConePlacementDistance, m_arm->GetAxis2Distance());
+  m_armisClear = false;
+  m_intake->PlaceCone();
+  m_arm->Move(m_arm->GetAxis1Angle(), 0.0_in);
 }
 
 // Called repeatedly when this Command is scheduled to run
 void ScoreConeCommand::Execute() {
-  if (!m_isPlaced && m_arm->IsAtCommandedPosition()) {
-    m_isPlaced = true;
-    m_intake->OuttakeCone();
-  }
-
-  if (!m_isRetracting && m_isPlaced) {
-    m_isRetracting = true;
-    m_arm->Move(m_arm->GetAxis1Angle(), 0.0_in);
-    m_outtakingStartTime = frc::Timer::GetFPGATimestamp();
+  if (m_arm->IsAtCommandedPosition()) {
+    m_armisClear = true;
   }
 }
 
 // Called once the command ends or is interrupted.
 void ScoreConeCommand::End(bool interrupted) {
   m_intake->Stop();
+  m_intake->CloseCone();
+  m_arm->Move(0.0_deg, 0.0_in);
 }
 
 // Returns true when the command should end.
 bool ScoreConeCommand::IsFinished() {
-  if (
-    m_isRetracting &&
-    frc::Timer::GetFPGATimestamp() > m_outtakingStartTime + IntakeConstants::kOuttakingTime) {
+  if (m_armisClear) {
     return true;
   }
   return false;

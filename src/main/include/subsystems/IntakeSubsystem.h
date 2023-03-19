@@ -30,6 +30,7 @@ class IntakeSubsystem : public frc2::SubsystemBase {
   void IntakeCube();
   void OuttakeCone();
   void OuttakeCube();
+  void PlaceCone();
   void Stop();
   void HoldGamePiece();
 

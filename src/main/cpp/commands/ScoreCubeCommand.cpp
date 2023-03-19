@@ -16,9 +16,9 @@ ScoreCubeCommand::ScoreCubeCommand(ArmSubsystem* arm, IntakeSubsystem* intake) :
 
 // Called when the command is initially scheduled.
 void ScoreCubeCommand::Initialize() {
+  m_startTime = frc::Timer::GetFPGATimestamp();
   m_intake->OuttakeCube();
   m_arm->Move(m_arm->GetAxis1Angle(), 0.0_in);
-  m_startTime = frc::Timer::GetFPGATimestamp();
 }
 
 // Called repeatedly when this Command is scheduled to run
@@ -27,11 +27,15 @@ void ScoreCubeCommand::Execute() {}
 // Called once the command ends or is interrupted.
 void ScoreCubeCommand::End(bool interrupted) {
   m_intake->Stop();
+  m_intake->CloseCube();
+  m_arm->Move(0.0_deg, 0.0_in);
 }
 
 // Returns true when the command should end.
 bool ScoreCubeCommand::IsFinished() {
-  if (frc::Timer::GetFPGATimestamp() > m_startTime + IntakeConstants::kOuttakingTime) {
+  if (
+    m_arm->IsAtCommandedPosition() &&
+    frc::Timer::GetFPGATimestamp() > m_startTime + IntakeConstants::kOuttakingTime) {
     return true;
   }
   return false;

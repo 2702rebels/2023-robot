@@ -252,9 +252,7 @@ void RobotContainer::ConfigureButtonBindings() {
       frc2::cmd::Sequence(
         ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CUBE), IntakeCubeCommand(&m_intake)),
       [this] { return m_mode == RobotMode::CONE; }))
-    .OnFalse(frc2::cmd::Sequence(
-      frc2::InstantCommand([this] { m_intake.Stop(); }, { &m_intake }),
-      ArmMoveCommand(&m_arm, ArmPosition::STOWED)));
+    .OnFalse(ArmMoveCommand(&m_arm, ArmPosition::STOWED).ToPtr());
 
   // Score Manually.
   frc2::Trigger(m_driverController.RightTrigger(
@@ -262,9 +260,9 @@ void RobotContainer::ConfigureButtonBindings() {
     .OnTrue(frc2::cmd::Either(
       ScoreConeCommand(&m_arm, &m_intake).ToPtr(),
       ScoreCubeCommand(&m_arm, &m_intake).ToPtr(),
-      [this] { return m_mode == RobotMode::CONE; }))
-    .OnFalse(frc2::cmd::Parallel(
-      IntakeHomeGripperCommand(&m_intake), ArmMoveCommand(&m_arm, ArmPosition::STOWED)));
+      [this] { return m_mode == RobotMode::CONE; }));
+  // .OnFalse(frc2::cmd::Parallel(
+  //   IntakeHomeGripperCommand(&m_intake), ArmMoveCommand(&m_arm, ArmPosition::STOWED)));
 
   // Score manually.
   // frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kLeftBumper)

@@ -32,7 +32,6 @@ class ScoreConeCommand : public frc2::CommandHelper<frc2::CommandBase, ScoreCone
  private:
   ArmSubsystem* m_arm;
   IntakeSubsystem* m_intake;
-  bool m_isPlaced = false;
-  bool m_isRetracting = false;
+  bool m_armisClear = false;
   units::millisecond_t m_outtakingStartTime;
 };

@@ -13,7 +13,7 @@ IntakeCubeCommand::IntakeCubeCommand(IntakeSubsystem* intake) {
 // Called when the command is initially scheduled.
 void IntakeCubeCommand::Initialize() {
   m_intake->IntakeCube();
-  m_intake->SetGripperDutyCycle(-0.2);
+  m_intake->OpenCube();
 }
 
 // Called repeatedly when this Command is scheduled to run
@@ -21,6 +21,7 @@ void IntakeCubeCommand::Execute() {}
 
 // Called once the command ends or is interrupted.
 void IntakeCubeCommand::End(bool interrupted) {
+  m_intake->CloseCube();
   m_intake->HoldGamePiece();
 }
 

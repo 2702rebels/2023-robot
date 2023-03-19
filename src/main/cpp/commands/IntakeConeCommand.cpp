@@ -13,7 +13,7 @@ IntakeConeCommand::IntakeConeCommand(IntakeSubsystem* intake) {
 // Called when the command is initially scheduled.
 void IntakeConeCommand::Initialize() {
   m_intake->IntakeCone();
-  m_intake->SetGripperDutyCycle(-0.2);
+  m_intake->OpenCone();
 }
 
 // Called repeatedly when this Command is scheduled to run
@@ -24,7 +24,9 @@ void IntakeConeCommand::End(bool interrupted) {
   // if (interrupted) {
   //   // TODO: Remove this once we have a limit switch and can end gracefully.
   //   m_intake->CloseCone();
+  m_intake->CloseCone();
   m_intake->HoldGamePiece();
+
   // } else {
   //   m_intake->CloseCone();
   //   m_intake->HoldGamePiece();

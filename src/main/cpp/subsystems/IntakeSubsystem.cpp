@@ -22,6 +22,7 @@ REGISTER_DOUBLE(GripperI, "Intake/Gripper/PID/I", 0.0)
 REGISTER_DOUBLE(GripperD, "Intake/Gripper/PID/D", 0.0)
 REGISTER_DOUBLE(GripperConeOpen, "Intake/Gripper/Positions/Cone/Open", 0);
 REGISTER_DOUBLE(GripperConeClosed, "Intake/Gripper/Positions/Cone/Closed", 0);
+REGISTER_DOUBLE(GripperConePlace, "Intake/Gripper/Positions/Cone/Place", 0);
 REGISTER_DOUBLE(GripperCubeOpen, "Intake/Gripper/Positions/Cube/Open", 0);
 REGISTER_DOUBLE(GripperCubeClosed, "Intake/Gripper/Positions/Cube/Closed", 0);
 
@@ -47,7 +48,7 @@ void IntakeSubsystem::ConfigureTuningParams() {
   m_gripperMotorPIDController.SetI(GetGripperI());
   m_gripperMotorPIDController.SetD(GetGripperD());
 
-  m_gripperMotorEncoder.SetDistancePerPulse(0.087890625);
+  // m_gripperMotorEncoder.SetDistancePerPulse(0.087890625);
   frc::DataLogManager::Log(fmt::format(
     "Configured Gripper with parameters: P={}, I={}, D={}, CurrentLimit={}, "
     "CurrentLimitDuration={}",
@@ -69,9 +70,12 @@ void IntakeSubsystem::Periodic() {
 
   // Axis 3 control loop.
   if (m_isGripperControlEnabled) {
-    m_gripperMotor.Set(
-      ctre::phoenix::motorcontrol::ControlMode::PercentOutput,
-      m_gripperMotorPIDController.Calculate(IntakeSubsystem::GetGripperAngle().value()));
+    double clampedVal =
+      m_gripperMotorPIDController.Calculate(IntakeSubsystem::GetGripperAngle().value());
+    if (clampedVal > 0.2) {
+      clampedVal = 0.2;
+    }
+    m_gripperMotor.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, clampedVal);
     // frc::DataLogManager::Log(fmt::format(
     //   "PID Set: {}",
     //   m_gripperMotorPIDController.Calculate(IntakeSubsystem::GetGripperAngle().value())));
@@ -79,7 +83,9 @@ void IntakeSubsystem::Periodic() {
 }
 
 units::degree_t IntakeSubsystem::GetGripperAngle() {
-  return units::degree_t(m_gripperMotorEncoder.GetDistance());
+  return units::degree_t(
+    -1 * double(m_gripperMotor.GetSensorCollection().GetQuadraturePosition()) *
+    kGripperAnglePerTick);
 }
 
 double IntakeSubsystem::GetGripperCurrent() {
@@ -112,7 +118,8 @@ void IntakeSubsystem::SetGripperOff() {
 }
 
 void IntakeSubsystem::ZeroGripper() {
-  m_gripperMotorEncoder.Reset();
+  // m_gripperMotorEncoder.Reset();
+  m_gripperMotor.SetSelectedSensorPosition(0);
   SetGripperNextSetpoint(0_deg);
   frc::DataLogManager::Log(fmt::format("Gripper: Zeroed and started position pid at 0."));
 }
@@ -153,7 +160,8 @@ void IntakeSubsystem::Stop() {
 }
 
 void IntakeSubsystem::HoldGamePiece() {
-  IntakeSubsystem::SetIntakeSpeed(0.2);
+  IntakeSubsystem::SetIntakeSpeed(IntakeConstants::kIntakeHoldSpeed);
+  // IntakeSubsystem::SetGripperNextSetpoint(units::degree_t(0.0));
 }
 
 void IntakeSubsystem::OpenCone() {
@@ -164,6 +172,11 @@ void IntakeSubsystem::OpenCone() {
 void IntakeSubsystem::CloseCone() {
   frc::DataLogManager::Log(fmt::format("CloseCone. Setting angle to: {}", GetGripperConeClosed()));
   IntakeSubsystem::SetGripperNextSetpoint(units::degree_t(GetGripperConeClosed()));
+}
+
+void IntakeSubsystem::PlaceCone() {
+  frc::DataLogManager::Log(fmt::format("PlaceCone. Setting angle to: {}", GetGripperConePlace()));
+  IntakeSubsystem::SetGripperNextSetpoint(units::degree_t(GetGripperConePlace()));
 }
 
 void IntakeSubsystem::OpenCube() {
