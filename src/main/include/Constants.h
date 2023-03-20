@@ -96,8 +96,9 @@ constexpr double kTurningEncoderVelocityFactor =
   kTurningEncoderPositionFactor / 60.0;  // radians per second
 
 constexpr units::radians_per_second_t kTurningMotorMaxAngularVelocity =
-  units::radians_per_second_t { kTurningEncoderPositionFactor * kTurningMotorFreeSpeedRps /
-                                KTurningMotorReduction };
+  units::radians_per_second_t {
+    kTurningEncoderPositionFactor * kTurningMotorFreeSpeedRps / KTurningMotorReduction,
+  };
 
 constexpr units::radian_t kTurningEncoderPositionPIDMinInput = 0_rad;
 constexpr units::radian_t kTurningEncoderPositionPIDMaxInput =
@@ -146,14 +147,12 @@ constexpr double kDYController = 0.0;
 constexpr double kPThetaController = 4.5;
 constexpr double kIThetaController = 0.0;
 constexpr double kDThetaController = 0.0;
-
-extern const frc::TrapezoidProfile<units::radians>::Constraints kThetaControllerConstraints;
 }  // namespace AutoConstants
 
 namespace OIConstants {
 constexpr int kDriverControllerPort = 0;
 constexpr int kOperatorControllerPort = 1;
-constexpr double kDriveDeadband = 0.1;
+constexpr double kDriveDeadband = 0.2;
 }  // namespace OIConstants
 
 namespace IntakeConstants {

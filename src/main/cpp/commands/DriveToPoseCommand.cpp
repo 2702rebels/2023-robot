@@ -1,6 +1,7 @@
 #include "commands/DriveToPoseCommand.h"
 
 #include <frc/DataLogManager.h>
+#include <frc/smartdashboard/SmartDashboard.h>
 #include <units/angular_velocity.h>
 #include <units/math.h>
 #include <units/velocity.h>
@@ -14,9 +15,9 @@ REGISTER_DOUBLE(AutoDriveToPoseXYI, "Auto/DriveToPose/XY - I", 0.0);
 REGISTER_DOUBLE(AutoDriveToPoseXYD, "Auto/DriveToPose/XY - D", 0.0);
 REGISTER_DOUBLE(AutoDriveToPoseXYV, "Auto/DriveToPose/XY - v", AutoConstants::kMaxSpeed.value());
 REGISTER_DOUBLE(AutoDriveToPoseXYA, "Auto/DriveToPose/XY - a", AutoConstants::kMaxAcceleration.value());
-REGISTER_DOUBLE(AutoDriveToPoseHP, "Auto/DriveToPose/Theta - P", 1.0);
-REGISTER_DOUBLE(AutoDriveToPoseHI, "Auto/DriveToPose/Theta - I", 0.0);
-REGISTER_DOUBLE(AutoDriveToPoseHD, "Auto/DriveToPose/Theta - D", 0.0);
+REGISTER_DOUBLE(AutoDriveToPoseHP, "Auto/DriveToPose/Theta - P", AutoConstants::kPThetaController);
+REGISTER_DOUBLE(AutoDriveToPoseHI, "Auto/DriveToPose/Theta - I", AutoConstants::kIThetaController);
+REGISTER_DOUBLE(AutoDriveToPoseHD, "Auto/DriveToPose/Theta - D", AutoConstants::kDThetaController);
 REGISTER_DOUBLE(AutoDriveToPoseHV, "Auto/DriveToPose/Theta - v", AutoConstants::kMaxAngularSpeed.value());
 REGISTER_DOUBLE(AutoDriveToPoseHA, "Auto/DriveToPose/Theta - a", AutoConstants::kMaxAngularAcceleration.value());
 
@@ -115,6 +116,13 @@ void DriveToPoseCommand::Execute() {
     driveVelocity.X() / 1_s, driveVelocity.Y() / 1_s, thetaFF, currentPose.Rotation().Radians());
 
   m_drive->SetChassisSpeeds(speeds);
+
+#ifndef QUIET
+  // clang-format off
+  frc::SmartDashboard::PutNumber("Telemetry/DriveToPose/Distance", m_driveError.convert<units::meter>().value());
+  frc::SmartDashboard::PutNumber("Telemetry/DriveToPose/Theta Error", m_thetaError.convert<units::degrees>().value());
+  // clang-format on
+#endif
 }
 
 void DriveToPoseCommand::End(bool interrupted) {

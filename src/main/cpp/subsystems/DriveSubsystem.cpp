@@ -31,9 +31,9 @@ REGISTER_DOUBLE(DriveSlewRateAccelerate, "Drive/Slew/Accelerate", DriveConstants
 REGISTER_DOUBLE(DriveSlewRateDecelerate, "Drive/Slew/Decelerate", DriveConstants::kDecelerateSlewRate)
 REGISTER_DOUBLE(DriveSlewRateRotation, "Drive/Slew/Rotation", DriveConstants::kRotationalSlewRate)
 REGISTER_DOUBLE(DriveTuneHeadingStep, "Drive/Tune/Heading Step", 5)
-REGISTER_DOUBLE(DriveTuneMaxSpeed, "Drive/Tune/Max Speed (mps)", 3)
-REGISTER_DOUBLE(DriveTuneMaxAngularSpeed, "Drive/Tune/Max Angular Speed (dps)", 360)
-REGISTER_DOUBLE(DriveTuneDeadband, "Drive/Tune/Deadband", 0.2)
+REGISTER_DOUBLE(DriveTuneMaxSpeed, "Drive/Tune/Max Speed (mps)", DriveConstants::kMaxSpeed.value())
+REGISTER_DOUBLE(DriveTuneMaxAngularSpeed, "Drive/Tune/Max Angular Speed (dps)", DriveConstants::kMaxAngularSpeed.convert<units::degrees_per_second>().value())
+REGISTER_DOUBLE(DriveTuneDeadband, "Drive/Tune/Deadband", OIConstants::kDriveDeadband)
 
 // clang-format on
 
@@ -128,11 +128,17 @@ void DriveSubsystem::InitSendable(wpi::SendableBuilder& builder) {
   builder.AddDoubleProperty(
     "Telemetry/Heading", [this] { return to180(GetHeading().Radians()); }, nullptr);
   builder.AddDoubleProperty(
-    "Telemetry/Yaw", [this] { return m_gyro.GetYaw(); }, nullptr);
+    "Telemetry/Pitch", [this] { return to90(m_pitch); }, nullptr);
   builder.AddDoubleProperty(
-    "Telemetry/Pitch", [this] { return m_gyro.GetPitch(); }, nullptr);
+    "Telemetry/Roll", [this] { return to90(m_roll); }, nullptr);
   builder.AddDoubleProperty(
-    "Telemetry/Roll", [this] { return m_gyro.GetRoll(); }, nullptr);
+    "Telemetry/Pitch Velocity",
+    [this] { return m_pitchVelocity.convert<units::deg_per_s>().value(); },
+    nullptr);
+  builder.AddDoubleProperty(
+    "Telemetry/Roll Velocity",
+    [this] { return m_rollVelocity.convert<units::deg_per_s>().value(); },
+    nullptr);
   builder.AddBooleanProperty(
     "Telemetry/X formation", [this] { return m_stopX; }, nullptr);
   builder.AddBooleanProperty(
@@ -273,7 +279,7 @@ void DriveSubsystem::Drive(double xSpeed, double ySpeed, double rotSpeed, bool f
   SetChassisSpeeds(speeds);
 }
 
-void DriveSubsystem::SetX() {
+void DriveSubsystem::StopX() {
   m_stopX = true;
   Stop();
 }
@@ -323,31 +329,22 @@ void DriveSubsystem::ResetEncoders() {
   m_rearRight.ResetEncoders();
 }
 
-units::meters_per_second_t DriveSubsystem::GetMaxSpeed() const {
-  return m_maxSpeed;
-}
-
-units::degree_t DriveSubsystem::GetGyroAngle() const {
-  return units::degree_t { -m_gyro.GetAngle() };  // flip the sign if changing gyro orientation
-}
-
-frc::Rotation2d DriveSubsystem::GetHeading() const {
-  return frc::Rotation2d(GetGyroAngle());
-}
-
 void DriveSubsystem::ZeroHeading() {
   m_gyro.Reset();
 }
 
-double DriveSubsystem::GetTurnRate() const {
-  return m_gyro.GetRate();  // flip the sign if changing gyro orientation
-}
-
-double DriveSubsystem::GetDeadband() const {
-  return m_deadband;
-}
-
 void DriveSubsystem::UpdateOdometry() {
+  // gyro reading
+  double ypr[3];
+  double yprVelocity[3];
+  m_gyro.GetYawPitchRoll(ypr);
+  m_gyro.GetRawGyro(yprVelocity);
+
+  m_pitch = units::degree_t { ypr[1] };
+  m_roll = units::degree_t { ypr[2] };
+  m_pitchVelocity = units::degrees_per_second_t { yprVelocity[0] };
+  m_rollVelocity = units::degrees_per_second_t { yprVelocity[1] };
+
   m_odometry.Update(
     GetHeading(),
     {

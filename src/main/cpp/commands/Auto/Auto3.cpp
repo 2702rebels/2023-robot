@@ -1,6 +1,5 @@
 #include "commands/auto/Auto3.h"
 
-#include "commands/DriveRotateCommand.h"
 #include "commands/DriveTrajectoryCommand.h"
 #include "frc2/command/InstantCommand.h"
 

@@ -16,15 +16,18 @@ RotationProfile::RotationProfile(
   const units::radians_per_second_t maxVelocity,
   const units::radians_per_second_squared_t maxAcceleration,
   const units::radians_per_second_squared_t maxDeceleration) {
-  // the profile is essentially trapezoidal profile that follows
-  // acceleration, constant velocity, deceleration path to fit
-  // within the given timeframe
-
   // constrain angles to (-pi, pi] range
   const auto r0 = MathUtils::ClampAngle(start.Radians());
   const auto rN = MathUtils::ClampAngle(end.Radians());
 
   if (r0 != rN) {
+    // difference between start and end orientation
+    // the sign of delta indicates the direction of the rotation
+    // positive - CCW, negative - CW
+    const auto delta = MathUtils::ShortestArc(r0, rN);
+    m_sign = delta.value() < 0 ? -1.0 : 1.0;
+    m_offset = r0;
+
 #ifdef TRAJECTORY_BASED_PROFILE
     // "abuse" trajectory generation mechanism treating angular parameters as linear
     // and using X coordinate as angular position
@@ -34,42 +37,32 @@ RotationProfile::RotationProfile(
 
     std::vector<frc::Pose2d> poses;
     poses.push_back({ 0_m, 0_m, frc::Rotation2d() });
-    m_offset = r0;
-
-    if (r0 > rN) {
-      constexpr auto twoPi = 2 * std::numbers::pi;
-      m_sign = -1.0;
-      poses.push_back({ units::meter_t { (r0 - rN).value() }, 0_m, frc::Rotation2d() });
-    } else {
-      poses.push_back({ units::meter_t { (rN - r0).value() }, 0_m, frc::Rotation2d() });
-    }
+    poses.push_back({ units::meter_t { fabs(delta.value()) }, 0_m, frc::Rotation2d() });
 
     m_trajectory = frc::TrajectoryGenerator::GenerateTrajectory(poses, config);
 #else
+    // the profile is essentially trapezoidal profile that follows
+    // acceleration, constant velocity, deceleration path to fit
+    // within the given timeframe
     m_states.push_back({ 0_s, frc::Rotation2d(r0), 0_rad_per_s });  // start state
 
-    // difference between start and end orientation
-    // the sign of delta indicates the direction of the rotation
-    // positive - CCW, negative - CW
-    const auto delta = MathUtils::ShortestArc(r0, rN);
-    const auto sign = delta.value() < 0 ? -1.0 : 1.0;
     auto tAcc = maxVelocity / maxAcceleration;  // time to maximum velocity
     auto tDec = maxVelocity / maxDeceleration;  // time from maximum velocity
 
     // do we need to accelerate to the maximum velocity (full trapezoid)
     if (tAcc + tDec < timeframe) {
-      const auto r1 = MathUtils::ClampAngle(r0 + sign * maxAcceleration * tAcc * tAcc / 2);
-      const auto r2 = MathUtils::ClampAngle(rN - sign * maxDeceleration * tDec * tDec / 2);
+      const auto r1 = MathUtils::ClampAngle(r0 + m_sign * maxAcceleration * tAcc * tAcc / 2);
+      const auto r2 = MathUtils::ClampAngle(rN - m_sign * maxDeceleration * tDec * tDec / 2);
       const auto dt = units::math::fabs(r2 - r1) / maxVelocity;
 
-      m_states.push_back({ tAcc, frc::Rotation2d(r1), sign * maxVelocity });
-      m_states.push_back({ tAcc + dt, frc::Rotation2d(r2), sign * maxVelocity });
+      m_states.push_back({ tAcc, frc::Rotation2d(r1), m_sign * maxVelocity });
+      m_states.push_back({ tAcc + dt, frc::Rotation2d(r2), m_sign * maxVelocity });
       m_states.push_back({ tAcc + dt + tDec, frc::Rotation2d(rN), 0_rad_per_s });  // end state
     } else {
       tAcc = timeframe * (maxAcceleration / (maxAcceleration + maxDeceleration));
       tDec = timeframe - tAcc;
-      const auto r1 = MathUtils::ClampAngle(r0 + sign * maxAcceleration * tAcc * tAcc / 2);
-      m_states.push_back({ tAcc, frc::Rotation2d(r1), sign * maxAcceleration * tAcc });
+      const auto r1 = MathUtils::ClampAngle(r0 + m_sign * maxAcceleration * tAcc * tAcc / 2);
+      m_states.push_back({ tAcc, frc::Rotation2d(r1), m_sign * maxAcceleration * tAcc });
       m_states.push_back({ timeframe, frc::Rotation2d(rN), 0_rad_per_s });  // end state
     }
 #endif

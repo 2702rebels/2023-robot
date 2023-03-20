@@ -61,9 +61,9 @@ class DriveSubsystem : public frc2::SubsystemBase {
   void UpdateTuningParameters();
 
   /**
-   * Sets the wheels into an X formation to prevent movement.
+   * Stops and sets the wheels into an X formation to prevent movement.
    */
-  void SetX();
+  void StopX();
 
   /**
    * Resets the drive encoders to currently read a position of 0.
@@ -74,7 +74,9 @@ class DriveSubsystem : public frc2::SubsystemBase {
    * Returns the heading of the robot.
    * @return The robot's heading.
    */
-  frc::Rotation2d GetHeading() const;
+  frc::Rotation2d GetHeading() const {
+    return frc::Rotation2d(GetGyroAngle());
+  }
 
   /**
    * Zeroes the heading of the robot.
@@ -83,9 +85,39 @@ class DriveSubsystem : public frc2::SubsystemBase {
 
   /**
    * Returns the turn rate of the robot.
-   * @return The turn rate of the robot, in degrees per second.
+   * @return The turn rate of the robot.
    */
-  double GetTurnRate() const;
+  units::radians_per_second_t GetTurnRate() const {
+    return units::degrees_per_second_t { -m_gyroSign * m_gyro.GetRate() };
+  }
+
+  /**
+   * Returns robot pitch.
+   */
+  units::radian_t GetPitch() const {
+    return m_pitch;
+  }
+
+  /**
+   * Returns robot roll.
+   */
+  units::radian_t GetRoll() const {
+    return m_roll;
+  }
+
+  /**
+   * Returns robot pitch velocity.
+   */
+  units::radians_per_second_t GetPitchVelocity() const {
+    return m_pitchVelocity;
+  }
+
+  /**
+   * Returns robot roll velocity.
+   */
+  units::radians_per_second_t GetRollVelocity() const {
+    return m_rollVelocity;
+  }
 
   /**
    * Returns the currently-estimated pose of the robot.
@@ -96,7 +128,9 @@ class DriveSubsystem : public frc2::SubsystemBase {
   /**
    * Gets the drive deadband.
    */
-  double GetDeadband() const;
+  double GetDeadband() const {
+    return m_deadband;
+  }
 
   /**
    * Resets the odometry to the specified pose.
@@ -141,12 +175,16 @@ class DriveSubsystem : public frc2::SubsystemBase {
    * Gets the angle reading of the gyroscope.
    * @returns The angle in degrees.
    */
-  units::degree_t GetGyroAngle() const;
+  units::degree_t GetGyroAngle() const {
+    return units::degree_t { m_gyroSign * m_gyro.GetAngle() };
+  }
 
   /**
    * Gets effective maximum speed.
    */
-  units::meters_per_second_t GetMaxSpeed() const;
+  units::meters_per_second_t GetMaxSpeed() const {
+    return m_maxSpeed;
+  }
 
   frc::SlewRateLimiter<units::scalar> m_rotLimiter;
   frc::SlewRateLimiter<units::scalar> m_magLimiter;
@@ -164,7 +202,7 @@ class DriveSubsystem : public frc2::SubsystemBase {
   units::meters_per_second_t m_currentVy;
   units::radians_per_second_t m_currentOmega;
 
-  double m_deadband = 0.2;
+  double m_deadband = OIConstants::kDriveDeadband;
   units::meters_per_second_t m_maxSpeed = DriveConstants::kMaxSpeed;
   units::radians_per_second_t m_maxAngularSpeed = DriveConstants::kMaxAngularSpeed;
 
@@ -190,6 +228,14 @@ class DriveSubsystem : public frc2::SubsystemBase {
 
   TalonSRX m_gyroController { IntakeConstants::kIntakeLeaderControllerCanId };
   WPI_PigeonIMU m_gyro { m_gyroController };
+
+  static constexpr double m_gyroSign = -1.0;  // flip the sign if changing gyro orientation
+
+  // last acquired gyro daa
+  units::radian_t m_pitch;
+  units::radian_t m_roll;
+  units::radians_per_second_t m_pitchVelocity;
+  units::radians_per_second_t m_rollVelocity;
 
   // odometry tracking can be based on either XxxOdometry or XxxPoseEstimator
   // XxxOdometry relies only on encoders and gyro to estimate the pose

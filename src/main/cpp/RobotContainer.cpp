@@ -168,13 +168,13 @@ void RobotContainer::ConfigureButtonBindings() {
     .OnTrue(frc2::InstantCommand([this] { ToggleRobotMode(); }, {}).ToPtr());
 
 #ifdef DRIVETRAIN_ENABLED
-  // Reset swerve heading by zeroing the gyro.
+  // Reset swerve heading by zeroing the gyro
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightStick)
     .OnTrue(frc2::InstantCommand([this] { m_drive.ZeroHeading(); }, { &m_drive }).ToPtr());
 
-  // Lock the wheels.
+  // Lock the wheels
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kLeftStick)
-    .WhileTrue(frc2::RunCommand([this] { m_drive.SetX(); }, { &m_drive }).ToPtr());
+    .WhileTrue(frc2::RunCommand([this] { m_drive.StopX(); }, { &m_drive }).ToPtr());
 
   frc2::Trigger(
     m_driverController.POVLeft(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
