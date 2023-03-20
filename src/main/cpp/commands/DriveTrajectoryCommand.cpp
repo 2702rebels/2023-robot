@@ -26,7 +26,6 @@ REGISTER_DOUBLE(AutoDriveTrajectoryXYA, "Auto/DriveTrajectory/XY - a", AutoConst
 DriveTrajectoryCommand::DriveTrajectoryCommand(
   const std::vector<Waypoint>& waypoints,
   const frc::Translation2d& origin,
-  bool reversed,
   bool resetOdometry,
   DriveSubsystem* drive) :
   m_drive { drive },
@@ -54,30 +53,20 @@ DriveTrajectoryCommand::DriveTrajectoryCommand(
   m_resetOdometry { resetOdometry } {
   AddRequirements(drive);
 
-  frc::TrajectoryConfig config(
-    units::meters_per_second_t { GetAutoDriveTrajectoryXYV() },
-    units::meters_per_second_squared_t { GetAutoDriveTrajectoryXYA() });
-
-  config.SetKinematics(drive->kDriveKinematics);
-
-  if (reversed) {
-    config.SetReversed(true);
-  }
-
   // TODO: error handler
   m_trajectory = WaypointTrajectory(
     waypoints,
     origin,
-    config,
-    frc::TrapezoidProfile<units::radian>::Constraints {
-      units::degrees_per_second_t { GetAutoDriveTrajectoryHV() },
-      units::degrees_per_second_squared_t { GetAutoDriveTrajectoryHA() },
-    });
+    drive->kDriveKinematics,
+    units::meters_per_second_t { GetAutoDriveTrajectoryXYV() },
+    units::meters_per_second_squared_t { GetAutoDriveTrajectoryXYA() },
+    units::degrees_per_second_t { GetAutoDriveTrajectoryHV() },
+    units::degrees_per_second_squared_t { GetAutoDriveTrajectoryHA() });
 
   frc::DataLogManager::Log(fmt::format("DriveTrajectory: Trajectory"));
-  for (auto& state : m_trajectory.Trajectory().States()) {
+  for (const auto& state : m_trajectory.Trajectory().States()) {
     frc::DataLogManager::Log(fmt::format(
-      "at {} -> ({}, {}, {}) r = {} v = {}",
+      "at {:.3f} -> ({:.2f}, {:.2f}, {:.1f}) r = {:.2f} v = {:.2f}",
       state.t.value(),
       state.pose.X().value(),
       state.pose.Y().value(),
@@ -87,9 +76,9 @@ DriveTrajectoryCommand::DriveTrajectoryCommand(
   }
 
   frc::DataLogManager::Log(fmt::format("DriveTrajectory: Rotation Profile"));
-  for (auto& state : m_trajectory.Rotations().States()) {
+  for (const auto& state : m_trajectory.Rotations().States()) {
     frc::DataLogManager::Log(fmt::format(
-      "at {} -> {} v = {}",
+      "at {:.3f} -> {:.1f} v = {:.2f}",
       state.time.value(),
       state.rotation.Degrees().value(),
       state.velocity.value()));

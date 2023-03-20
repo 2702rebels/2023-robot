@@ -13,7 +13,6 @@ class DriveTrajectoryCommand
   DriveTrajectoryCommand(
     const std::vector<Waypoint>& waypoints,
     const frc::Translation2d& origin,
-    bool reversed,
     bool resetOdometry,
     DriveSubsystem* drive);
 

@@ -10,7 +10,6 @@ Auto_DriveDistance::Auto_DriveDistance(DriveSubsystem* drive) {
       Waypoint(frc::Pose2d { 1_m, 0_m, 0_deg }, frc::Rotation2d(0_deg)),
     },
     frc::Translation2d { 0_m, 0_m },
-    false,
     true,
     drive));
   // DriveRotateCommand(frc::Rotation2d { 180_deg }, drive),

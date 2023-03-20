@@ -1,11 +1,14 @@
 #pragma once
 
 #include <frc/geometry/Rotation2d.h>
+#include <frc/trajectory/Trajectory.h>
 #include <units/angular_acceleration.h>
 #include <units/angular_velocity.h>
 #include <units/time.h>
 
 #include <vector>
+
+#define TRAJECTORY_BASED_PROFILE
 
 class RotationProfile {
  public:
@@ -67,10 +70,13 @@ class RotationProfile {
   /**
    * Returns the states of the profile.
    */
-  const std::vector<State>& States() const {
-    return m_states;
-  }
+  const std::vector<State> States() const;
 
  private:
   std::vector<State> m_states;
+  frc::Trajectory m_trajectory;
+  units::radian_t m_offset;
+  double m_sign = 1.0;
+
+  State convert(const frc::Trajectory::State& state) const;
 };

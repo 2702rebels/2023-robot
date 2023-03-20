@@ -7,13 +7,17 @@
 WaypointTrajectory::WaypointTrajectory(
   const std::vector<Waypoint>& waypoints,
   const frc::Translation2d& origin,
-  const frc::TrajectoryConfig& config,
-  const frc::TrapezoidProfile<units::radians>::Constraints& constraints) {
+  frc::SwerveDriveKinematics<4U>& kinematics,
+  units::meters_per_second_t maxVelocity,
+  units::meters_per_second_squared_t maxAcceleration,
+  units::radians_per_second_t maxAngularVelocity,
+  units::radians_per_second_squared_t maxAngularAcceleration) {
   if (waypoints.size() < 2) {
     throw std::runtime_error("Trajectory requires at least 2 waypoints");
   }
 
   std::vector<frc::Pose2d> poses;
+  std::vector<std::tuple<unsigned int, units::meters_per_second_t>> speedControlPoints;
 
   // if directional heading is not specified for a position, auto-generate one
   // as the vector towards the next position, for the last waypoint retain
@@ -32,10 +36,64 @@ WaypointTrajectory::WaypointTrajectory(
       poses.push_back({ position, direction });
     }
 
+    if (waypoint.speed.has_value()) {
+      speedControlPoints.push_back({ index, waypoint.speed.value() });
+    }
+
     ++index;
   }
 
-  m_trajectory = frc::TrajectoryGenerator::GenerateTrajectory(poses, config);
+  // if we have waypoints controlling speed we have to split the path into
+  // individual trajectories and splice them together at the speed control
+  // points by setting end and start velocities to the desired speed
+  if (speedControlPoints.size() > 0) {
+    unsigned int startIndex = 0;
+    units::meters_per_second_t startVelocity = 0_mps;
+    m_trajectory = frc::Trajectory();
+
+    for (const auto& controlPoint : speedControlPoints) {
+      const auto endIndex = std::get<0>(controlPoint);
+      const auto endVelocity = std::get<1>(controlPoint);
+
+      // deal with the situation when first waypoint is a control point
+      if (endIndex > startIndex) {
+        std::vector<frc::Pose2d> leg(poses.begin() + startIndex, poses.begin() + endIndex + 1);
+
+        frc::TrajectoryConfig config(
+          startVelocity > 0_mps ? startVelocity : maxVelocity, maxAcceleration);
+
+        config.SetKinematics(kinematics);
+        config.SetEndVelocity(endVelocity);
+        config.SetStartVelocity(startVelocity);
+
+        // splice trajectories
+        m_trajectory = m_trajectory + frc::TrajectoryGenerator::GenerateTrajectory(leg, config);
+      }
+
+      startVelocity = endVelocity;
+      startIndex = endIndex;
+    }
+
+    // last leg
+    if (poses.begin() + startIndex < poses.end()) {
+      std::vector<frc::Pose2d> leg(poses.begin() + startIndex, poses.end());
+
+      frc::TrajectoryConfig config(
+        startVelocity > 0_mps ? startVelocity : maxVelocity, maxAcceleration);
+
+      config.SetKinematics(kinematics);
+      config.SetEndVelocity(0_mps);  // stop at the end
+      config.SetStartVelocity(startVelocity);
+
+      // splice trajectories
+      m_trajectory = m_trajectory + frc::TrajectoryGenerator::GenerateTrajectory(leg, config);
+    }
+  } else {
+    frc::TrajectoryConfig config(maxVelocity, maxAcceleration);
+    config.SetKinematics(kinematics);
+
+    m_trajectory = frc::TrajectoryGenerator::GenerateTrajectory(poses, config);
+  }
 
   // now that we have constructed a drive trajectory we calculate a profile for
   // holonomic rotations based on the total time of the drive path and subject
@@ -47,6 +105,6 @@ WaypointTrajectory::WaypointTrajectory(
     r0.has_value() ? r0.value() : frc::Rotation2d(),
     r1.has_value() ? r1.value() : frc::Rotation2d(),
     m_trajectory.TotalTime(),
-    constraints.maxVelocity,
-    constraints.maxAcceleration);
+    maxAngularVelocity,
+    maxAngularAcceleration);
 }

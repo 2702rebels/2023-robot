@@ -1,5 +1,6 @@
 #pragma once
 
+#include <frc/kinematics/SwerveDriveKinematics.h>
 #include <frc/trajectory/Trajectory.h>
 #include <frc/trajectory/TrajectoryConfig.h>
 #include <frc/trajectory/TrapezoidProfile.h>
@@ -17,8 +18,11 @@ class WaypointTrajectory {
   WaypointTrajectory(
     const std::vector<Waypoint>& waypoints,
     const frc::Translation2d& origin,
-    const frc::TrajectoryConfig& config,
-    const frc::TrapezoidProfile<units::radians>::Constraints& constraints);
+    frc::SwerveDriveKinematics<4U>& kinematics,
+    units::meters_per_second_t maxVelocity,
+    units::meters_per_second_squared_t maxAcceleration,
+    units::radians_per_second_t maxAngularVelocity,
+    units::radians_per_second_squared_t maxAngularAcceleration);
 
   /**
    * Returns trajectory representing positional waypoints and headings.

@@ -1,6 +1,7 @@
 #include "utils/RotationProfile.h"
 
 #include <frc/DataLogManager.h>
+#include <frc/trajectory/TrajectoryGenerator.h>
 #include <frc/trajectory/TrapezoidProfile.h>
 #include <units/math.h>
 
@@ -24,6 +25,27 @@ RotationProfile::RotationProfile(
   const auto rN = MathUtils::ClampAngle(end.Radians());
 
   if (r0 != rN) {
+#ifdef TRAJECTORY_BASED_PROFILE
+    // "abuse" trajectory generation mechanism treating angular parameters as linear
+    // and using X coordinate as angular position
+    frc::TrajectoryConfig config(
+      units::meters_per_second_t { maxVelocity.value() },
+      units::meters_per_second_squared_t { maxAcceleration.value() });
+
+    std::vector<frc::Pose2d> poses;
+    poses.push_back({ 0_m, 0_m, frc::Rotation2d() });
+    m_offset = r0;
+
+    if (r0 > rN) {
+      constexpr auto twoPi = 2 * std::numbers::pi;
+      m_sign = -1.0;
+      poses.push_back({ units::meter_t { (r0 - rN).value() }, 0_m, frc::Rotation2d() });
+    } else {
+      poses.push_back({ units::meter_t { (rN - r0).value() }, 0_m, frc::Rotation2d() });
+    }
+
+    m_trajectory = frc::TrajectoryGenerator::GenerateTrajectory(poses, config);
+#else
     m_states.push_back({ 0_s, frc::Rotation2d(r0), 0_rad_per_s });  // start state
 
     // difference between start and end orientation
@@ -50,10 +72,38 @@ RotationProfile::RotationProfile(
       m_states.push_back({ tAcc, frc::Rotation2d(r1), sign * maxAcceleration * tAcc });
       m_states.push_back({ timeframe, frc::Rotation2d(rN), 0_rad_per_s });  // end state
     }
+#endif
   }
 }
 
+RotationProfile::State RotationProfile::convert(const frc::Trajectory::State& state) const {
+  return {
+    state.t,
+    frc::Rotation2d(
+      MathUtils::ClampAngle(m_offset + units::radian_t { m_sign * state.pose.X().value() })),
+    units::radians_per_second_t { m_sign * state.velocity.value() },
+  };
+}
+
+const std::vector<RotationProfile::State> RotationProfile::States() const {
+#ifdef TRAJECTORY_BASED_PROFILE
+  std::vector<RotationProfile::State> states;
+  for (const auto& state : m_trajectory.States()) {
+    states.push_back(convert(state));
+  }
+  return states;
+#else
+  return m_states;
+#endif
+}
+
 RotationProfile::State RotationProfile::Sample(const units::second_t t) const {
+#ifdef TRAJECTORY_BASED_PROFILE
+  if (m_trajectory.States().size() == 0) {
+    return { t, frc::Rotation2d(), 0_rad_per_s };
+  }
+  return convert(m_trajectory.Sample(t));
+#else
   if (m_states.size() == 0) {
     return { t, frc::Rotation2d(), 0_rad_per_s };
   }
@@ -85,4 +135,5 @@ RotationProfile::State RotationProfile::Sample(const units::second_t t) const {
     MathUtils::ClampAngle(prev->rotation.Radians() + (state->velocity + prev->velocity) * dt / 2);
 
   return { t, frc::Rotation2d(r), v };
+#endif
 }

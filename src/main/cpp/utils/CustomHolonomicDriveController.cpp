@@ -61,12 +61,12 @@ frc::ChassisSpeeds CustomHolonomicDriveController::Calculate(
     m_thetaController.Calculate(currentPose.Rotation().Radians(), desiredRotation.Radians()),
   };
 
-  frc::DataLogManager::Log(fmt::format(
-    "{:.5f} {:.5f} | {:.2f} -> {:.2f}",
-    thetaFF.value(),
-    thetaFeedback.value(),
-    currentPose.Rotation().Degrees().value(),
-    desiredRotation.Degrees().value()));
+  // frc::DataLogManager::Log(fmt::format(
+  //   "{:.5f} {:.5f} | {:.2f} -> {:.2f}",
+  //   thetaFF.value(),
+  //   thetaFeedback.value(),
+  //   currentPose.Rotation().Degrees().value(),
+  //   desiredRotation.Degrees().value()));
 
   return frc::ChassisSpeeds::FromFieldRelativeSpeeds(
     xFF + xFeedback, yFF + yFeedback, thetaFF + thetaFeedback, currentPose.Rotation());
