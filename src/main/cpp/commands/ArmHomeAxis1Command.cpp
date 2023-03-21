@@ -8,7 +8,7 @@
 #include <frc/Timer.h>
 
 ArmHomeAxis1Command::ArmHomeAxis1Command(ArmSubsystem* arm) : m_arm(arm) {
-  // Use addRequirements() here to declare subsystem dependencies.
+  SetName("ArmHomeAxis1Command");
   AddRequirements(arm);
 }
 

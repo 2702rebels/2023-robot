@@ -15,6 +15,7 @@ enum LEDPattern {
   BREATH,
   WAVE,
   PONG,
+  LOADING,
 };
 
 class LedSubsystem : public frc2::SubsystemBase {
@@ -36,6 +37,24 @@ class LedSubsystem : public frc2::SubsystemBase {
   void SetRGB(int r, int g, int b);
 
   /**
+   * Write the left side of the robot's leds a single colour based on RGB values.
+   *
+   * @param r The red colour value.
+   * @param g The green colour value.
+   * @param b The blue colour value.
+   */
+  void SetRGBLeft(int r, int g, int b);
+
+  /**
+   * Write the right side of the robot's leds a single colour based on RGB values.
+   *
+   * @param r The red colour value.
+   * @param g The green colour value.
+   * @param b The blue colour value.
+   */
+  void SetRGBRight(int r, int g, int b);
+
+  /**
    * Sets which pattern to use to display the colour buffer.
    *
    * @param pattern Which LEDPattern to run on the LED's.
@@ -53,6 +72,13 @@ class LedSubsystem : public frc2::SubsystemBase {
    */
   void RestorePattern();
 
+  /**
+   * Set's the front LED's on or off depending on the isOn value.
+   */
+  void SetFrontLEDsOn(bool isOn) {
+    m_isFrontLEDsOff = isOn;
+  }
+
  private:
   frc::AddressableLED m_led { LEDConstants::kpwmPort };
   std::array<frc::AddressableLED::LEDData, LEDConstants::kLength> m_ledColourBuffer;
@@ -61,6 +87,7 @@ class LedSubsystem : public frc2::SubsystemBase {
   units::millisecond_t m_period;
   units::millisecond_t m_periodStart;
   bool m_isNewPattern;
+  bool m_isFrontLEDsOff;
 
   LEDPattern m_patternStored;
   units::millisecond_t m_periodStored;
@@ -78,6 +105,8 @@ class LedSubsystem : public frc2::SubsystemBase {
         return "WAVE";
       case PONG:
         return "PONG";
+      case LOADING:
+        return "LOADING";
     }
     return "Undefined";
   }

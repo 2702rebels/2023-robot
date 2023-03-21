@@ -22,6 +22,7 @@ SetLedCommand::SetLedCommand(
   m_pattern { pattern },
   m_period { period },
   m_timeToDisplay { timeToDisplay } {
+  SetName("SetLedCommand");
   AddRequirements(m_ledSubsystem);
 }
 

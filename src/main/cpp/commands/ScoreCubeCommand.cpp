@@ -4,11 +4,13 @@
 
 #include "commands/ScoreCubeCommand.h"
 
+#include <frc/DataLogManager.h>
 #include <frc/Timer.h>
 
 ScoreCubeCommand::ScoreCubeCommand(ArmSubsystem* arm, IntakeSubsystem* intake) :
   m_arm(arm),
   m_intake(intake) {
+  SetName("ScoreCubeCommand");
   // Use addRequirements() here to declare subsystem dependencies.
   AddRequirements(arm);
   AddRequirements(intake);

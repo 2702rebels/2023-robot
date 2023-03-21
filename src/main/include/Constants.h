@@ -223,7 +223,7 @@ constexpr double kAxis2MotorRotationsPerMeterOfTravel =
 constexpr int kAxis2HomeTimeoutInSeconds = 3;
 constexpr double kAxis2HomeCurrentThreshold = 15;
 constexpr double kAxis2Deadband = 1.2;
-constexpr units::inch_t kAxis2MaxExtension = 18.75_in;
+constexpr units::inch_t kAxis2MaxExtension = 17.75_in;
 
 // Position
 constexpr units::degree_t kConePlacementDistance = 12.0_deg;
@@ -233,5 +233,5 @@ constexpr units::degree_t kConePlacementDistance = 12.0_deg;
 namespace LEDConstants {
 // Execute cycle time.
 constexpr int kpwmPort = 0;
-constexpr int kLength = 68;
+constexpr int kLength = 66;
 }  // namespace LEDConstants

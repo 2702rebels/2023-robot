@@ -5,7 +5,7 @@
 #include "commands/IntakeConeCommand.h"
 
 IntakeConeCommand::IntakeConeCommand(IntakeSubsystem* intake) {
-  // Use addRequirements() here to declare subsystem dependencies.
+  SetName("IntakeConeCommand");
   AddRequirements(intake);
   m_intake = intake;
 }

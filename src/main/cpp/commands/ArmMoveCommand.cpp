@@ -8,7 +8,7 @@ ArmMoveCommand::ArmMoveCommand(ArmSubsystem* arm, units::degree_t angle, units::
   m_arm(arm),
   m_axis1Angle(angle),
   m_axis2Distance(distance) {
-  // Use addRequirements() here to declare subsystem dependencies.
+  SetName("ArmMoveCommand");
   AddRequirements(arm);
   m_isUsePosition = false;
 }
@@ -16,6 +16,7 @@ ArmMoveCommand::ArmMoveCommand(ArmSubsystem* arm, units::degree_t angle, units::
 ArmMoveCommand::ArmMoveCommand(ArmSubsystem* arm, ArmPosition position) :
   m_arm(arm),
   m_position(position) {
+  SetName("ArmMoveCommand");
   AddRequirements(arm);
   m_isUsePosition = true;
 }

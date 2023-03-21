@@ -286,13 +286,13 @@ void ArmSubsystem::SetArmOff() {
 void ArmSubsystem::ZeroAxis1() {
   m_axis1Encoder.SetPosition(0);
   m_axis1PIDController.SetReference(0, rev::CANSparkMax::ControlType::kPosition);
-  frc::DataLogManager::Log(fmt::format("Axis1: Zero'd and started position pid at 0."));
+  frc::DataLogManager::Log(fmt::format("Axis1: Zeroed and started position pid at 0."));
 }
 
 void ArmSubsystem::ZeroAxis2() {
   m_axis2Encoder.SetPosition(0);
   m_axis2PIDController.SetReference(0, rev::CANSparkMax::ControlType::kPosition);
-  frc::DataLogManager::Log(fmt::format("Axis2: Zero'd and started position pid at 0."));
+  frc::DataLogManager::Log(fmt::format("Axis2: Zeroed and started position pid at 0."));
 }
 
 void ArmSubsystem::Move(units::degree_t angle, units::inch_t distance) {
@@ -323,6 +323,11 @@ void ArmSubsystem::Move(units::degree_t angle, units::inch_t distance) {
   m_axis2TrapezoidalProfileState =
     frc::TrapezoidProfile<units::meters>::State { ArmSubsystem::GetAxis2Distance(),
                                                   ArmSubsystem::GetAxis2Velocity() };
+
+  frc::DataLogManager::Log(fmt::format(
+    "Arm: Move - Axis1SetPoint={}, Axis2SetPoint={}",
+    m_axis1SetPoint.value(),
+    m_axis2SetPoint.value()));
 }
 
 void ArmSubsystem::Move(ArmPosition position) {

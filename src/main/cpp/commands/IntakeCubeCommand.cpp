@@ -5,7 +5,7 @@
 #include "commands/IntakeCubeCommand.h"
 
 IntakeCubeCommand::IntakeCubeCommand(IntakeSubsystem* intake) {
-  // Use addRequirements() here to declare subsystem dependencies.
+  SetName("IntakeCubeCommand");
   AddRequirements(intake);
   m_intake = intake;
 }

@@ -8,9 +8,9 @@
 
 #include "commands/ArmHomeAxis1Command.h"
 #include "commands/ArmHomeAxis2Command.h"
+#include "commands/IntakeHomeGripperCommand.h"
 
 ArmHomeCommand::ArmHomeCommand(ArmSubsystem* arm, IntakeSubsystem* intake) {
-  // AddCommands(HomeGripperCommand(IntakeSubsystem* intake));
-  AddCommands(ArmHomeAxis2Command(arm));
-  AddCommands(ArmHomeAxis1Command(arm));
+  SetName("ArmHomeCommand");
+  AddCommands(IntakeHomeGripperCommand(intake), ArmHomeAxis2Command(arm), ArmHomeAxis1Command(arm));
 }

@@ -5,7 +5,7 @@
 #include "commands/IntakeHomeGripperCommand.h"
 
 IntakeHomeGripperCommand::IntakeHomeGripperCommand(IntakeSubsystem* intake) : m_intake(intake) {
-  // Use addRequirements() here to declare subsystem dependencies.
+  SetName("IntakeHomeGripperCommand");
 }
 
 // Called when the command is initially scheduled.

@@ -9,6 +9,7 @@
 
 LedSubsystem::LedSubsystem() {
   m_isNewPattern = false;
+  m_isFrontLEDsOff = false;
 
   m_led.SetLength(LEDConstants::kLength);
   LedSubsystem::SetRGB(255, 255, 255);
@@ -22,10 +23,10 @@ void LedSubsystem::Periodic() {
   if (m_isNewPattern) {
     m_isNewPattern = false;
     m_periodStart = frc::Timer::GetFPGATimestamp();
-    for (int i = 0; i < LEDConstants::kLength; i++) {
-      m_ledPatternBuffer[i] = m_ledColourBuffer[i];
-    }
-    // memcpy(m_ledPatternBuffer.data(), m_ledBuffer.data(), m_ledBuffer.size());
+    // for (int i = 0; i < LEDConstants::kLength; i++) {
+    //   m_ledPatternBuffer[i] = m_ledColourBuffer[i];
+    // }
+    memcpy(m_ledPatternBuffer.data(), m_ledColourBuffer.data(), m_ledColourBuffer.size() * 4);
   }
 
   double ledBrightness = 0;
@@ -79,6 +80,33 @@ void LedSubsystem::Periodic() {
         m_periodStart = frc::Timer::GetFPGATimestamp();
       }
       break;
+    case LEDPattern::LOADING:
+      double columnSize = LEDConstants::kLength / 4.0;
+      double percentDone = ((frc::Timer::GetFPGATimestamp() - m_periodStart) / m_period).value();
+      int ledsToTurnOn = columnSize * percentDone;
+
+      for (int i = 0; i < ledsToTurnOn; i++) {
+        m_ledPatternBuffer[i] = m_ledColourBuffer[i];
+        m_ledPatternBuffer[i + columnSize] = m_ledColourBuffer[i + columnSize];
+        m_ledPatternBuffer[i + columnSize + columnSize] =
+          m_ledColourBuffer[i + columnSize + columnSize];
+        m_ledPatternBuffer[i + columnSize + columnSize + columnSize] =
+          m_ledColourBuffer[i + columnSize + columnSize + columnSize];
+      }
+
+      if (frc::Timer::GetFPGATimestamp() > m_periodStart + m_period) {
+        m_periodStart = frc::Timer::GetFPGATimestamp();
+      }
+      break;
+  }
+
+  if (m_isFrontLEDsOff) {
+    for (int i = LEDConstants::kLength / 4; i < LEDConstants::kLength - LEDConstants::kLength / 4;
+         i++) {
+      m_ledPatternBuffer[i].r = 0;
+      m_ledPatternBuffer[i].g = 0;
+      m_ledPatternBuffer[i].b = 0;
+    }
   }
 
   // Write the pattern buffer to the LED.
@@ -87,6 +115,24 @@ void LedSubsystem::Periodic() {
 
 void LedSubsystem::SetRGB(int r, int g, int b) {
   for (int i = 0; i < LEDConstants::kLength; i++) {
+    m_ledColourBuffer[i].SetRGB(r, g, b);
+  }
+  frc::DataLogManager::Log(fmt::format("Set LEDs to RGB values: ({}, {}, {})", r, g, b));
+}
+
+// TODO: Check that this is actually the left and right side. Might need to mess with the length
+// it's iterating over a bit.
+void LedSubsystem::SetRGBLeft(int r, int g, int b) {
+  for (int i = 0; i < LEDConstants::kLength / 2; i++) {
+    m_ledColourBuffer[i].SetRGB(r, g, b);
+  }
+  frc::DataLogManager::Log(fmt::format("Set LEDs to RGB values: ({}, {}, {})", r, g, b));
+}
+
+// TODO: Check that this is actually the left and right side. Might need to mess with the length
+// it's iterating over a bit.
+void LedSubsystem::SetRGBRight(int r, int g, int b) {
+  for (int i = LEDConstants::kLength / 2; i < LEDConstants::kLength; i++) {
     m_ledColourBuffer[i].SetRGB(r, g, b);
   }
   frc::DataLogManager::Log(fmt::format("Set LEDs to RGB values: ({}, {}, {})", r, g, b));

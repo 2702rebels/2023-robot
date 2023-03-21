@@ -6,9 +6,10 @@
 #include "Constants.h"
 #include "subsystems/ArmSubsystem.h"
 #include "subsystems/DriveSubsystem.h"
+#include "subsystems/IntakeSubsystem.h"
 
 class Auto_ScoreAndBalance
   : public frc2::CommandHelper<frc2::SequentialCommandGroup, Auto_ScoreAndBalance> {
  public:
-  Auto_ScoreAndBalance(DriveSubsystem* drive, ArmSubsystem* arm);
+  Auto_ScoreAndBalance(DriveSubsystem* drive, ArmSubsystem* arm, IntakeSubsystem* intake);
 };

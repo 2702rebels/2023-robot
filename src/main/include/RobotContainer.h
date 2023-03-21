@@ -16,6 +16,7 @@
 #include "commands/auto/Auto_DoNothing.h"
 #include "commands/auto/Auto_DriveDistance.h"
 #include "commands/auto/Auto_ScoreAndBalance.h"
+#include "commands/auto/Auto_ScoreScoreSco.h"
 #include "subsystems/ArmSubsystem.h"
 #include "subsystems/DriveSubsystem.h"
 #include "subsystems/IntakeSubsystem.h"
@@ -31,6 +32,8 @@
 
 enum RobotMode { CONE, CUBE };
 
+enum RobotScoreHeight { MID, HIGH };
+
 class RobotContainer {
  public:
   RobotContainer();
@@ -43,13 +46,16 @@ class RobotContainer {
 
   void SetRobotMode(RobotMode mode);
   void ToggleRobotMode();
-
   std::string GetRobotModeString();
+
+  void SetRobotScoreHeight(RobotScoreHeight height);
+  void ToggleRobotScoreHeight();
+  std::string GetRobotScoreHeightString();
 
  private:
   // The driver's controller
   frc::XboxController m_driverController { OIConstants::kDriverControllerPort };
-  frc::XboxController m_operatorController { OIConstants::kDriverControllerPort };
+  frc::XboxController m_operatorController { OIConstants::kOperatorControllerPort };
 
   // The robot's subsystems
 #ifdef DRIVETRAIN_ENABLED
@@ -74,7 +80,10 @@ class RobotContainer {
   Auto2 m_auto2 { &m_drive };
 
 #ifdef ARM_ENABLED
-  Auto_ScoreAndBalance m_auto_scoreAndBalance { &m_drive, &m_arm };
+#ifdef INTAKE_ENABLED
+  Auto_ScoreAndBalance m_auto_scoreAndBalance { &m_drive, &m_arm, &m_intake };
+  Auto_ScoreScoreSco m_auto_scoreScoreSco { &m_drive, &m_arm, &m_intake };
+#endif
   Auto3 m_auto3 { &m_drive, &m_arm };
 #endif
 
@@ -82,6 +91,7 @@ class RobotContainer {
   frc::SendableChooser<frc2::Command*> m_chooser;
 
   RobotMode m_mode = RobotMode::CONE;
+  RobotScoreHeight m_scoreHeight = RobotScoreHeight::HIGH;
 
   void ConfigureButtonBindings();
 };

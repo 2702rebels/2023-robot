@@ -4,9 +4,12 @@
 
 #include "commands/ScoreConeCommand.h"
 
+#include <frc/DataLogManager.h>
+
 ScoreConeCommand::ScoreConeCommand(ArmSubsystem* arm, IntakeSubsystem* intake) :
   m_arm(arm),
   m_intake(intake) {
+  SetName("ScoreConeCommand");
   // Use addRequirements() here to declare subsystem dependencies.
   AddRequirements(arm);
   AddRequirements(intake);
