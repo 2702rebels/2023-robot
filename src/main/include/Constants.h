@@ -172,7 +172,7 @@ constexpr double kGripperZeroOffset = 45.0;
 constexpr double kGripperReduction = 9 / 1 * 7 / 1;
 constexpr double kGripperAnglePerTick = 360.0 / (4096.0 * 7.0);
 
-constexpr double kGripperHomeCurrent = 15;
+constexpr double kGripperHomeCurrent = 14;
 }  // namespace IntakeConstants
 
 namespace ArmConstants {

@@ -27,7 +27,7 @@ void IntakeHomeGripperCommand::End(bool interrupted) {
 
 // Returns true when the command should end.
 bool IntakeHomeGripperCommand::IsFinished() {
-  if (abs(m_intake->GetGripperCurrent()) > IntakeConstants::kGripperHomeCurrent) {
+  if (fabs(m_intake->GetGripperCurrent()) > IntakeConstants::kGripperHomeCurrent) {
     return true;
   }
   return false;

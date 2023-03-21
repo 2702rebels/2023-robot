@@ -81,12 +81,15 @@ WaypointTrajectory::WaypointTrajectory(
       frc::TrajectoryConfig config(
         startVelocity > 0_mps ? startVelocity : maxVelocity, maxAcceleration);
 
+      m_endVelocity = 0_mps;  // stop at the end
       config.SetKinematics(kinematics);
-      config.SetEndVelocity(0_mps);  // stop at the end
+      config.SetEndVelocity(m_endVelocity);
       config.SetStartVelocity(startVelocity);
 
       // splice trajectories
       m_trajectory = m_trajectory + frc::TrajectoryGenerator::GenerateTrajectory(leg, config);
+    } else {
+      m_endVelocity = startVelocity;
     }
   } else {
     frc::TrajectoryConfig config(maxVelocity, maxAcceleration);

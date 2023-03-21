@@ -15,6 +15,7 @@
 #include "commands/auto/Auto3.h"
 #include "commands/auto/Auto_DoNothing.h"
 #include "commands/auto/Auto_DriveDistance.h"
+#include "commands/auto/Auto_ScoreAndBalance.h"
 #include "subsystems/ArmSubsystem.h"
 #include "subsystems/DriveSubsystem.h"
 #include "subsystems/IntakeSubsystem.h"
@@ -73,6 +74,7 @@ class RobotContainer {
   Auto2 m_auto2 { &m_drive };
 
 #ifdef ARM_ENABLED
+  Auto_ScoreAndBalance m_auto_scoreAndBalance { &m_drive, &m_arm };
   Auto3 m_auto3 { &m_drive, &m_arm };
 #endif
 

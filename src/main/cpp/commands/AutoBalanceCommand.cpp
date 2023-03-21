@@ -10,9 +10,9 @@
 #include "utils/MathUtils.h"
 
 // clang-format off
-REGISTER_DOUBLE(AutoBalanceSpeed, "Auto/Balance/Speed", 0.5);
+REGISTER_DOUBLE(AutoBalanceSpeed, "Auto/Balance/Speed", 1.0);
 REGISTER_DOUBLE(AutoBalanceAngleThreshold, "Auto/Balance/Angle Threshold", 5.0);
-REGISTER_DOUBLE(AutoBalanceVelocityThreshold, "Auto/Balance/Velocity Threshold", 5.0);
+REGISTER_DOUBLE(AutoBalanceVelocityThreshold, "Auto/Balance/Velocity Threshold", 8.0);
 
 // clang-format on
 
@@ -30,12 +30,9 @@ void AutoBalanceCommand::Initialize() {
 
 void AutoBalanceCommand::Execute() {
   const auto currentPose = m_drive->GetPose();
-  const auto cosTheta = currentPose.Rotation().Cos();
-  const auto sinTheta = currentPose.Rotation().Sin();
 
-  m_angle = cosTheta * m_drive->GetPitch() + sinTheta * m_drive->GetRoll();
-  const auto angleVelocity =
-    cosTheta * m_drive->GetPitchVelocity() + sinTheta * m_drive->GetRollVelocity();
+  m_angle = m_drive->GetInclination();
+  const auto angleVelocity = m_drive->GetInclinationVelocity();
 
   const auto counterBalanced = (m_angle < 0_rad && angleVelocity > m_velocityThreshold) ||
                                (m_angle > 0_rad && angleVelocity < -m_velocityThreshold);
@@ -44,7 +41,7 @@ void AutoBalanceCommand::Execute() {
     m_drive->Stop();
   } else {
     const auto speeds = frc::ChassisSpeeds::FromFieldRelativeSpeeds(
-      m_speed * (m_angle > 0_rad ? -1.0 : 1.0),
+      m_speed * (m_angle > 0_rad ? 1.0 : -1.0),
       0_mps,
       0_rad_per_s,
       currentPose.Rotation().Radians());
@@ -52,7 +49,7 @@ void AutoBalanceCommand::Execute() {
     m_drive->SetChassisSpeeds(speeds);
   }
 
-#ifndef QUIET
+#ifdef AUTO_TELEMETRY
   // clang-format off
   frc::SmartDashboard::PutNumber("Telemetry/AutoBalance/Angle", m_angle.convert<units::degree>().value());
   frc::SmartDashboard::PutNumber("Telemetry/AutoBalance/Angle Velocity", angleVelocity.convert<units::degrees_per_second>().value());

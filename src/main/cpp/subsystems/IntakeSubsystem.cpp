@@ -89,8 +89,7 @@ void IntakeSubsystem::Periodic() {
 
 units::degree_t IntakeSubsystem::GetGripperAngle() {
   return units::degree_t(
-    -1 * double(m_gripperMotor.GetSensorCollection().GetQuadraturePosition()) *
-    kGripperAnglePerTick);
+    double(m_gripperMotor.GetSensorCollection().GetQuadraturePosition()) * kGripperAnglePerTick);
 }
 
 double IntakeSubsystem::GetGripperCurrent() {

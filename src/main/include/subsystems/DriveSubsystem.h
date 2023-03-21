@@ -93,6 +93,9 @@ class DriveSubsystem : public frc2::SubsystemBase {
 
   /**
    * Returns robot pitch.
+   *
+   * - negative - leans forwards
+   * - positive - leans backwards
    */
   units::radian_t GetPitch() const {
     return m_pitch;
@@ -100,6 +103,9 @@ class DriveSubsystem : public frc2::SubsystemBase {
 
   /**
    * Returns robot roll.
+   *
+   * - negative - banks left
+   * - positive - banks right
    */
   units::radian_t GetRoll() const {
     return m_roll;
@@ -117,6 +123,23 @@ class DriveSubsystem : public frc2::SubsystemBase {
    */
   units::radians_per_second_t GetRollVelocity() const {
     return m_rollVelocity;
+  }
+
+  /**
+   * Returns fused pitch/roll accounting for pose.
+   *
+   * - negative - leans forwards
+   * - positive - leans backwards
+   */
+  units::radian_t GetInclination() const {
+    return m_inclination;
+  }
+
+  /**
+   * Returns instantaneous change in inclination per time.
+   */
+  units::radians_per_second_t GetInclinationVelocity() const {
+    return m_inclinationVelocity;
   }
 
   /**
@@ -231,11 +254,14 @@ class DriveSubsystem : public frc2::SubsystemBase {
 
   static constexpr double m_gyroSign = -1.0;  // flip the sign if changing gyro orientation
 
-  // last acquired gyro daa
   units::radian_t m_pitch;
   units::radian_t m_roll;
   units::radians_per_second_t m_pitchVelocity;
   units::radians_per_second_t m_rollVelocity;
+
+  // fused pitch and roll accounting for pose
+  units::radian_t m_inclination;
+  units::radians_per_second_t m_inclinationVelocity;
 
   // odometry tracking can be based on either XxxOdometry or XxxPoseEstimator
   // XxxOdometry relies only on encoders and gyro to estimate the pose

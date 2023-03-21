@@ -47,7 +47,15 @@ class WaypointTrajectory {
       m_trajectory.InitialPose().Translation(), m_rotationProfile.States().front().rotation);
   }
 
+  /**
+   * Gets the end velocity of the trajectory.
+   */
+  units::meters_per_second_t GetEndVelocity() const {
+    return m_endVelocity;
+  }
+
  private:
   frc::Trajectory m_trajectory;
   RotationProfile m_rotationProfile;
+  units::meters_per_second_t m_endVelocity = 0_mps;
 };

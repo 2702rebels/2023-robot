@@ -63,7 +63,7 @@ DriveTrajectoryCommand::DriveTrajectoryCommand(
     units::degrees_per_second_t { GetAutoDriveTrajectoryHV() },
     units::degrees_per_second_squared_t { GetAutoDriveTrajectoryHA() });
 
-#ifndef QUIET
+#ifndef AUTO_TELEMETRY
   frc::DataLogManager::Log(fmt::format("DriveTrajectory: Trajectory"));
   for (const auto& state : m_trajectory.Trajectory().States()) {
     frc::DataLogManager::Log(fmt::format(
@@ -124,7 +124,10 @@ void DriveTrajectoryCommand::Execute() {
 
 void DriveTrajectoryCommand::End(bool interrupted) {
   m_timer.Stop();
-  m_drive->Stop();
+
+  if (m_trajectory.GetEndVelocity() == 0_mps) {
+    m_drive->Stop();
+  }
 }
 
 bool DriveTrajectoryCommand::IsFinished() {
