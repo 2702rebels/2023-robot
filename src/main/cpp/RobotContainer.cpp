@@ -95,7 +95,8 @@ RobotContainer::RobotContainer() {
 }
 
 void RobotContainer::OnAutoEnable() {
-  m_drive.ResetOdometry(frc::Pose2d {});
+  m_leds.SetRGB(0, 255, 0);
+  m_leds.SetPattern(LEDPattern::FLASH, 500_ms);
 }
 
 void RobotContainer::OnTeleEnable() {
