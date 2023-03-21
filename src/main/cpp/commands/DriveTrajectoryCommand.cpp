@@ -63,6 +63,7 @@ DriveTrajectoryCommand::DriveTrajectoryCommand(
     units::degrees_per_second_t { GetAutoDriveTrajectoryHV() },
     units::degrees_per_second_squared_t { GetAutoDriveTrajectoryHA() });
 
+#ifndef QUIET
   frc::DataLogManager::Log(fmt::format("DriveTrajectory: Trajectory"));
   for (const auto& state : m_trajectory.Trajectory().States()) {
     frc::DataLogManager::Log(fmt::format(
@@ -83,6 +84,7 @@ DriveTrajectoryCommand::DriveTrajectoryCommand(
       state.rotation.Degrees().value(),
       state.velocity.value()));
   }
+#endif
 }
 
 void DriveTrajectoryCommand::Initialize() {

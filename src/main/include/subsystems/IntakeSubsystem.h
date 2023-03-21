@@ -41,6 +41,8 @@ class IntakeSubsystem : public frc2::SubsystemBase {
   bool IsAtCommandedPosition();
 
   units::degree_t GetGripperAngle();
+  double GetIntakeCurrent();
+  bool GetCurrentAboveValue(double val);
   double GetGripperCurrent();
   void SetGripperOff();
   void ZeroGripper();

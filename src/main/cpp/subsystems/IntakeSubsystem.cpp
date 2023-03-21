@@ -15,19 +15,20 @@ REGISTER_DOUBLE(IntakeOutSpeedCube, "Intake/OutSpeed/Cube", -0.6)
 REGISTER_DOUBLE(WheelsCurrentLimit, "Intake/Wheels/CurrentLimit", 20)
 REGISTER_DOUBLE(WheelsCurrentLimitDuration, "Intake/Wheels/CurrentLimitDuration", 0.0)
 
-REGISTER_DOUBLE(GripperCurrentLimit, "Intake/Gripper/CurrentLimit", 5)
+REGISTER_DOUBLE(GripperCurrentLimit, "Intake/Gripper/CurrentLimit", 20)
 REGISTER_DOUBLE(GripperCurrentLimitDuration, "Intake/Gripper/CurrentLimitDuration", 0.0)
-REGISTER_DOUBLE(GripperP, "Intake/Gripper/PID/P", 0.0005)
+REGISTER_DOUBLE(GripperP, "Intake/Gripper/PID/P", 0.008)
 REGISTER_DOUBLE(GripperI, "Intake/Gripper/PID/I", 0.0)
 REGISTER_DOUBLE(GripperD, "Intake/Gripper/PID/D", 0.0)
-REGISTER_DOUBLE(GripperConeOpen, "Intake/Gripper/Positions/Cone/Open", 0);
-REGISTER_DOUBLE(GripperConeClosed, "Intake/Gripper/Positions/Cone/Closed", 0);
-REGISTER_DOUBLE(GripperConePlace, "Intake/Gripper/Positions/Cone/Place", 0);
-REGISTER_DOUBLE(GripperCubeOpen, "Intake/Gripper/Positions/Cube/Open", 0);
+REGISTER_DOUBLE(GripperConeOpen, "Intake/Gripper/Positions/Cone/Open", 25);
+REGISTER_DOUBLE(GripperConeClosed, "Intake/Gripper/Positions/Cone/Closed", -15);
+REGISTER_DOUBLE(GripperConePlace, "Intake/Gripper/Positions/Cone/Place", 40);
+REGISTER_DOUBLE(GripperCubeOpen, "Intake/Gripper/Positions/Cube/Open", 50);
 REGISTER_DOUBLE(GripperCubeClosed, "Intake/Gripper/Positions/Cube/Closed", 0);
 
 IntakeSubsystem::IntakeSubsystem() {
   m_leaderMotorController.SetInverted(ctre::phoenix::motorcontrol::InvertType::InvertMotorOutput);
+  m_gripperMotor.SetSensorPhase(false);
   IntakeSubsystem::ConfigureTuningParams();
 }
 
@@ -61,7 +62,8 @@ void IntakeSubsystem::ConfigureTuningParams() {
 
 // This method will be called once per scheduler run
 void IntakeSubsystem::Periodic() {
-  frc::SmartDashboard::PutNumber("IntakeCurrent", m_leaderMotorController.GetStatorCurrent());
+  frc::SmartDashboard::PutNumber("IntakeCurrent", GetIntakeCurrent());
+  frc::SmartDashboard::PutBoolean("IntakeCurrentAboveValue", GetCurrentAboveValue(10.0));
   frc::SmartDashboard::PutBoolean("HasGamePiece", m_isHasGamePiece);
   frc::SmartDashboard::PutNumber("GripperAngle", GetGripperAngle().value());
   frc::SmartDashboard::PutNumber("GripperCurrent", GetGripperCurrent());
@@ -74,6 +76,9 @@ void IntakeSubsystem::Periodic() {
       m_gripperMotorPIDController.Calculate(IntakeSubsystem::GetGripperAngle().value());
     if (clampedVal > 0.2) {
       clampedVal = 0.2;
+    }
+    if (clampedVal < -0.2) {
+      clampedVal = -0.2;
     }
     m_gripperMotor.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, clampedVal);
     // frc::DataLogManager::Log(fmt::format(
@@ -191,4 +196,15 @@ void IntakeSubsystem::CloseCube() {
 
 bool IntakeSubsystem::IsAtCommandedPosition() {
   return m_gripperMotorPIDController.AtSetpoint();
+}
+
+double IntakeSubsystem::GetIntakeCurrent() {
+  return m_leaderMotorController.GetStatorCurrent();
+}
+
+bool IntakeSubsystem::GetCurrentAboveValue(double val) {
+  if (abs(IntakeSubsystem::GetIntakeCurrent()) > val) {
+    return true;
+  }
+  return false;
 }

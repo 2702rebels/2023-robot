@@ -39,20 +39,20 @@ REGISTER_DOUBLE(
 REGISTER_DOUBLE(Axis2CurrentLimit, "ExArm/TuningParameters/Axis2CurrentLimit", 20.0)
 
 REGISTER_DOUBLE(ConeAxis1IntakeFloor, "ExArm/Position/Cone/IntakeFloor/Axis1", 18.0)
-REGISTER_DOUBLE(ConeAxis2IntakeFloor, "ExArm/Position/Cone/IntakeFloor/Axis2", 10.0)
-REGISTER_DOUBLE(ConeAxis1IntakeStation, "ExArm/Position/Cone/IntakeStation/Axis1", 65.0)
-REGISTER_DOUBLE(ConeAxis2IntakeStation, "ExArm/Position/Cone/IntakeStation/Axis2", 5.0)
+REGISTER_DOUBLE(ConeAxis2IntakeFloor, "ExArm/Position/Cone/IntakeFloor/Axis2", 14.0)
+REGISTER_DOUBLE(ConeAxis1IntakeStation, "ExArm/Position/Cone/IntakeStation/Axis1", 59.0)
+REGISTER_DOUBLE(ConeAxis2IntakeStation, "ExArm/Position/Cone/IntakeStation/Axis2", 0)
 
 REGISTER_DOUBLE(ConeAxis1ScoreLow, "ExArm/Position/Cone/ScoreLow/Axis1", 18.0)
 REGISTER_DOUBLE(ConeAxis2ScoreLow, "ExArm/Position/Cone/ScoreLow/Axis2", 0.0)
-REGISTER_DOUBLE(ConeAxis1ScoreMid, "ExArm/Position/Cone/ScoreMid/Axis1", 65.0)
+REGISTER_DOUBLE(ConeAxis1ScoreMid, "ExArm/Position/Cone/ScoreMid/Axis1", 62.0)
 REGISTER_DOUBLE(ConeAxis2ScoreMid, "ExArm/Position/Cone/ScoreMid/Axis2", 7.0)
-REGISTER_DOUBLE(ConeAxis1ScoreHigh, "ExArm/Position/Cone/ScoreHigh/Axis1", 80.0)
+REGISTER_DOUBLE(ConeAxis1ScoreHigh, "ExArm/Position/Cone/ScoreHigh/Axis1", 78.0)
 REGISTER_DOUBLE(ConeAxis2ScoreHigh, "ExArm/Position/Cone/ScoreHigh/Axis2", 20.0)
 
 REGISTER_DOUBLE(CubeAxis1IntakeFloor, "ExArm/Position/Cube/IntakeFloor/Axis1", 18.0)
-REGISTER_DOUBLE(CubeAxis2IntakeFloor, "ExArm/Position/Cube/IntakeFloor/Axis2", 10.0)
-REGISTER_DOUBLE(CubeAxis1IntakeStation, "ExArm/Position/Cube/IntakeStation/Axis1", 65.0)
+REGISTER_DOUBLE(CubeAxis2IntakeFloor, "ExArm/Position/Cube/IntakeFloor/Axis2", 14.0)
+REGISTER_DOUBLE(CubeAxis1IntakeStation, "ExArm/Position/Cube/IntakeStation/Axis1", 60.0)
 REGISTER_DOUBLE(CubeAxis2IntakeStation, "ExArm/Position/Cube/IntakeStation/Axis2", 5.0)
 
 REGISTER_DOUBLE(CubeAxis1ScoreLow, "ExArm/Position/Cube/ScoreLow/Axis1", 18.0)
