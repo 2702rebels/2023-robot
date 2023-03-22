@@ -210,7 +210,7 @@ void RobotContainer::ConfigureButtonBindings() {
     .OnTrue(frc2::InstantCommand([this] { m_drive.ZeroHeading(); }, { &m_drive }).ToPtr());
 
   // Lock the wheels
-  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightStick)
+  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kLeftStick)
     .WhileTrue(frc2::RunCommand([this] { m_drive.StopX(); }, { &m_drive }).ToPtr());
 
   frc2::Trigger(
