@@ -20,7 +20,7 @@ RotationProfile::RotationProfile(
   const auto r0 = MathUtils::ClampAngle(start.Radians());
   const auto rN = MathUtils::ClampAngle(end.Radians());
 
-  if (r0 != rN) {
+  if (units::math::fabs(r0 - rN) > 1_deg) {
     // difference between start and end orientation
     // the sign of delta indicates the direction of the rotation
     // positive - CCW, negative - CW
@@ -93,7 +93,7 @@ const std::vector<RotationProfile::State> RotationProfile::States() const {
 RotationProfile::State RotationProfile::Sample(const units::second_t t) const {
 #ifdef TRAJECTORY_BASED_PROFILE
   if (m_trajectory.States().size() == 0) {
-    return { t, frc::Rotation2d(), 0_rad_per_s };
+    return RotationProfile::State { t, frc::Rotation2d(), 0_rad_per_s };
   }
   return convert(m_trajectory.Sample(t));
 #else

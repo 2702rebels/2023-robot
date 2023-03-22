@@ -72,6 +72,20 @@ class RotationProfile {
    */
   const std::vector<State> States() const;
 
+  /**
+   * Returns initial rotation.
+   */
+  frc::Rotation2d InitialRotation() const {
+    return States().size() == 0 ? frc::Rotation2d() : States().front().rotation;
+  }
+
+  /**
+   * Returns final rotation.
+   */
+  frc::Rotation2d FinalRotation() const {
+    return States().size() == 0 ? frc::Rotation2d() : States().back().rotation;
+  }
+
  private:
   std::vector<State> m_states;
   frc::Trajectory m_trajectory;

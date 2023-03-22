@@ -1,7 +1,10 @@
 #include "utils/CustomHolonomicDriveController.h"
 
 #include <frc/DataLogManager.h>
+#include <frc/smartdashboard/SmartDashboard.h>
 #include <units/math.h>
+
+#include "Directives.h"
 
 CustomHolonomicDriveController::CustomHolonomicDriveController(
   frc2::PIDController xController,
@@ -61,12 +64,19 @@ frc::ChassisSpeeds CustomHolonomicDriveController::Calculate(
     m_thetaController.Calculate(currentPose.Rotation().Radians(), desiredRotation.Radians()),
   };
 
-  // frc::DataLogManager::Log(fmt::format(
-  //   "{:.5f} {:.5f} | {:.2f} -> {:.2f}",
-  //   thetaFF.value(),
-  //   thetaFeedback.value(),
-  //   currentPose.Rotation().Degrees().value(),
-  //   desiredRotation.Degrees().value()));
+#ifdef AUTO_COMMAND_LOG
+  // clang-format off
+  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/ΔΘ ", m_rotationError.Radians().convert<units::degree>().value());
+  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/ΔX", m_poseError.Translation().X().value());
+  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/ΔY", m_poseError.Translation().Y().value());
+  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/Θ FF", thetaFF.convert<units::degrees_per_second>().value());
+  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/Θ FB", thetaFeedback.convert<units::degrees_per_second>().value());
+  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/X FF", xFF.value());
+  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/X FB", xFeedback.value());
+  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/Y FF", yFF.value());
+  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/Y FB", yFeedback.value());
+  // clang-format on
+#endif
 
   return frc::ChassisSpeeds::FromFieldRelativeSpeeds(
     xFF + xFeedback, yFF + yFeedback, thetaFF + thetaFeedback, currentPose.Rotation());

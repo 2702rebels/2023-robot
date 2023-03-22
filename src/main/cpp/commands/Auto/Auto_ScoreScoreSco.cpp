@@ -35,6 +35,7 @@ Auto_ScoreScoreSco::Auto_ScoreScoreSco(
         },
         frc::Translation2d { 0_m, 0_m },
         true,
+        false,
         drive)),
     frc2::ParallelCommandGroup(
       ArmMoveCommand(arm, ArmPosition::SCORE_HIGH_CUBE),
@@ -48,6 +49,7 @@ Auto_ScoreScoreSco::Auto_ScoreScoreSco(
         },
         frc::Translation2d { 0_m, 0_m },
         true,
+        false,
         drive)),
     frc2::ParallelCommandGroup(
       frc2::SequentialCommandGroup(
@@ -64,6 +66,7 @@ Auto_ScoreScoreSco::Auto_ScoreScoreSco(
         },
         frc::Translation2d { 0_m, 0_m },
         true,
+        false,
         drive)),
     frc2::ParallelCommandGroup(
       ArmMoveCommand(arm, ArmPosition::STOWED),
@@ -77,5 +80,6 @@ Auto_ScoreScoreSco::Auto_ScoreScoreSco(
         },
         frc::Translation2d { 0_m, 0_m },
         true,
+        false,
         drive)));
 }

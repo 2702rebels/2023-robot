@@ -1,5 +1,5 @@
-#define QUIET
-// #define AUTO_TELEMETRY
+// Indicates that auto commands should log telemetry data
+#define AUTO_COMMAND_LOG
 
 // Indicates that detailed logging of DS and joystick controls should be enabled
 #define LOG_DATA_DRIVER_STATION

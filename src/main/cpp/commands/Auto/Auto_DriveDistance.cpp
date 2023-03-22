@@ -10,5 +10,6 @@ Auto_DriveDistance::Auto_DriveDistance(DriveSubsystem* drive) {
     },
     frc::Translation2d { 0_m, 0_m },
     true,
+    true,
     drive));
 }

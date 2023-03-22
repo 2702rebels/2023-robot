@@ -34,6 +34,13 @@ class CustomHolonomicDriveController {
   }
 
   /**
+   * Gets the pose tolerance.
+   */
+  const frc::Pose2d& GetTolerance() const {
+    return m_poseTolerance;
+  }
+
+  /**
    * Returns the next output of the holonomic drive controller.
    *
    * @param currentPose The current pose, as measured by odometry or pose estimator.

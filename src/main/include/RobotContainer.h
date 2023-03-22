@@ -11,6 +11,7 @@
 #include <frc2/command/RunCommand.h>
 
 #include "Constants.h"
+#include "commands/Auto/Auto_ScoreAndOverAndBalance.h"
 #include "commands/auto/Auto2.h"
 #include "commands/auto/Auto3.h"
 #include "commands/auto/Auto_DoNothing.h"
@@ -82,6 +83,7 @@ class RobotContainer {
 #ifdef ARM_ENABLED
 #ifdef INTAKE_ENABLED
   Auto_ScoreAndBalance m_auto_scoreAndBalance { &m_drive, &m_arm, &m_intake };
+  Auto_ScoreAndOverAndBalance m_auto_scoreAndOverAndBalance { &m_drive, &m_arm, &m_intake };
   Auto_ScoreScoreSco m_auto_scoreScoreSco { &m_drive, &m_arm, &m_intake };
 #endif
   Auto3 m_auto3 { &m_drive, &m_arm };

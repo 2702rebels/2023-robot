@@ -71,11 +71,11 @@ class DriveSubsystem : public frc2::SubsystemBase {
   void ResetEncoders();
 
   /**
-   * Returns the heading of the robot.
+   * Returns the heading of the robot based on the estimated pose.
    * @return The robot's heading.
    */
   frc::Rotation2d GetHeading() const {
-    return frc::Rotation2d(GetGyroAngle());
+    return GetPose().Rotation();
   }
 
   /**
@@ -89,6 +89,13 @@ class DriveSubsystem : public frc2::SubsystemBase {
    */
   units::radians_per_second_t GetTurnRate() const {
     return units::degrees_per_second_t { -m_gyroSign * m_gyro.GetRate() };
+  }
+
+  /**
+   * Returns the yaw heading of the robot based on the gyro.
+   */
+  frc::Rotation2d GetYaw() const {
+    return frc::Rotation2d(GetGyroAngle());
   }
 
   /**

@@ -15,6 +15,7 @@ Auto2::Auto2(DriveSubsystem* drive) {
       },
       frc::Translation2d { 0_m, 0_m },
       true,
+      false,
       drive),
     AutoBalanceCommand(drive));
 }

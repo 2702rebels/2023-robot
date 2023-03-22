@@ -13,6 +13,8 @@
 #include "commands/ScoreCubeCommand.h"
 #include "frc2/command/InstantCommand.h"
 
+constexpr auto origin = frc::Translation2d { 0_m, 0_m };
+
 // class Auto_ScoreAndBalance_IntakeTimout
 //   : public frc2::CommandHelper<frc2::ParallelRaceGroup, Auto_ScoreAndBalance_IntakeTimout> {
 //  public:
@@ -41,21 +43,25 @@ Auto_ScoreAndBalance::Auto_ScoreAndBalance(
           Waypoint(frc::Pose2d { 3_m, 0_m, 0_deg }, 1_mps),
           Waypoint(frc::Pose2d { 4.6_m, 0_m, 0_deg }, frc::Rotation2d(0_deg)),
         },
-        frc::Translation2d { 0_m, 0_m },
+        origin,
         true,
+        false,
+        false,
         drive)),
     frc2::ParallelCommandGroup(
       ArmMoveCommand(arm, ArmPosition::SCORE_HIGH_CUBE),
       DriveTrajectoryCommand(
         {
-          Waypoint(frc::Pose2d { 0_m, 0_m, 0_deg }, frc::Rotation2d(180_deg)),
-          Waypoint(frc::Pose2d { 1_m, 0_m, 0_deg }),
-          Waypoint(frc::Pose2d { 2_m, 0_m, 0_deg }),
-          Waypoint(frc::Pose2d { 3_m, 0_m, 0_deg }, 1_mps),
-          Waypoint(frc::Pose2d { 4.6_m, 0_m, 0_deg }, frc::Rotation2d(0_deg)),
+          Waypoint(frc::Pose2d { 4.6_m, 0_m, 180_deg }, frc::Rotation2d(0_deg)),
+          Waypoint(frc::Pose2d { 3.6_m, 0_m, 180_deg }),
+          Waypoint(frc::Pose2d { 2.6_m, 0_m, 180_deg }),
+          Waypoint(frc::Pose2d { 1.6_m, 0_m, 180_deg }, 1_mps),
+          Waypoint(frc::Pose2d { 0_m, 0_m, 180_deg }, frc::Rotation2d(180_deg)),
         },
-        frc::Translation2d { 0_m, 0_m },
-        true,
+        origin,
+        false,
+        false,
+        false,
         drive)),
     frc2::ParallelCommandGroup(
       ScoreCubeCommand(arm, intake),
@@ -66,7 +72,8 @@ Auto_ScoreAndBalance::Auto_ScoreAndBalance(
           Waypoint(frc::Pose2d { 0.5_m, 2_m, 0_deg }, 1_mps),
           Waypoint(frc::Pose2d { 2_m, 2_m, 0_deg }, frc::Rotation2d(90_deg)),
         },
-        frc::Translation2d { 0_m, 0_m },
+        origin,
+        false,
         true,
         drive)),
     AutoBalanceCommand(drive));

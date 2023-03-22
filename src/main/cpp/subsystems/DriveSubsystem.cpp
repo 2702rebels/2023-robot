@@ -78,7 +78,7 @@ DriveSubsystem::DriveSubsystem() :
   },
   m_odometry {
     kDriveKinematics,
-    GetHeading(),
+    GetYaw(),
     {
       m_frontLeft.GetPosition(),
       m_frontRight.GetPosition(),
@@ -100,59 +100,41 @@ DriveSubsystem::DriveSubsystem() :
 
 void DriveSubsystem::InitSendable(wpi::SendableBuilder& builder) {
   SubsystemBase::InitSendable(builder);
+  SubsystemBase::SetName("Drive");
+  SubsystemBase::SetSubsystem("Drive");
 
   builder.SetSmartDashboardType("Drive");
 
-  builder.AddDoubleProperty(
-    "Telemetry/Lateral Heading",
-    [this] { return m_currentHeading.convert<units::degree>().value(); },
-    nullptr);
-  builder.AddDoubleProperty(
-    "Telemetry/Lateral Magnitude", [this] { return m_currentSpeed; }, nullptr);
-  builder.AddDoubleProperty(
-    "Telemetry/Rotation", [this] { return m_currentRotation; }, nullptr);
-  builder.AddDoubleProperty(
-    "Telemetry/Input Lateral Heading",
-    [this] { return m_inputHeading.convert<units::degree>().value(); },
-    nullptr);
-  builder.AddDoubleProperty(
-    "Telemetry/Input Lateral Magnitude", [this] { return m_inputSpeed; }, nullptr);
-  builder.AddDoubleProperty(
-    "Telemetry/Input Rotation", [this] { return m_inputRotation; }, nullptr);
-  builder.AddDoubleProperty(
-    "Telemetry/Vx", [this] { return m_currentVx.value(); }, nullptr);
-  builder.AddDoubleProperty(
-    "Telemetry/Vy", [this] { return m_currentVy.value(); }, nullptr);
-  builder.AddDoubleProperty(
-    "Telemetry/ω", [this] { return m_currentOmega.value(); }, nullptr);
-  builder.AddDoubleProperty(
-    "Telemetry/Heading", [this] { return to180(GetHeading().Radians()); }, nullptr);
-  builder.AddDoubleProperty(
-    "Telemetry/Pitch", [this] { return m_pitch.convert<units::degrees>().value(); }, nullptr);
-  builder.AddDoubleProperty(
-    "Telemetry/Roll", [this] { return m_roll.convert<units::degrees>().value(); }, nullptr);
-  builder.AddDoubleProperty(
-    "Telemetry/Pitch Velocity",
-    [this] { return m_pitchVelocity.convert<units::deg_per_s>().value(); },
-    nullptr);
-  builder.AddDoubleProperty(
-    "Telemetry/Roll Velocity",
-    [this] { return m_rollVelocity.convert<units::deg_per_s>().value(); },
-    nullptr);
-  builder.AddDoubleProperty(
-    "Telemetry/Inclination",
-    [this] { return m_inclination.convert<units::degrees>().value(); },
-    nullptr);
-  builder.AddDoubleProperty(
-    "Telemetry/Inclination Velocity",
-    [this] { return m_inclinationVelocity.convert<units::deg_per_s>().value(); },
-    nullptr);
-  builder.AddBooleanProperty(
-    "Telemetry/X formation", [this] { return m_stopX; }, nullptr);
-  builder.AddBooleanProperty(
-    "Telemetry/IMU Ready",
-    [this] { return m_gyro.GetState() == ctre::phoenix::sensors::PigeonIMU::PigeonState::Ready; },
-    nullptr);
+  // clang-format off
+  // user input from joystick/controller and values commanded to the modules
+  builder.AddDoubleProperty("Telemetry/Joystick/Heading",   [this] { return m_inputHeading.convert<units::degree>().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Joystick/Magnitude", [this] { return m_inputSpeed; }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Joystick/Rotation",  [this] { return m_inputRotation; }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Commanded/Heading",  [this] { return m_currentHeading.convert<units::degree>().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Commanded/Speed",    [this] { return m_currentSpeed; }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Commanded/Rotation", [this] { return m_currentRotation; }, nullptr);
+
+  // real-time telemetry of the robot speeds, heading, inclination, etc.
+  builder.AddDoubleProperty("Telemetry/Pose/X",             [this] { return GetPose().X().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Pose/Y",             [this] { return GetPose().Y().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Pose/Θ",             [this] { return to180(GetPose().Rotation().Radians()); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Speed/Vx",           [this] { return m_currentVx.value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Speed/Vy",           [this] { return m_currentVy.value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Speed/ω",            [this] { return m_currentOmega.convert<units::deg_per_s>().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Gyro/Yaw",           [this] { return to180(GetYaw().Radians()); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Gyro/Pitch",         [this] { return m_pitch.convert<units::degrees>().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Gyro/Roll",          [this] { return m_roll.convert<units::degrees>().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Gyro/Pitch per s",   [this] { return m_pitchVelocity.convert<units::deg_per_s>().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Gyro/Roll per s",    [this] { return m_rollVelocity.convert<units::deg_per_s>().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Gyro/Inclination",   [this] { return m_inclination.convert<units::degree>().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Gyro/Incl per s",    [this] { return m_inclinationVelocity.convert<units::deg_per_s>().value(); }, nullptr);
+
+  // states
+  builder.AddBooleanProperty("Telemetry/X formation",       [this] { return m_stopX; }, nullptr);
+  builder.AddBooleanProperty("Telemetry/IMU Ready",         [this] { return m_gyro.GetState() == ctre::phoenix::sensors::PigeonIMU::PigeonState::Ready; }, nullptr);
+  // clang-format on
+
+  // swerve module states
   builder.AddDoubleProperty(
     "Telemetry/Swerve States/Driving Current",
     [this] {
@@ -338,11 +320,9 @@ void DriveSubsystem::ResetEncoders() {
 }
 
 void DriveSubsystem::ZeroHeading() {
-  m_gyro.Reset();
-
   const auto pose = m_odometry.GetPose();
   m_odometry.ResetPosition(
-    GetHeading(),
+    GetYaw(),
     {
       m_frontLeft.GetPosition(),
       m_frontRight.GetPosition(),
@@ -357,33 +337,8 @@ void DriveSubsystem::ZeroHeading() {
 }
 
 void DriveSubsystem::UpdateOdometry() {
-  const auto heading = GetHeading();
-  const auto pose = GetPose();
-
-  // gyro reading
-  double ypr[3];
-  double xyz[3];
-  m_gyro.GetYawPitchRoll(ypr);
-  m_gyro.GetRawGyro(xyz);
-
-  m_pitch = units::degree_t { ypr[1] };
-  m_roll = units::degree_t { ypr[2] };
-
-  m_pitchVelocity = units::degrees_per_second_t { xyz[0] };
-  m_rollVelocity = units::degrees_per_second_t { xyz[1] };
-
-  const auto cosTheta = heading.Cos();
-  const auto sinTheta = heading.Sin();
-
-  m_inclination = cosTheta * m_pitch.convert<units::radian>() +
-                  m_gyroSign * sinTheta * m_roll.convert<units::radian>();
-
-  m_inclinationVelocity =
-    cosTheta * m_pitchVelocity.convert<units::radians_per_second>() +
-    m_gyroSign * sinTheta * m_rollVelocity.convert<units::radians_per_second>();
-
   m_odometry.Update(
-    heading,
+    GetYaw(),
     {
       m_frontLeft.GetPosition(),
       m_frontRight.GetPosition(),
@@ -407,7 +362,33 @@ void DriveSubsystem::UpdateOdometry() {
 #endif
 
   // update field position for debugging purposes
+  const auto pose = GetPose();
   m_field.SetRobotPose(pose);
+
+  // update pitch/roll/inclination
+  const auto heading = pose.Rotation();
+
+  // gyro reading
+  double ypr[3];
+  double xyz[3];
+  m_gyro.GetYawPitchRoll(ypr);
+  m_gyro.GetRawGyro(xyz);
+
+  m_pitch = units::degree_t { ypr[1] };
+  m_roll = units::degree_t { ypr[2] };
+
+  m_pitchVelocity = units::degrees_per_second_t { xyz[0] };
+  m_rollVelocity = units::degrees_per_second_t { xyz[1] };
+
+  const auto cosTheta = heading.Cos();
+  const auto sinTheta = heading.Sin();
+
+  m_inclination = cosTheta * m_pitch.convert<units::radian>() +
+                  m_gyroSign * sinTheta * m_roll.convert<units::radian>();
+
+  m_inclinationVelocity =
+    cosTheta * m_pitchVelocity.convert<units::radians_per_second>() +
+    m_gyroSign * sinTheta * m_rollVelocity.convert<units::radians_per_second>();
 }
 
 frc::Pose2d DriveSubsystem::GetPose() const {
@@ -442,7 +423,7 @@ void DriveSubsystem::UpdateTuningParameters() {
 
 void DriveSubsystem::ResetOdometry(const frc::Pose2d& pose) {
   m_odometry.ResetPosition(
-    GetHeading(),
+    GetYaw(),
     {
       m_frontLeft.GetPosition(),
       m_frontRight.GetPosition(),

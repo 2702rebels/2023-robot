@@ -98,6 +98,7 @@ RobotContainer::RobotContainer() {
   m_chooser.SetDefaultOption("DoNothing", &m_auto_doNothing);
   m_chooser.AddOption("DriveForwards", &m_auto_driveForwards);
   m_chooser.AddOption("ScoreAndBalance", &m_auto_scoreAndBalance);
+  m_chooser.AddOption("ScoreAndOverAndBalance", &m_auto_scoreAndOverAndBalance);
   m_chooser.AddOption("Auto2", &m_auto2);
 #ifdef ARM_ENABLED
   m_chooser.AddOption("ScoreAndBalance", &m_auto_scoreAndBalance);
