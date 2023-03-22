@@ -23,10 +23,15 @@ void LedSubsystem::Periodic() {
   if (m_isNewPattern) {
     m_isNewPattern = false;
     m_periodStart = frc::Timer::GetFPGATimestamp();
-    // for (int i = 0; i < LEDConstants::kLength; i++) {
-    //   m_ledPatternBuffer[i] = m_ledColourBuffer[i];
-    // }
-    memcpy(m_ledPatternBuffer.data(), m_ledColourBuffer.data(), m_ledColourBuffer.size() * 4);
+    if (m_pattern == LEDPattern::LOADING) {
+      for (int i = 0; i < LEDConstants::kLength; i++) {
+        m_ledPatternBuffer[i].r = 0;
+        m_ledPatternBuffer[i].g = 0;
+        m_ledPatternBuffer[i].b = 0;
+      }
+    } else {
+      memcpy(m_ledPatternBuffer.data(), m_ledColourBuffer.data(), m_ledColourBuffer.size() * 4);
+    }
   }
 
   double ledBrightness = 0;
@@ -84,6 +89,7 @@ void LedSubsystem::Periodic() {
       double columnSize = LEDConstants::kLength / 4.0;
       double percentDone = ((frc::Timer::GetFPGATimestamp() - m_periodStart) / m_period).value();
       int ledsToTurnOn = columnSize * percentDone;
+      frc::DataLogManager::Log(fmt::format("ledsToTurnOn={}", ledsToTurnOn));
 
       for (int i = 0; i < ledsToTurnOn; i++) {
         m_ledPatternBuffer[i] = m_ledColourBuffer[i];

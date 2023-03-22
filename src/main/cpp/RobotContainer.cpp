@@ -293,8 +293,8 @@ void RobotContainer::ConfigureButtonBindings() {
 #endif
 #endif
 
-#ifdef OPERATOR_CONTROLLER_ENABLED
   // [Configure Operator Controller]
+#ifdef OPERATOR_CONTROLLER_ENABLED
 #ifdef ARM_ENABLED
 #ifdef INTAKE_ENABLED
   // Reload parameters.
@@ -362,13 +362,13 @@ void RobotContainer::ConfigureButtonBindings() {
   // Toggle robot mode.
   frc2::JoystickButton(&m_operatorController, frc::XboxController::Button::kLeftBumper)
     .OnTrue(frc2::InstantCommand([this] { ToggleRobotMode(); }, {}).ToPtr());
-}
 #endif
+}
 
 frc2::Command* RobotContainer::GetAutonomousCommand() {
 #ifdef AUTO_CHOOSER
   return m_chooser.GetSelected();
 #else
-    return new frc2::InstantCommand([this] { frc::DataLogManager::Log("No autonomous code"); });
+  return new frc2::InstantCommand([this] { frc::DataLogManager::Log("No autonomous code"); });
 #endif
 }

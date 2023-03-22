@@ -36,4 +36,4 @@
 // Indicates that the led's are enabled.
 #define LED_ENABLED
 
-#define OPERATOR_CONTROLLER_ENABLED
+// #define OPERATOR_CONTROLLER_ENABLED
