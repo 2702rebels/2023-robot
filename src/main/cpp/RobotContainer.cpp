@@ -188,7 +188,7 @@ void RobotContainer::ToggleRobotScoreHeight() {
 std::string RobotContainer::GetRobotScoreHeightString() {
   if (m_scoreHeight == RobotScoreHeight::HIGH) {
     return "HIGH";
-  } else if (m_mode == RobotScoreHeight::MID) {
+  } else if (m_scoreHeight == RobotScoreHeight::MID) {
     return "MID";
   }
   return "Undefined";
@@ -258,7 +258,7 @@ void RobotContainer::ConfigureButtonBindings() {
   // Intake automatically.
   frc2::Trigger(m_driverController.LeftTrigger(
                   0.5, frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
-    .OnTrue(IntakeAutonomouslyCommand(&m_drive, &m_arm, &m_intake, [this] -> bool {
+    .OnTrue(IntakeAutonomouslyCommand(&m_drive, &m_arm, &m_intake, [this]() -> bool {
               return this->m_mode == RobotMode::CONE;
             }).ToPtr());
 
@@ -269,8 +269,8 @@ void RobotContainer::ConfigureButtonBindings() {
               &m_drive,
               &m_arm,
               &m_intake,
-              [this] -> bool { return this->m_scoreHeight == RobotScoreHeight::HIGH; },
-              [this] -> bool { return this->m_mode == RobotMode::CONE; })
+              [this]() -> bool { return this->m_scoreHeight == RobotScoreHeight::HIGH; },
+              [this]() -> bool { return this->m_mode == RobotMode::CONE; })
               .ToPtr());
 
   // Intake from the floor.
