@@ -1,5 +1,6 @@
 #include "utils/WaypointTrajectory.h"
 
+#include <frc/DataLogManager.h>
 #include <frc/trajectory/TrajectoryGenerator.h>
 
 #include <algorithm>
@@ -75,7 +76,7 @@ WaypointTrajectory::WaypointTrajectory(
     }
 
     // last leg
-    if (poses.begin() + startIndex < poses.end()) {
+    if (poses.begin() + startIndex < poses.end() - 1) {
       std::vector<frc::Pose2d> leg(poses.begin() + startIndex, poses.end());
 
       frc::TrajectoryConfig config(

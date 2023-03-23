@@ -76,14 +76,14 @@ class RotationProfile {
    * Returns initial rotation.
    */
   frc::Rotation2d InitialRotation() const {
-    return States().size() == 0 ? frc::Rotation2d() : States().front().rotation;
+    return States().size() == 0 ? frc::Rotation2d(m_offset) : States().front().rotation;
   }
 
   /**
    * Returns final rotation.
    */
   frc::Rotation2d FinalRotation() const {
-    return States().size() == 0 ? frc::Rotation2d() : States().back().rotation;
+    return States().size() == 0 ? frc::Rotation2d(m_offset) : States().back().rotation;
   }
 
  private:

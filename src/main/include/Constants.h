@@ -31,7 +31,7 @@ constexpr units::radians_per_second_t kMaxAngularSpeed { 2 * std::numbers::pi };
 
 constexpr double kDirectionSlewRate = std::numbers::pi / 2;  // radians per second
 constexpr double kAccelerateSlewRate = 0.8;                  // percent per second (1 = 100%)
-constexpr double kDecelerateSlewRate = 1.5;                  // percent per second (1 = 100%)
+constexpr double kDecelerateSlewRate = 2.0;                  // percent per second (1 = 100%)
 constexpr double kRotationalSlewRate = 1.5;                  // percent per second (1 = 100%)
 
 // Chassis configuration

@@ -89,7 +89,6 @@ void LedSubsystem::Periodic() {
       double columnSize = LEDConstants::kLength / 4.0;
       double percentDone = ((frc::Timer::GetFPGATimestamp() - m_periodStart) / m_period).value();
       int ledsToTurnOn = columnSize * percentDone;
-      frc::DataLogManager::Log(fmt::format("ledsToTurnOn={}", ledsToTurnOn));
 
       for (int i = 0; i < ledsToTurnOn; i++) {
         m_ledPatternBuffer[i] = m_ledColourBuffer[i];

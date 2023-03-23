@@ -66,6 +66,8 @@ RotationProfile::RotationProfile(
       m_states.push_back({ timeframe, frc::Rotation2d(rN), 0_rad_per_s });  // end state
     }
 #endif
+  } else {
+    m_offset = r0;
   }
 }
 
@@ -93,7 +95,7 @@ const std::vector<RotationProfile::State> RotationProfile::States() const {
 RotationProfile::State RotationProfile::Sample(const units::second_t t) const {
 #ifdef TRAJECTORY_BASED_PROFILE
   if (m_trajectory.States().size() == 0) {
-    return RotationProfile::State { t, frc::Rotation2d(), 0_rad_per_s };
+    return RotationProfile::State { t, frc::Rotation2d(m_offset), 0_rad_per_s };
   }
   return convert(m_trajectory.Sample(t));
 #else

@@ -17,6 +17,7 @@
 #include "commands/auto/Auto_DoNothing.h"
 #include "commands/auto/Auto_DriveDistance.h"
 #include "commands/auto/Auto_ScoreAndBalance.h"
+#include "commands/auto/Auto_ScoreAndOut.h"
 #include "commands/auto/Auto_ScoreScoreSco.h"
 #include "subsystems/ArmSubsystem.h"
 #include "subsystems/DriveSubsystem.h"
@@ -87,6 +88,7 @@ class RobotContainer {
   Auto_ScoreAndBalance m_auto_scoreAndBalance { &m_drive, &m_arm, &m_intake };
   Auto_ScoreAndOverAndBalance m_auto_scoreAndOverAndBalance { &m_drive, &m_arm, &m_intake };
   Auto_ScoreScoreSco m_auto_scoreScoreSco { &m_drive, &m_arm, &m_intake };
+  Auto_ScoreAndOut m_auto_scoreAndOut { &m_drive, &m_arm, &m_intake };
 #endif
   Auto3 m_auto3 { &m_drive, &m_arm };
 #endif
