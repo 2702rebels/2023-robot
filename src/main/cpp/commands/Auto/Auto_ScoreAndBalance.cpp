@@ -71,7 +71,7 @@ Auto_ScoreAndBalance::Auto_ScoreAndBalance(
           Waypoint(frc::Pose2d { 0.2_m, 0_m, 90_deg }, frc::Rotation2d(181_deg)),
           Waypoint(frc::Pose2d { 0.2_m, 1_m, 90_deg }),
           Waypoint(frc::Pose2d { 0.5_m, 2.5_m, 0_deg }, 1_mps),
-          Waypoint(frc::Pose2d { 2_m, 2.5_m, 0_deg }, frc::Rotation2d(-90_deg)),
+          Waypoint(frc::Pose2d { 2_m, 2.5_m, 0_deg }, frc::Rotation2d(90_deg)),
         } :
         std::vector<Waypoint>
         {
