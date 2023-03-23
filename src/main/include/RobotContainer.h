@@ -85,10 +85,12 @@ class RobotContainer {
 
 #ifdef ARM_ENABLED
 #ifdef INTAKE_ENABLED
-  Auto_ScoreAndBalance m_auto_scoreAndBalance { &m_drive, &m_arm, &m_intake };
+  Auto_ScoreAndBalance m_auto_scoreAndBalanceRed { Alliance::RED, &m_drive, &m_arm, &m_intake };
+  Auto_ScoreAndBalance m_auto_scoreAndBalanceBlue { Alliance::BLUE, &m_drive, &m_arm, &m_intake };
   Auto_ScoreAndOverAndBalance m_auto_scoreAndOverAndBalance { &m_drive, &m_arm, &m_intake };
   Auto_ScoreScoreSco m_auto_scoreScoreSco { &m_drive, &m_arm, &m_intake };
-  Auto_ScoreAndOut m_auto_scoreAndOut { &m_drive, &m_arm, &m_intake };
+  Auto_ScoreAndOut m_auto_scoreAndOutRed { Alliance::RED, &m_drive, &m_arm, &m_intake };
+  Auto_ScoreAndOut m_auto_scoreAndOutBlue { Alliance::BLUE, &m_drive, &m_arm, &m_intake };
 #endif
   Auto3 m_auto3 { &m_drive, &m_arm };
 #endif

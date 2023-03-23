@@ -25,7 +25,7 @@ constexpr auto origin = frc::Translation2d { 0_m, 0_m };
 // Auto_ScoreAndBalance_IntakeTimout(intake),
 
 Auto_ScoreAndBalance::Auto_ScoreAndBalance(
-  DriveSubsystem* drive, ArmSubsystem* arm, IntakeSubsystem* intake) {
+  Alliance alliance, DriveSubsystem* drive, ArmSubsystem* arm, IntakeSubsystem* intake) {
   AddCommands(
     frc2::InstantCommand([intake] { intake->CloseCube(); }, {}),
     ArmMoveCommand(arm, ArmPosition::SCORE_HIGH_CUBE),
@@ -65,11 +65,20 @@ Auto_ScoreAndBalance::Auto_ScoreAndBalance(
     frc2::ParallelCommandGroup(
       ScoreCubeCommand(arm, intake),
       DriveTrajectoryCommand(
+        alliance == Alliance::RED ?
+        std::vector<Waypoint>
         {
-          Waypoint(frc::Pose2d { 0.2_m, 0_m, 90_deg }, frc::Rotation2d(180_deg)),
+          Waypoint(frc::Pose2d { 0.2_m, 0_m, 90_deg }, frc::Rotation2d(181_deg)),
           Waypoint(frc::Pose2d { 0.2_m, 1_m, 90_deg }),
           Waypoint(frc::Pose2d { 0.5_m, 2.5_m, 0_deg }, 1_mps),
-          Waypoint(frc::Pose2d { 2_m, 2.5_m, 0_deg }, frc::Rotation2d(90_deg)),
+          Waypoint(frc::Pose2d { 2_m, 2.5_m, 0_deg }, frc::Rotation2d(-90_deg)),
+        } :
+        std::vector<Waypoint>
+        {
+          Waypoint(frc::Pose2d { 0.2_m, 0_m, -90_deg }, frc::Rotation2d(181_deg)),
+          Waypoint(frc::Pose2d { 0.2_m, -1_m, -90_deg }),
+          Waypoint(frc::Pose2d { 0.5_m, -2.5_m, 0_deg }, 1_mps),
+          Waypoint(frc::Pose2d { 2_m, -2.5_m, 0_deg }, frc::Rotation2d(-90_deg)),
         },
         origin,
         false,

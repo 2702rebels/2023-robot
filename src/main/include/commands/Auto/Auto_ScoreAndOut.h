@@ -11,5 +11,6 @@
 class Auto_ScoreAndOut
   : public frc2::CommandHelper<frc2::SequentialCommandGroup, Auto_ScoreAndOut> {
  public:
-  Auto_ScoreAndOut(DriveSubsystem* drive, ArmSubsystem* arm, IntakeSubsystem* intake);
+  Auto_ScoreAndOut(
+    Alliance alliance, DriveSubsystem* drive, ArmSubsystem* arm, IntakeSubsystem* intake);
 };

@@ -11,5 +11,6 @@
 class Auto_ScoreAndBalance
   : public frc2::CommandHelper<frc2::SequentialCommandGroup, Auto_ScoreAndBalance> {
  public:
-  Auto_ScoreAndBalance(DriveSubsystem* drive, ArmSubsystem* arm, IntakeSubsystem* intake);
+  Auto_ScoreAndBalance(
+    Alliance alliance, DriveSubsystem* drive, ArmSubsystem* arm, IntakeSubsystem* intake);
 };

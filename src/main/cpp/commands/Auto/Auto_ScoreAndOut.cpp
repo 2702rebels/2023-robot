@@ -14,7 +14,7 @@
 constexpr auto initialPose = frc::Pose2d { 0_m, 0_m, 180_deg };
 
 Auto_ScoreAndOut::Auto_ScoreAndOut(
-  DriveSubsystem* drive, ArmSubsystem* arm, IntakeSubsystem* intake) {
+  Alliance alliance, DriveSubsystem* drive, ArmSubsystem* arm, IntakeSubsystem* intake) {
   AddCommands(
     frc2::InstantCommand([intake] { intake->CloseCone(); }, {}),
     ArmMoveCommand(arm, 68_deg, 0_in),
@@ -35,7 +35,9 @@ Auto_ScoreAndOut::Auto_ScoreAndOut(
       DriveTrajectoryCommand(
         {
           Waypoint(frc::Pose2d { 2.7_m, 0_m, 0_deg }, frc::Rotation2d(180_deg), 0.7_mps),
-          Waypoint(frc::Pose2d { 4.9_m, -0.3_m, 0_deg }, frc::Rotation2d(0_deg)),
+          Waypoint(
+            frc::Pose2d { 4.9_m, alliance == Alliance::RED ? -0.3_m : 0.3_m, 0_deg },
+            frc::Rotation2d(0_deg)),
         },
         initialPose.Translation(),
         false,

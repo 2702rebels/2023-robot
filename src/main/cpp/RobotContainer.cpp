@@ -100,8 +100,10 @@ RobotContainer::RobotContainer() {
   m_chooser.AddOption("ScoreAndOverBalance", &m_auto_scoreAndOverAndBalance);
   m_chooser.AddOption("Auto2", &m_auto2);
 #ifdef ARM_ENABLED
-  m_chooser.AddOption("ScoreAndOut", &m_auto_scoreAndOut);
-  m_chooser.AddOption("ScoreAndBalance", &m_auto_scoreAndBalance);
+  m_chooser.AddOption("ScoreAndOut (Red)", &m_auto_scoreAndOutRed);
+  m_chooser.AddOption("ScoreAndBalance (Red)", &m_auto_scoreAndBalanceRed);
+  m_chooser.AddOption("ScoreAndOut (Blue)", &m_auto_scoreAndOutBlue);
+  m_chooser.AddOption("ScoreAndBalance (Blue)", &m_auto_scoreAndBalanceBlue);
   m_chooser.AddOption("ScoreScoreSco", &m_auto_scoreScoreSco);
   m_chooser.AddOption("Auto3", &m_auto3);
 #endif
