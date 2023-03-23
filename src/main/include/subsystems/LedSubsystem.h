@@ -83,6 +83,8 @@ class LedSubsystem : public frc2::SubsystemBase {
   frc::AddressableLED m_led { LEDConstants::kpwmPort };
   std::array<frc::AddressableLED::LEDData, LEDConstants::kLength> m_ledColourBuffer;
   std::array<frc::AddressableLED::LEDData, LEDConstants::kLength> m_ledPatternBuffer;
+  std::array<frc::AddressableLED::LEDData, LEDConstants::kLength> m_outputBuffer;
+  
   LEDPattern m_pattern;
   units::millisecond_t m_period;
   units::millisecond_t m_periodStart;

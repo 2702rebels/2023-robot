@@ -53,6 +53,8 @@ class RobotContainer {
   void ToggleRobotScoreHeight();
   std::string GetRobotScoreHeightString();
 
+  void ToggleFrontLights();
+
  private:
   // The driver's controller
   frc::XboxController m_driverController { OIConstants::kDriverControllerPort };
@@ -96,4 +98,5 @@ class RobotContainer {
   RobotScoreHeight m_scoreHeight = RobotScoreHeight::HIGH;
 
   void ConfigureButtonBindings();
+  bool m_isFrontLights = false;
 };

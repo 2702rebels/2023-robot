@@ -106,17 +106,30 @@ void LedSubsystem::Periodic() {
       break;
   }
 
+  memcpy(m_outputBuffer.data(), m_ledPatternBuffer.data(), m_ledPatternBuffer.size() * 4);
+
   if (m_isFrontLEDsOff) {
-    for (int i = LEDConstants::kLength / 4; i < LEDConstants::kLength - LEDConstants::kLength / 4;
-         i++) {
-      m_ledPatternBuffer[i].r = 0;
-      m_ledPatternBuffer[i].g = 0;
-      m_ledPatternBuffer[i].b = 0;
+    for (int i = 0; i < (LEDConstants::kLength / 4) + 1; i++) {
+      m_outputBuffer[i].r = 0;
+      m_outputBuffer[i].g = 0;
+      m_outputBuffer[i].b = 0;
+    }
+    for (int i = (LEDConstants::kLength / 4) * 3; i < LEDConstants::kLength; i++) {
+      m_outputBuffer[i].r = 0;
+      m_outputBuffer[i].g = 0;
+      m_outputBuffer[i].b = 0;
+    }
+  } else {
+    for (int i = 0; i < (LEDConstants::kLength / 4) + 1; i++) {
+      m_outputBuffer[i] = m_ledPatternBuffer[i];
+    }
+    for (int i = (LEDConstants::kLength / 4) * 3; i < LEDConstants::kLength; i++) {
+      m_outputBuffer[i] = m_ledPatternBuffer[i];
     }
   }
 
   // Write the pattern buffer to the LED.
-  m_led.SetData(m_ledPatternBuffer);
+  m_led.SetData(m_outputBuffer);
 }
 
 void LedSubsystem::SetRGB(int r, int g, int b) {
