@@ -7,7 +7,7 @@
 #include "commands/ArmMoveCommand.h"
 #include "commands/AutoBalanceCommand.h"
 #include "commands/DriveTrajectoryCommand.h"
-#include "commands/IntakeCubeCommand.h"
+#include "commands/IntakeCubeAutoCommand.h"
 #include "commands/ScoreConeCommand.h"
 #include "frc2/command/InstantCommand.h"
 
@@ -18,7 +18,7 @@ Auto_ScoreAndOut::Auto_ScoreAndOut(
   AddCommands(
     frc2::InstantCommand([intake] { intake->CloseCone(); }, {}),
     ArmMoveCommand(arm, 68_deg, 0_in),
-    ArmMoveCommand(arm, ArmPosition::SCORE_HIGH_CONE),
+    ArmMoveCommand(arm, 70_deg, 17_in),
     ScoreConeCommand(arm, intake),
     DriveTrajectoryCommand(
       {
@@ -31,7 +31,7 @@ Auto_ScoreAndOut::Auto_ScoreAndOut(
       drive),
     frc2::ParallelCommandGroup(
       ArmMoveCommand(arm, ArmPosition::INTAKE_FLOOR_CUBE),
-      frc2::ParallelRaceGroup(IntakeCubeCommand(intake), frc2::WaitCommand(4_s)),
+      frc2::ParallelRaceGroup(IntakeCubeAutoCommand(intake), frc2::WaitCommand(4_s)),
       DriveTrajectoryCommand(
         {
           Waypoint(frc::Pose2d { 2.7_m, 0_m, 0_deg }, frc::Rotation2d(180_deg), 0.7_mps),

@@ -37,6 +37,7 @@ class IntakeSubsystem : public frc2::SubsystemBase {
   void OpenCone();
   void CloseCone();
   void OpenCube();
+  void OpenAuto();
   void CloseCube();
   bool IsAtCommandedPosition();
 

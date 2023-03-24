@@ -123,7 +123,9 @@ void RobotContainer::OnAutoEnable() {
 }
 
 void RobotContainer::OnTeleEnable() {
-  SetRobotMode(RobotMode::CONE);
+  SetRobotMode(RobotMode::CUBE);
+  m_intake.CloseCube();
+  m_intake.HoldGamePiece();
   SetRobotScoreHeight(RobotScoreHeight::HIGH);
 }
 

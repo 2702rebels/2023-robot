@@ -25,6 +25,7 @@ REGISTER_DOUBLE(GripperConeClosed, "Intake/Gripper/Positions/Cone/Closed", -15);
 REGISTER_DOUBLE(GripperConePlace, "Intake/Gripper/Positions/Cone/Place", 40);
 REGISTER_DOUBLE(GripperCubeOpen, "Intake/Gripper/Positions/Cube/Open", 50);
 REGISTER_DOUBLE(GripperCubeClosed, "Intake/Gripper/Positions/Cube/Closed", 0);
+REGISTER_DOUBLE(GripperAutoOpen, "Intake/Gripper/Positions/Auto/Open", 60);
 
 IntakeSubsystem::IntakeSubsystem() {
   m_leaderMotorController.SetInverted(ctre::phoenix::motorcontrol::InvertType::InvertMotorOutput);
@@ -186,6 +187,11 @@ void IntakeSubsystem::PlaceCone() {
 void IntakeSubsystem::OpenCube() {
   frc::DataLogManager::Log(fmt::format("OpenCube. Setting angle to: {}", GetGripperCubeOpen()));
   IntakeSubsystem::SetGripperNextSetpoint(units::degree_t(GetGripperCubeOpen()));
+}
+
+void IntakeSubsystem::OpenAuto() {
+  frc::DataLogManager::Log(fmt::format("OpenAuto. Setting angle to: {}", GetGripperAutoOpen()));
+  IntakeSubsystem::SetGripperNextSetpoint(units::degree_t(GetGripperAutoOpen()));
 }
 
 void IntakeSubsystem::CloseCube() {

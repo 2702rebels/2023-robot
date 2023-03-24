@@ -149,10 +149,11 @@ void DriveTrajectoryCommand::End(bool interrupted) {
 bool DriveTrajectoryCommand::AtTarget() const {
   const auto currentPose = m_drive->GetPose();
   const auto tolerance = m_controller.GetTolerance();
-  const auto& eTranslate = (m_finalPose.RelativeTo(currentPose)).Translation();
+  const auto eTranslate = (m_finalPose.RelativeTo(currentPose)).Translation();
   const auto& eRotate = m_finalPose.Rotation() - currentPose.Rotation();
   const auto& tolTranslate = tolerance.Translation();
   const auto& tolRotate = tolerance.Rotation();
+
   return units::math::fabs(eTranslate.X()) < tolTranslate.X() &&
          units::math::fabs(eTranslate.Y()) < tolTranslate.Y() &&
          units::math::fabs(eRotate.Radians()) < tolRotate.Radians();

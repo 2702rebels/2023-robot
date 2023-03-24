@@ -320,7 +320,7 @@ void DriveSubsystem::ResetEncoders() {
 }
 
 void DriveSubsystem::ZeroHeading() {
-  const auto pose = m_odometry.GetPose();
+  const auto pose = GetPose();
   m_odometry.ResetPosition(
     GetYaw(),
     {
@@ -348,17 +348,17 @@ void DriveSubsystem::UpdateOdometry() {
 
 #ifdef DRIVETRAIN_ODOMETRY_VISION
   // feed global position from camera
-  // const auto visionPose = m_visionPose.GetAtomic();
-  // const auto timestamp = frc::Timer::GetFPGATimestamp();
-  //  units::second_t { visionPose.serverTime };
-  // const auto x = units::length::meter_t { visionPose.value[0] };
-  // const auto y = units::length::meter_t { visionPose.value[1] };
-  // const auto r = units::angle::radian_t { visionPose.value[2] };
+  const auto visionPose = m_visionPose.GetAtomic();
+  const auto timestamp = frc::Timer::GetFPGATimestamp();
+  units::second_t { visionPose.serverTime };
+  const auto x = units::length::meter_t { visionPose.value[0] };
+  const auto y = units::length::meter_t { visionPose.value[1] };
+  const auto r = units::angle::radian_t { visionPose.value[2] };
 
-  // if (x.value() >= 0.0) {
-  //   frc::Pose2d pose(frc::Translation2d(x, y), frc::Rotation2d(r));
-  //   m_odometry.AddVisionMeasurement(pose, timestamp);
-  // }
+  if (x.value() >= 0.0) {
+    frc::Pose2d pose(frc::Translation2d(x, y), frc::Rotation2d(r));
+    m_odometry.AddVisionMeasurement(pose, timestamp);
+  }
 #endif
 
   // update field position for debugging purposes
