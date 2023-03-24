@@ -27,5 +27,9 @@ void IntakeCubeCommand::End(bool interrupted) {
 
 // Returns true when the command should end.
 bool IntakeCubeCommand::IsFinished() {
+#ifdef INTAKE_SWITCH_ENABLED
+  return m_intake->IsGamePieceSwitchPressed();
+#else
   return false;
+#endif
 }

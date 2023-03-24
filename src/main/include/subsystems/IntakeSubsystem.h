@@ -40,6 +40,7 @@ class IntakeSubsystem : public frc2::SubsystemBase {
   void OpenAuto();
   void CloseCube();
   bool IsAtCommandedPosition();
+  bool IsGamePieceSwitchPressed();
 
   units::degree_t GetGripperAngle();
   double GetIntakeCurrent();
@@ -63,4 +64,6 @@ class IntakeSubsystem : public frc2::SubsystemBase {
   frc2::PIDController m_gripperMotorPIDController { 0, 0, 0 };
   frc::Encoder m_gripperMotorEncoder { IntakeConstants::kGripperEncoderChannel1Id,
                                        IntakeConstants::kGripperEncoderChannel2Id };
+
+  frc::DigitalInput m_limitSwitch { IntakeConstants::kIntakeSwitchId };
 };

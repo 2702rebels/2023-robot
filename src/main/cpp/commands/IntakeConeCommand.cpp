@@ -35,5 +35,9 @@ void IntakeConeCommand::End(bool interrupted) {
 
 // Returns true when the command should end.
 bool IntakeConeCommand::IsFinished() {
+#ifdef INTAKE_SWITCH_ENABLED
+  return m_intake->IsGamePieceSwitchPressed();
+#else
   return false;
+#endif
 }

@@ -52,7 +52,7 @@ REGISTER_DOUBLE(ConeAxis2ScoreHigh, "ExArm/Position/Cone/ScoreHigh/Axis2", 20.0)
 
 REGISTER_DOUBLE(CubeAxis1IntakeFloor, "ExArm/Position/Cube/IntakeFloor/Axis1", 18.0)
 REGISTER_DOUBLE(CubeAxis2IntakeFloor, "ExArm/Position/Cube/IntakeFloor/Axis2", 14.0)
-REGISTER_DOUBLE(CubeAxis1IntakeStation, "ExArm/Position/Cube/IntakeStation/Axis1", 60.0)
+REGISTER_DOUBLE(CubeAxis1IntakeStation, "ExArm/Position/Cube/IntakeStation/Axis1", 56.0)
 REGISTER_DOUBLE(CubeAxis2IntakeStation, "ExArm/Position/Cube/IntakeStation/Axis2", 5.0)
 
 REGISTER_DOUBLE(CubeAxis1ScoreLow, "ExArm/Position/Cube/ScoreLow/Axis1", 18.0)

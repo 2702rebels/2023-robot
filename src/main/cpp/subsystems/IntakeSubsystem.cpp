@@ -213,3 +213,7 @@ bool IntakeSubsystem::GetCurrentAboveValue(double val) {
   }
   return false;
 }
+
+bool IntakeSubsystem::IsGamePieceSwitchPressed() {
+  return m_limitSwitch.Get();
+}
