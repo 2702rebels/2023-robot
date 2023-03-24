@@ -26,6 +26,7 @@ REGISTER_DOUBLE(GripperConePlace, "Intake/Gripper/Positions/Cone/Place", 40);
 REGISTER_DOUBLE(GripperCubeOpen, "Intake/Gripper/Positions/Cube/Open", 50);
 REGISTER_DOUBLE(GripperCubeClosed, "Intake/Gripper/Positions/Cube/Closed", 0);
 REGISTER_DOUBLE(GripperAutoOpen, "Intake/Gripper/Positions/Auto/Open", 60);
+REGISTER_BOOL(IntakeLimitSwitch, "Intake/LimitSwitchEnabled", true)
 
 IntakeSubsystem::IntakeSubsystem() {
   m_leaderMotorController.SetInverted(ctre::phoenix::motorcontrol::InvertType::InvertMotorOutput);
@@ -215,5 +216,8 @@ bool IntakeSubsystem::GetCurrentAboveValue(double val) {
 }
 
 bool IntakeSubsystem::IsGamePieceSwitchPressed() {
+  if (GetIntakeLimitSwitch()) {
+    return false;
+  }
   return m_limitSwitch.Get();
 }

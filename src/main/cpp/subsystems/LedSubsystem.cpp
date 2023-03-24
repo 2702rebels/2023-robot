@@ -174,6 +174,7 @@ void LedSubsystem::StorePattern() {
 void LedSubsystem::RestorePattern() {
   memcpy(&m_ledColourBuffer, &m_ledColourBufferStored, m_ledColourBuffer.size() * 4);
   m_pattern = m_patternStored;
+  m_isNewPattern = true;
   m_period = m_periodStored;
   frc::DataLogManager::Log("Restored LED colours, pattern and period.");
 }

@@ -226,7 +226,7 @@ void RobotContainer::ConfigureButtonBindings() {
     .OnTrue(frc2::InstantCommand([this] { m_drive.ZeroHeading(); }, { &m_drive }).ToPtr());
 
   // Lock the wheels
-  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kLeftStick)
+  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kX)
     .WhileTrue(frc2::RunCommand([this] { m_drive.StopX(); }, { &m_drive }).ToPtr());
 
   frc2::Trigger(
@@ -242,13 +242,17 @@ void RobotContainer::ConfigureButtonBindings() {
 
 #ifdef ARM_ENABLED
 
-  frc2::Trigger(
-    m_driverController.POVUp(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
-    .OnTrue(m_arm.JogUp());
+  // Jog Up.
 
-  frc2::Trigger(
-    m_driverController.POVDown(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
-    .OnTrue(m_arm.JogDown());
+  // frc2::Trigger(
+  //   m_driverController.POVUp(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+  //   .OnTrue(m_arm.JogUp());
+
+  // Jog Down.
+
+  // frc2::Trigger(
+  //   m_driverController.POVDown(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+  //   .OnTrue(m_arm.JogDown());
 
   // frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kA)
   //   .OnTrue(ArmMoveCommand(&m_arm, ArmPosition::STOWED).ToPtr());
@@ -259,7 +263,8 @@ void RobotContainer::ConfigureButtonBindings() {
   //     ArmMoveCommand(&m_arm, ArmPosition::SCORE_MID_CUBE).ToPtr(),
   //     [this] { return m_mode == RobotMode::CONE; }));
 
-  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kX)
+  // Score Low.
+  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kA)
     .OnTrue(frc2::cmd::Sequence(
       ArmMoveCommand(&m_arm, ArmPosition::SCORE_LOW_CUBE),
       frc2::InstantCommand([this] { m_intake.SetIntakeSpeed(-0.5); }, { &m_intake }).ToPtr()))
@@ -305,8 +310,8 @@ void RobotContainer::ConfigureButtonBindings() {
     .OnFalse(ArmMoveCommand(&m_arm, ArmPosition::STOWED).ToPtr());
 
   // Toggle robot mode.
-  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kLeftBumper)
-    .OnTrue(frc2::InstantCommand([this] { ToggleRobotMode(); }, {}).ToPtr());
+  // frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kLeftBumper)
+  //   .OnTrue(frc2::InstantCommand([this] { ToggleRobotMode(); }, {}).ToPtr());
 #endif
 #endif
 
@@ -330,15 +335,29 @@ void RobotContainer::ConfigureButtonBindings() {
 #endif
 
 #ifdef ARM_ENABLED
+
+  // Jog Up.
+  frc2::Trigger(
+    m_operatorController.POVUp(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+    .OnTrue(m_arm.JogUp());
+
+  // Jog Down.
+  frc2::Trigger(
+    m_operatorController.POVDown(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+    .OnTrue(m_arm.JogDown());
+
+  // Stow.
   frc2::JoystickButton(&m_operatorController, frc::XboxController::Button::kA)
     .OnTrue(ArmMoveCommand(&m_arm, ArmPosition::STOWED).ToPtr());
 
+  // Arm Mid.
   frc2::JoystickButton(&m_operatorController, frc::XboxController::Button::kB)
     .OnTrue(frc2::cmd::Either(
       ArmMoveCommand(&m_arm, ArmPosition::SCORE_MID_CONE).ToPtr(),
       ArmMoveCommand(&m_arm, ArmPosition::SCORE_MID_CUBE).ToPtr(),
       [this] { return m_mode == RobotMode::CONE; }));
 
+  // Score Low.
   // frc2::JoystickButton(&m_operatorController, frc::XboxController::Button::kX);
 
   frc2::JoystickButton(&m_operatorController, frc::XboxController::Button::kY)
@@ -366,11 +385,25 @@ void RobotContainer::ConfigureButtonBindings() {
         ArmMoveCommand(&m_arm, ArmPosition::INTAKE_STATION_CUBE), IntakeCubeCommand(&m_intake)),
       [this] { return m_mode == RobotMode::CONE; }))
     .OnFalse(frc2::cmd::Sequence(ArmMoveCommand(&m_arm, ArmPosition::STOWED)));
+
+  // Intake Floor.
+  frc2::JoystickButton(&m_operatorController, frc::XboxController::Button::kRightBumper)
+    .OnTrue(frc2::cmd::Either(
+      frc2::cmd::Sequence(
+        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CONE),
+        IntakeConeCommand(&m_intake),
+        SetLedCommand(&m_leds, 0, 0, 255, LEDPattern::FLASH, 300_ms, 3_s)),
+      frc2::cmd::Sequence(
+        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CUBE),
+        IntakeCubeCommand(&m_intake),
+        SetLedCommand(&m_leds, 0, 0, 255, LEDPattern::FLASH, 300_ms, 3_s)),
+      [this] { return m_mode == RobotMode::CONE; }))
+    .OnFalse(ArmMoveCommand(&m_arm, ArmPosition::STOWED).ToPtr());
 #endif
 #endif
 
   // Flash to sign for a game piece.
-  frc2::JoystickButton(&m_operatorController, frc::XboxController::Button::kRightBumper)
+  frc2::JoystickButton(&m_operatorController, frc::XboxController::Button::kX)
     .OnTrue(
       frc2::InstantCommand([this] { m_leds.SetPattern(LEDPattern::FLASH, 200_ms); }, {}).ToPtr())
     .OnFalse(
@@ -379,9 +412,9 @@ void RobotContainer::ConfigureButtonBindings() {
   // Toggle robot mode.
   frc2::JoystickButton(&m_operatorController, frc::XboxController::Button::kLeftBumper)
     .OnTrue(frc2::InstantCommand([this] { ToggleRobotMode(); }, {}).ToPtr());
-
+  // Toggle Front LED.
   frc2::Trigger(
-    m_operatorController.POVDown(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+    m_operatorController.POVRight(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
     .OnTrue(frc2::InstantCommand([this] { RobotContainer::ToggleFrontLights(); }, {}).ToPtr());
 }
 
