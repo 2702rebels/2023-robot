@@ -38,6 +38,7 @@ void Robot::RobotPeriodic() {
  */
 void Robot::DisabledInit() {
   m_container.OnDisable();
+  m_writingStarted = false;
 }
 
 void Robot::DisabledPeriodic() {
