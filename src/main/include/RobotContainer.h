@@ -55,6 +55,8 @@ class RobotContainer {
   std::string GetRobotScoreHeightString();
 
   void ToggleFrontLights();
+  void SetLedsCameraWriting();
+  void SetLedsCameraDoneWriting();
 
  private:
   // The driver's controller

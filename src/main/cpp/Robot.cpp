@@ -13,6 +13,8 @@ void Robot::RobotInit() {
   m_bpIsLogging = ntinst.GetBooleanTopic("/Vision/IsLogging").Publish();
   m_bpIsLogging.Set(false);
 
+  m_cameraIsWritingLog = ntinst.GetBooleanTopic("/Vision/PiIsLogging").Subscribe(false);
+
 #ifdef LOG_DATA_DRIVER_STATION
   frc::DriverStation::StartDataLog(frc::DataLogManager::GetLog());
 #endif
@@ -38,7 +40,18 @@ void Robot::DisabledInit() {
   m_container.OnDisable();
 }
 
-void Robot::DisabledPeriodic() {}
+void Robot::DisabledPeriodic() {
+  if (m_cameraIsWritingLog.Get() && !m_writingStarted) {
+    m_writingStarted = true;
+    m_container.SetLedsCameraWriting();
+    frc::DataLogManager::Log("Pi is logging match images.");
+  } else if (m_writingStarted && !m_cameraIsWritingLog.Get()) {
+    m_writingStarted = false;
+    m_bpIsLogging.Set(false);
+    m_container.SetLedsCameraDoneWriting();
+    frc::DataLogManager::Log("Pi is done logging match images.");
+  }
+}
 
 /**
  * This autonomous runs the autonomous command selected by your {@link RobotContainer} class.

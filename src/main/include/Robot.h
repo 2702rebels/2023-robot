@@ -23,7 +23,9 @@ class Robot : public frc::TimedRobot {
   // doesn't have undefined behavior and potentially crash.
   frc2::Command* m_autonomousCommand = nullptr;
   nt::BooleanPublisher m_bpIsLogging;
+  nt::BooleanSubscriber m_cameraIsWritingLog;
 
   RobotContainer m_container;
   void StartCamera();
+  bool m_writingStarted = false;
 };

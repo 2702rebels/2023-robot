@@ -427,3 +427,15 @@ frc2::Command* RobotContainer::GetAutonomousCommand() {
     return new frc2::InstantCommand([this] { frc::DataLogManager::Log("No autonomous code"); });
 #endif
 }
+
+void RobotContainer::SetLedsCameraWriting() {
+  m_leds.SetRGBLeft(255, 0, 0);
+  m_leds.SetRGBRight(0, 0, 255);
+  m_leds.SetPattern(LEDPattern::FLASH, 500_ms);
+}
+
+void RobotContainer::SetLedsCameraDoneWriting() {
+  m_leds.SetPattern(LEDPattern::SOLID, 0_s);
+  m_leds.SetRGB(0, 255, 0);
+  m_leds.SetPattern(LEDPattern::BREATH, 2500_ms);
+}
