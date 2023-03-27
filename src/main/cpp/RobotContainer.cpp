@@ -416,15 +416,14 @@ void RobotContainer::ConfigureButtonBindings() {
   frc2::Trigger(
     m_operatorController.POVRight(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
     .OnTrue(frc2::InstantCommand([this] { RobotContainer::ToggleFrontLights(); }, {}).ToPtr());
-}
-
 #endif
+}
 
 frc2::Command* RobotContainer::GetAutonomousCommand() {
 #ifdef AUTO_CHOOSER
   return m_chooser.GetSelected();
 #else
-    return new frc2::InstantCommand([this] { frc::DataLogManager::Log("No autonomous code"); });
+  return new frc2::InstantCommand([this] { frc::DataLogManager::Log("No autonomous code"); });
 #endif
 }
 

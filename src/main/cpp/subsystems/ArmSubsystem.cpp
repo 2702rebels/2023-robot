@@ -149,20 +149,20 @@ void ArmSubsystem::Periodic() {
   frc::SmartDashboard::PutNumber("Axis2SetPoint", m_axis2SetPoint.value());
   frc::SmartDashboard::PutBoolean("IsComp", IsCompBot());
 
-  // Axis 1 & 2.
   ArmSubsystem::Axis1Control();
   ArmSubsystem::Axis2Control();
 }
 
 void ArmSubsystem::Axis1Control() {
-  if (m_isAxis1ControlEnabled) {
-    units::degree_t axis1ProfileSetPoint = m_axis1SetPoint;
-    if (
-      axis1ProfileSetPoint.value() < kPastBumperAngle &&
-      GetAxis2Distance().value() > kAxis2ZeroDeadBand) {
-      axis1ProfileSetPoint = units::degree_t(kPastBumperAngle);
-    }
+  units::degree_t axis1ProfileSetPoint = m_axis1SetPoint;
+  if (
+    axis1ProfileSetPoint.value() < kPastBumperAngle &&
+    GetAxis2Distance().value() > kAxis2ZeroDeadBand) {
+    axis1ProfileSetPoint = units::degree_t(kPastBumperAngle);
+  }
 
+  // Axis 1 control loop.
+  if (m_isAxis1ControlEnabled) {
     frc::TrapezoidProfile<units::degree> axis1Profile {
       *m_axis1TrapezoidalProfileConstraints,
       frc::TrapezoidProfile<units::degree>::State { axis1ProfileSetPoint,
@@ -178,10 +178,8 @@ void ArmSubsystem::Axis1Control() {
         m_axis1TrapezoidalProfileState.position.value() * kAxis1MotorRotationsPerDegreeComp;
     }
 #ifdef VERBOSE_LOG
-    frc::DataLogManager::Log(fmt::format(
-      "Axis1: Setting setpoint to: {}, Setting rotations to: {}",
-      m_axis1TrapezoidalProfileState.position,
-      rotations));
+    frc::DataLogManager::Log(
+      fmt::format("Axis1: Setting setpoint to: {}, Setting rotations to: {}", setPoint, rotations));
 #endif
 
 #ifdef ARMFEEDFORWARDS_ENABLED
@@ -202,12 +200,13 @@ void ArmSubsystem::Axis1Control() {
 }
 
 void ArmSubsystem::Axis2Control() {
-  if (m_isAxis2ControlEnabled) {
-    units::inch_t axis2ProfileSetPoint = m_axis2SetPoint;
-    if (GetAxis1Angle().value() < kPastBumperAngle) {
-      axis2ProfileSetPoint = units::inch_t(0);
-    }
+  units::inch_t axis2ProfileSetPoint = m_axis2SetPoint;
+  if (GetAxis1Angle().value() < kPastBumperAngle) {
+    axis2ProfileSetPoint = units::inch_t(0);
+  }
 
+  // Axis 2 control loop.
+  if (m_isAxis2ControlEnabled) {
     frc::TrapezoidProfile<units::meters> axis2Profile {
       *m_axis2TrapezoidalProfileConstraints,
       frc::TrapezoidProfile<units::meters>::State { axis2ProfileSetPoint, 0_mps },
@@ -215,15 +214,11 @@ void ArmSubsystem::Axis2Control() {
     };
 
     m_axis2TrapezoidalProfileState = axis2Profile.Calculate(ArmConstants::kDt);
-    double rotations =
-      m_axis2TrapezoidalProfileState.position.value() * kAxis2MotorRotationsPerInchOfTravel;
-#ifdef VERBOSE_LOG
-    frc::DataLogManager::Log(fmt::format(
-      "Axis2: Setting setpoint to: {}, Setting rotations to: {}",
-      m_axis2TrapezoidalProfileState.position,
-      rotations));
-#endif
-    m_axis2PIDController.SetReference(rotations, rev::CANSparkMax::ControlType::kPosition);
+    ArmSubsystem::SetAxis2NextSetpoint(m_axis2TrapezoidalProfileState.position);
+    // frc::DataLogManager::Log(fmt::format(
+    //   "SetReference Rotations={}, Location={}",
+    //   rotations,
+    //   ArmSubsystem::GetAxis2Distance().value()));
   }
 }
 
@@ -263,6 +258,17 @@ double ArmSubsystem::GetAxis1Current() {
 
 double ArmSubsystem::GetAxis2Current() {
   return m_axis2Motor.GetOutputCurrent();
+}
+
+void ArmSubsystem::SetAxis1NextSetpoint(units::degree_t setPoint) {}
+
+void ArmSubsystem::SetAxis2NextSetpoint(units::inch_t setPoint) {
+  double rotations = setPoint.value() * kAxis2MotorRotationsPerInchOfTravel;
+#ifdef VERBOSE_LOG
+  frc::DataLogManager::Log(
+    fmt::format("Axis2: Setting setpoint to: {}, Setting rotations to: {}", setPoint, rotations));
+#endif
+  m_axis2PIDController.SetReference(rotations, rev::CANSparkMax::ControlType::kPosition);
 }
 
 void ArmSubsystem::SetAxis1DutyCycle(double dutyCycle) {
@@ -316,7 +322,8 @@ void ArmSubsystem::Move(units::degree_t angle) {
   m_axis1TrapezoidalProfileState =
     frc::TrapezoidProfile<units::degree>::State { ArmSubsystem::GetAxis1Angle(),
                                                   ArmSubsystem::GetAxis1Velocity() };
-  frc::DataLogManager::Log(fmt::format("Arm: Move - Axis1SetPoint={}", m_axis1SetPoint.value()));
+  frc::DataLogManager::Log(
+    fmt::format("Arm: Move(Axis1) - Axis1SetPoint={}", m_axis1SetPoint.value()));
 }
 
 void ArmSubsystem::Move(units::inch_t distance) {
@@ -335,7 +342,8 @@ void ArmSubsystem::Move(units::inch_t distance) {
   m_axis2TrapezoidalProfileState =
     frc::TrapezoidProfile<units::meters>::State { ArmSubsystem::GetAxis2Distance(),
                                                   ArmSubsystem::GetAxis2Velocity() };
-  frc::DataLogManager::Log(fmt::format("Arm: Move - Axis2SetPoint={}", m_axis2SetPoint.value()));
+  frc::DataLogManager::Log(
+    fmt::format("Arm: Move(Axis2) - Axis2SetPoint={}", m_axis2SetPoint.value()));
 }
 
 void ArmSubsystem::Move(units::degree_t angle, units::inch_t distance) {
