@@ -19,7 +19,7 @@ ScoreConeCommand::ScoreConeCommand(ArmSubsystem* arm, IntakeSubsystem* intake) :
 void ScoreConeCommand::Initialize() {
   m_armisClear = false;
   m_intake->PlaceCone();
-  m_arm->Move(m_arm->GetAxis1Angle(), 0.0_in);
+  m_arm->Move(0.0_in);
 }
 
 // Called repeatedly when this Command is scheduled to run

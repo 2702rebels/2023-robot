@@ -19,6 +19,8 @@
 class ArmMoveCommand : public frc2::CommandHelper<frc2::CommandBase, ArmMoveCommand> {
  public:
   ArmMoveCommand(ArmSubsystem* arm, units::degree_t angle, units::inch_t distance);
+  ArmMoveCommand(ArmSubsystem* arm, units::degree_t angle);
+  ArmMoveCommand(ArmSubsystem* arm, units::inch_t distance);
   ArmMoveCommand(ArmSubsystem* arm, ArmPosition position);
 
   void Initialize() override;
@@ -35,4 +37,6 @@ class ArmMoveCommand : public frc2::CommandHelper<frc2::CommandBase, ArmMoveComm
   units::inch_t m_axis2Distance;
   ArmPosition m_position;
   bool m_isUsePosition = false;
+  bool m_isAngleOnly = false;
+  bool m_isDistanceOnly = false;
 };

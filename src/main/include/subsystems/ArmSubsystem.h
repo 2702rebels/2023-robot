@@ -57,6 +57,8 @@ class ArmSubsystem : public frc2::SubsystemBase {
   void SetAxis1DutyCycle(double dutyCycle);
   void SetAxis2DutyCycle(double dutyCycle);
 
+  void Move(units::degree_t angle);
+  void Move(units::inch_t distance);
   void Move(units::degree_t angle, units::inch_t distance);
   void Move(ArmPosition position);
   bool IsAtCommandedPosition();

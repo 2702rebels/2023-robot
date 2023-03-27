@@ -62,6 +62,8 @@ REGISTER_DOUBLE(CubeAxis2ScoreMid, "ExArm/Position/Cube/ScoreMid/Axis2", 0.0)
 REGISTER_DOUBLE(CubeAxis1ScoreHigh, "ExArm/Position/Cube/ScoreHigh/Axis1", 70.0)
 REGISTER_DOUBLE(CubeAxis2ScoreHigh, "ExArm/Position/Cube/ScoreHigh/Axis2", 10.0)
 
+REGISTER_DOUBLE(JogDistance, "ExArm/JogDistance", 5.0);
+
 ArmSubsystem::ArmSubsystem() {
   frc::DataLogManager::Log(fmt::format("Initializing ArmSubsystem."));
   ArmSubsystem::ConfigureTuningParams();
@@ -295,7 +297,7 @@ void ArmSubsystem::ZeroAxis2() {
   frc::DataLogManager::Log(fmt::format("Axis2: Zeroed and started position pid at 0."));
 }
 
-void ArmSubsystem::Move(units::degree_t angle, units::inch_t distance) {
+void ArmSubsystem::Move(units::degree_t angle) {
   // Ensure we aren't commanding the arm outside it's limit.
   if (angle > kAxis1MaxAngle) {
     m_axis1SetPoint = kAxis1MaxAngle;
@@ -305,6 +307,17 @@ void ArmSubsystem::Move(units::degree_t angle, units::inch_t distance) {
     m_axis1SetPoint = angle;
   }
 
+  m_isAxis1ControlEnabled = true;
+
+  // Reset our initial profile states.
+  m_axis1TrapezoidalProfileState =
+    frc::TrapezoidProfile<units::degree>::State { ArmSubsystem::GetAxis1Angle(),
+                                                  ArmSubsystem::GetAxis1Velocity() };
+  frc::DataLogManager::Log(fmt::format("Arm: Move - Axis1SetPoint={}", m_axis1SetPoint.value()));
+}
+
+void ArmSubsystem::Move(units::inch_t distance) {
+  // Ensure we aren't commanding the arm outside it's limit.
   if (distance > kAxis2MaxExtension) {
     m_axis2SetPoint = kAxis2MaxExtension;
   } else if (distance < units::inch_t(0)) {
@@ -313,21 +326,18 @@ void ArmSubsystem::Move(units::degree_t angle, units::inch_t distance) {
     m_axis2SetPoint = distance;
   }
 
-  m_isAxis1ControlEnabled = true;
   m_isAxis2ControlEnabled = true;
 
   // Reset our initial profile states.
-  m_axis1TrapezoidalProfileState =
-    frc::TrapezoidProfile<units::degree>::State { ArmSubsystem::GetAxis1Angle(),
-                                                  ArmSubsystem::GetAxis1Velocity() };
   m_axis2TrapezoidalProfileState =
     frc::TrapezoidProfile<units::meters>::State { ArmSubsystem::GetAxis2Distance(),
                                                   ArmSubsystem::GetAxis2Velocity() };
+  frc::DataLogManager::Log(fmt::format("Arm: Move - Axis2SetPoint={}", m_axis2SetPoint.value()));
+}
 
-  frc::DataLogManager::Log(fmt::format(
-    "Arm: Move - Axis1SetPoint={}, Axis2SetPoint={}",
-    m_axis1SetPoint.value(),
-    m_axis2SetPoint.value()));
+void ArmSubsystem::Move(units::degree_t angle, units::inch_t distance) {
+  ArmSubsystem::Move(angle);
+  ArmSubsystem::Move(distance);
 }
 
 void ArmSubsystem::Move(ArmPosition position) {
@@ -417,7 +427,8 @@ frc2::CommandPtr ArmSubsystem::JogUp() {
   return frc2::FunctionalCommand(
            // Initialize
            [this] {
-             ArmSubsystem::Move(GetAxis1Angle() + units::degree_t(10), GetAxis2Distance());
+             ArmSubsystem::Move(
+               GetAxis1Angle() + units::degree_t(GetJogDistance()), GetAxis2Distance());
            },
            // Execute
            [this] {},
@@ -434,7 +445,8 @@ frc2::CommandPtr ArmSubsystem::JogDown() {
   return frc2::FunctionalCommand(
            // Initialize
            [this] {
-             ArmSubsystem::Move(GetAxis1Angle() - units::degree_t(10), GetAxis2Distance());
+             ArmSubsystem::Move(
+               GetAxis1Angle() - units::degree_t(GetJogDistance()), GetAxis2Distance());
            },
            // Execute
            [this] {},

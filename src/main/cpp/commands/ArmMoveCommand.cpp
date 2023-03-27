@@ -10,21 +10,40 @@ ArmMoveCommand::ArmMoveCommand(ArmSubsystem* arm, units::degree_t angle, units::
   m_axis2Distance(distance) {
   SetName("ArmMoveCommand");
   AddRequirements(arm);
-  m_isUsePosition = false;
 }
 
 ArmMoveCommand::ArmMoveCommand(ArmSubsystem* arm, ArmPosition position) :
   m_arm(arm),
   m_position(position) {
-  SetName("ArmMoveCommand");
+  SetName("ArmMoveCommand(Position)");
   AddRequirements(arm);
   m_isUsePosition = true;
+}
+
+ArmMoveCommand::ArmMoveCommand(ArmSubsystem* arm, units::degree_t angle) :
+  m_arm(arm),
+  m_axis1Angle(angle) {
+  SetName("ArmMoveCommand(Angle)");
+  AddRequirements(arm);
+  m_isAngleOnly = true;
+}
+
+ArmMoveCommand::ArmMoveCommand(ArmSubsystem* arm, units::inch_t distance) :
+  m_arm(arm),
+  m_axis2Distance(distance) {
+  SetName("ArmMoveCommand(Distance)");
+  AddRequirements(arm);
+  m_isDistanceOnly = true;
 }
 
 // Called when the command is initially scheduled.
 void ArmMoveCommand::Initialize() {
   if (m_isUsePosition) {
     m_arm->Move(m_position);
+  } else if (m_isAngleOnly) {
+    m_arm->Move(m_axis1Angle);
+  } else if (m_isDistanceOnly) {
+    m_arm->Move(m_axis2Distance);
   } else {
     m_arm->Move(m_axis1Angle, m_axis2Distance);
   }

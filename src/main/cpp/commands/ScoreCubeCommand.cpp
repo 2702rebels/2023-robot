@@ -20,7 +20,7 @@ ScoreCubeCommand::ScoreCubeCommand(ArmSubsystem* arm, IntakeSubsystem* intake) :
 void ScoreCubeCommand::Initialize() {
   m_startTime = frc::Timer::GetFPGATimestamp();
   m_intake->OuttakeCube();
-  m_arm->Move(m_arm->GetAxis1Angle(), 0.0_in);
+  m_arm->Move(0.0_in);
 }
 
 // Called repeatedly when this Command is scheduled to run
