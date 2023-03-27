@@ -105,6 +105,6 @@ class ArmSubsystem : public frc2::SubsystemBase {
   frc::TrapezoidProfile<units::meters>::Constraints* m_axis2TrapezoidalProfileConstraints;
   frc::TrapezoidProfile<units::meters>::State m_axis2TrapezoidalProfileState;
 
-  void SetAxis1NextSetpoint(units::degree_t setPoint);
-  void SetAxis2NextSetpoint(units::inch_t setPoint);
+  void Axis1Control();
+  void Axis2Control();
 };

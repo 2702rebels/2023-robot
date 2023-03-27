@@ -150,21 +150,19 @@ void ArmSubsystem::Periodic() {
   frc::SmartDashboard::PutBoolean("IsComp", IsCompBot());
 
   // Axis 1 & 2.
-  units::degree_t axis1ProfileSetPoint = m_axis1SetPoint;
-  units::inch_t axis2ProfileSetPoint = m_axis2SetPoint;
+  ArmSubsystem::Axis1Control();
+  ArmSubsystem::Axis2Control();
+}
 
-  if (GetAxis1Angle().value() < kPastBumperAngle) {
-    axis2ProfileSetPoint = units::inch_t(0);
-  }
-
-  if (
-    axis1ProfileSetPoint.value() < kPastBumperAngle &&
-    GetAxis2Distance().value() > kAxis2ZeroDeadBand) {
-    axis1ProfileSetPoint = units::degree_t(kPastBumperAngle);
-  }
-
-  // Axis 1 control loop.
+void ArmSubsystem::Axis1Control() {
   if (m_isAxis1ControlEnabled) {
+    units::degree_t axis1ProfileSetPoint = m_axis1SetPoint;
+    if (
+      axis1ProfileSetPoint.value() < kPastBumperAngle &&
+      GetAxis2Distance().value() > kAxis2ZeroDeadBand) {
+      axis1ProfileSetPoint = units::degree_t(kPastBumperAngle);
+    }
+
     frc::TrapezoidProfile<units::degree> axis1Profile {
       *m_axis1TrapezoidalProfileConstraints,
       frc::TrapezoidProfile<units::degree>::State { axis1ProfileSetPoint,
@@ -173,11 +171,43 @@ void ArmSubsystem::Periodic() {
     };
 
     m_axis1TrapezoidalProfileState = axis1Profile.Calculate(ArmConstants::kDt);
-    ArmSubsystem::SetAxis1NextSetpoint(m_axis1TrapezoidalProfileState.position);
-  }
+    double rotations =
+      m_axis1TrapezoidalProfileState.position.value() * kAxis1MotorRotationsPerDegree;
+    if (ArmSubsystem::IsCompBot()) {
+      rotations =
+        m_axis1TrapezoidalProfileState.position.value() * kAxis1MotorRotationsPerDegreeComp;
+    }
+#ifdef VERBOSE_LOG
+    frc::DataLogManager::Log(fmt::format(
+      "Axis1: Setting setpoint to: {}, Setting rotations to: {}",
+      m_axis1TrapezoidalProfileState.position,
+      rotations));
+#endif
 
-  // Axis 2 control loop.
+#ifdef ARMFEEDFORWARDS_ENABLED
+    m_axis1PIDController.SetReference(
+      rotations,
+      rev::CANSparkMax::ControlType::kPosition,
+      0,
+      m_axis1feedforward
+        ->Calculate(
+          ExtendingArmSubsystem::GetAxis1Angle() - kaxis1ffAngleCorrection,
+          units::radians_per_second_t(0),
+          units::radians_per_second_squared_t(0))
+        .value());
+#else
+    m_axis1PIDController.SetReference(rotations, rev::CANSparkMax::ControlType::kPosition);
+#endif
+  }
+}
+
+void ArmSubsystem::Axis2Control() {
   if (m_isAxis2ControlEnabled) {
+    units::inch_t axis2ProfileSetPoint = m_axis2SetPoint;
+    if (GetAxis1Angle().value() < kPastBumperAngle) {
+      axis2ProfileSetPoint = units::inch_t(0);
+    }
+
     frc::TrapezoidProfile<units::meters> axis2Profile {
       *m_axis2TrapezoidalProfileConstraints,
       frc::TrapezoidProfile<units::meters>::State { axis2ProfileSetPoint, 0_mps },
@@ -185,7 +215,15 @@ void ArmSubsystem::Periodic() {
     };
 
     m_axis2TrapezoidalProfileState = axis2Profile.Calculate(ArmConstants::kDt);
-    ArmSubsystem::SetAxis2NextSetpoint(m_axis2TrapezoidalProfileState.position);
+    double rotations =
+      m_axis2TrapezoidalProfileState.position.value() * kAxis2MotorRotationsPerInchOfTravel;
+#ifdef VERBOSE_LOG
+    frc::DataLogManager::Log(fmt::format(
+      "Axis2: Setting setpoint to: {}, Setting rotations to: {}",
+      m_axis2TrapezoidalProfileState.position,
+      rotations));
+#endif
+    m_axis2PIDController.SetReference(rotations, rev::CANSparkMax::ControlType::kPosition);
   }
 }
 
@@ -225,41 +263,6 @@ double ArmSubsystem::GetAxis1Current() {
 
 double ArmSubsystem::GetAxis2Current() {
   return m_axis2Motor.GetOutputCurrent();
-}
-
-void ArmSubsystem::SetAxis1NextSetpoint(units::degree_t setPoint) {
-  double rotations = setPoint.value() * kAxis1MotorRotationsPerDegree;
-  if (ArmSubsystem::IsCompBot()) {
-    rotations = setPoint.value() * kAxis1MotorRotationsPerDegreeComp;
-  }
-#ifdef VERBOSE_LOG
-  frc::DataLogManager::Log(
-    fmt::format("Axis1: Setting setpoint to: {}, Setting rotations to: {}", setPoint, rotations));
-#endif
-
-#ifdef ARMFEEDFORWARDS_ENABLED
-  m_axis1PIDController.SetReference(
-    rotations,
-    rev::CANSparkMax::ControlType::kPosition,
-    0,
-    m_axis1feedforward
-      ->Calculate(
-        ExtendingArmSubsystem::GetAxis1Angle() - kaxis1ffAngleCorrection,
-        units::radians_per_second_t(0),
-        units::radians_per_second_squared_t(0))
-      .value());
-#else
-  m_axis1PIDController.SetReference(rotations, rev::CANSparkMax::ControlType::kPosition);
-#endif
-}
-
-void ArmSubsystem::SetAxis2NextSetpoint(units::inch_t setPoint) {
-  double rotations = setPoint.value() * kAxis2MotorRotationsPerInchOfTravel;
-#ifdef VERBOSE_LOG
-  frc::DataLogManager::Log(
-    fmt::format("Axis2: Setting setpoint to: {}, Setting rotations to: {}", setPoint, rotations));
-#endif
-  m_axis2PIDController.SetReference(rotations, rev::CANSparkMax::ControlType::kPosition);
 }
 
 void ArmSubsystem::SetAxis1DutyCycle(double dutyCycle) {
