@@ -34,6 +34,7 @@ REGISTER_DOUBLE(DriveTuneHeadingStep, "Drive/Tune/Heading Step", 5)
 REGISTER_DOUBLE(DriveTuneMaxSpeed, "Drive/Tune/Max Speed (mps)", DriveConstants::kMaxSpeed.value())
 REGISTER_DOUBLE(DriveTuneMaxAngularSpeed, "Drive/Tune/Max Angular Speed (dps)", DriveConstants::kMaxAngularSpeed.convert<units::degrees_per_second>().value())
 REGISTER_DOUBLE(DriveTuneDeadband, "Drive/Tune/Deadband", OIConstants::kDriveDeadband)
+REGISTER_DOUBLE(DriveOrientationP, "Drive/Tune/Orientation kP", 0.5)
 
 // clang-format on
 
@@ -56,6 +57,7 @@ DriveSubsystem::DriveSubsystem() :
   m_maxSpeed { units::meters_per_second_t { GetDriveTuneMaxSpeed() } },
   m_maxAngularSpeed { units::degrees_per_second_t { GetDriveTuneMaxAngularSpeed() } },
   m_headingStep { units::convert<units::degree, units::radian>(GetDriveTuneHeadingStep()) },
+  m_orientationController { GetDriveOrientationP(), 0.0, 0.0 },
   m_frontLeft {
     kFrontLeftDrivingCanId,
     kFrontLeftTurningCanId,
@@ -91,6 +93,8 @@ DriveSubsystem::DriveSubsystem() :
     { GetDrivePoseStdDevVisionX(), GetDrivePoseStdDevVisionY(), GetDrivePoseStdDevVisionH() },
 #endif
   } {
+  m_orientationController.EnableContinuousInput(-std::numbers::pi, std::numbers::pi);
+
   frc::SmartDashboard::PutData("Field", &m_field);
   frc::SmartDashboard::PutData("Gyro", &m_gyro);
 
@@ -132,6 +136,7 @@ void DriveSubsystem::InitSendable(wpi::SendableBuilder& builder) {
   // states
   builder.AddBooleanProperty("Telemetry/X formation",       [this] { return m_stopX; }, nullptr);
   builder.AddBooleanProperty("Telemetry/IMU Ready",         [this] { return m_gyro.GetState() == ctre::phoenix::sensors::PigeonIMU::PigeonState::Ready; }, nullptr);
+  builder.AddBooleanProperty("Telemetry/Orientation Lock",  [this] { return HasOrientationLock(); }, nullptr);
   // clang-format on
 
   // swerve module states
@@ -204,6 +209,11 @@ void DriveSubsystem::Drive(double xSpeed, double ySpeed, double rotSpeed, bool f
 
   // apply rate limiting to rotation
   m_currentRotation = m_rotLimiter.Calculate(m_inputRotation);
+
+  // use PID for orientation
+  if (m_orientationLock.has_value()) {
+    m_currentRotation = m_orientationController.Calculate(GetHeading().Radians().value());
+  }
 
   // make heading slew rate dependent on the magnitude of lateral "speed"
   // when the robot is moving slowly we should allow for much faster changes
@@ -431,6 +441,24 @@ void DriveSubsystem::ResetOdometry(const frc::Pose2d& pose) {
       m_rearRight.GetPosition(),
     },
     pose);
+}
+
+void DriveSubsystem::EnableOrientationLock(units::radian_t angle) {
+  m_orientationLock = angle;
+  m_orientationController.SetSetpoint(angle.convert<units::radian>().value());
+}
+
+void DriveSubsystem::ToggleOrientationLock(units::radian_t angle) {
+  if (m_orientationLock.has_value()) {
+    DisableOrientationLock();
+  } else {
+    EnableOrientationLock(angle);
+  }
+}
+
+void DriveSubsystem::DisableOrientationLock() {
+  m_orientationLock = std::nullopt;
+  m_orientationController.SetSetpoint(0);
 }
 
 void DriveSubsystem::Stop() {

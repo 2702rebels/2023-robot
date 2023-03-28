@@ -84,6 +84,7 @@ class RobotContainer {
   Auto_DoNothing m_auto_doNothing;
   Auto_DriveDistance m_auto_driveForwards { &m_drive };
   Auto2 m_auto2 { &m_drive };
+  Auto3 m_auto3 { &m_drive };
 
 #ifdef ARM_ENABLED
 #ifdef INTAKE_ENABLED
@@ -94,7 +95,6 @@ class RobotContainer {
   Auto_ScoreAndOut m_auto_scoreAndOutRed { Alliance::RED, &m_drive, &m_arm, &m_intake };
   Auto_ScoreAndOut m_auto_scoreAndOutBlue { Alliance::BLUE, &m_drive, &m_arm, &m_intake };
 #endif
-  Auto3 m_auto3 { &m_drive, &m_arm };
 #endif
 
   // The chooser for the autonomous routines

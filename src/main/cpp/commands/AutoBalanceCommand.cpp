@@ -9,25 +9,31 @@
 
 // clang-format off
 REGISTER_DOUBLE(AutoBalanceSpeed, "Auto/Balance/Speed", 1.1);
-REGISTER_DOUBLE(AutoBalanceStopAngle, "Auto/Balance/Stop Angle", 5.0);
-REGISTER_DOUBLE(AutoBalanceStopV, "Auto/Balance/Stop Velocity", 4.0);
-REGISTER_DOUBLE(AutoBalanceFactor, "Auto/Balance/Speed Factor", 16.0);
-REGISTER_DOUBLE(AutoBalanceThresholdV, "Auto/Balance/Threshold Velocity", 8.0);
+REGISTER_DOUBLE(AutoBalanceSpeedFactor, "Auto/Balance/Factor", 1.0);
+REGISTER_DOUBLE(AutoBalanceRampTime, "Auto/Balance/Ramp Time", 1.2);
+REGISTER_DOUBLE(AutoBalanceMaxTime, "Auto/Balance/Max Time", 3.0);
+REGISTER_DOUBLE(AutoBalanceAngleThreshold, "Auto/Balance/Angle Threshold", 6.0);
+REGISTER_DOUBLE(AutoBalanceVelocityThreshold, "Auto/Balance/Velocity Threshold", 15.0);
 
 // clang-format on
 
-AutoBalanceCommand::AutoBalanceCommand(DriveSubsystem* drive) : m_drive { drive } {
+AutoBalanceCommand::AutoBalanceCommand(DriveSubsystem* drive, Side side) :
+  m_drive { drive },
+  m_direction { side == Side::LEFT ? 1.0 : -1.0 } {
   AddRequirements(drive);
 }
 
 void AutoBalanceCommand::Initialize() {
   m_speed = units::meters_per_second_t { GetAutoBalanceSpeed() };
-  m_factor = GetAutoBalanceFactor();
-  m_stopAngle = units::degree_t { GetAutoBalanceStopAngle() };
-  m_stopV = units::degrees_per_second_t { GetAutoBalanceStopV() };
-  m_thresholdV = units::degrees_per_second_t { GetAutoBalanceThresholdV() };
+  m_factor = GetAutoBalanceSpeedFactor();
+  m_rampTime = units::second_t { GetAutoBalanceRampTime() };
+  m_maxTime = units::second_t { GetAutoBalanceMaxTime() };
+  m_angleThreshold = units::degree_t { GetAutoBalanceAngleThreshold() };
+  m_velocityThreshold = units::degrees_per_second_t { GetAutoBalanceVelocityThreshold() };
 
-  m_angle = 10_rad;
+  m_stage = Stage::APPROACH;
+  m_angle = 0_rad;
+  m_timer.Restart();
 }
 
 void AutoBalanceCommand::Execute() {
@@ -36,38 +42,62 @@ void AutoBalanceCommand::Execute() {
   m_angle = m_drive->GetInclination();
   m_velocity = m_drive->GetInclinationVelocity();
 
-  const auto counterBalanced =
-    units::math::fabs(m_angle) < 15.0_deg && ((m_angle < 0_rad && m_velocity > m_thresholdV) ||
-                                              (m_angle > 0_rad && m_velocity < -m_thresholdV));
+  auto speed = m_speed * m_direction;
+  switch (m_stage) {
+    case Stage::APPROACH:
+      // start driving up the ramp
+      if (units::math::fabs(m_angle) > m_angleThreshold) {
+        m_stage = Stage::RAMP;
+        m_timer.Restart();
+      }
+      break;
 
-  if (counterBalanced) {
-    m_drive->Stop();
-  } else {
-    const auto f =
-      std::min(1.0, pow(units::math::fabs(m_angle).convert<units::degree>().value() / m_factor, 2));
+    case Stage::RAMP:
+      if (m_timer.HasElapsed(m_rampTime)) {
+        m_stage = Stage::BALANCE;
+      }
+      break;
 
-    const auto speeds = frc::ChassisSpeeds::FromFieldRelativeSpeeds(
-      m_speed * (m_angle > 0_rad ? 1.0 : -1.0) * f,
-      0_mps,
-      0_rad_per_s,
-      currentPose.Rotation().Radians());
+    case Stage::BALANCE:
+      // slow down as angle decreases
+      speed = std::sqrt(units::math::fabs(m_angle).value()) * m_speed * m_direction * m_factor;
 
-    m_drive->SetChassisSpeeds(speeds);
+      if (
+        units::math::fabs(m_angle) < m_angleThreshold ||
+        (units::math::fabs(m_velocity) > m_velocityThreshold &&
+         m_angle.value() * m_velocity.value() < 0)) {
+        m_stage = Stage::FINAL;
+      }
+      break;
+
+    case Stage::FINAL:
+      speed = 0_mps;
+      break;
   }
+
+  const auto speeds = frc::ChassisSpeeds::FromFieldRelativeSpeeds(
+    speed, 0_mps, 0_rad_per_s, currentPose.Rotation().Radians());
+
+  m_drive->SetChassisSpeeds(speeds);
 
 #ifdef AUTO_COMMAND_LOG
   // clang-format off
+  frc::SmartDashboard::PutNumber("Telemetry/AutoBalance/Speed", speed.value());
   frc::SmartDashboard::PutNumber("Telemetry/AutoBalance/Angle", m_angle.convert<units::degree>().value());
-  frc::SmartDashboard::PutNumber("Telemetry/AutoBalance/Velocity", m_velocity.convert<units::degrees_per_second>().value());
-  frc::SmartDashboard::PutBoolean("Telemetry/AutoBalance/Balanced", counterBalanced);
+  frc::SmartDashboard::PutNumber("Telemetry/AutoBalance/Angle V", m_velocity.convert<units::degrees_per_second>().value());
+  frc::SmartDashboard::PutString("Telemetry/AutoBalance/Stage",
+    m_stage == Stage::APPROACH ? "Approach" :
+    m_stage == Stage::RAMP ? "Ramping" :
+    m_stage == Stage::BALANCE ? "Balance" : "Final");
   // clang-format on
 #endif
 }
 
 void AutoBalanceCommand::End(bool interrupted) {
   m_drive->StopX();
+  frc::SmartDashboard::PutString("Telemetry/AutoBalance/Stage", "Final");
 }
 
 bool AutoBalanceCommand::IsFinished() {
-  return units::math::fabs(m_angle) < m_stopAngle && units::math::fabs(m_velocity) < m_stopV;
+  return m_stage == Stage::FINAL || m_timer.HasElapsed(m_maxTime);
 }

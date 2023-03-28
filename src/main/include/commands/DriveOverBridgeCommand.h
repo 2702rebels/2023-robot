@@ -18,15 +18,23 @@ class DriveOverBridgeCommand
   bool IsFinished() override;
 
  private:
+  enum Stage {
+    APPROACH,
+    RAMP_UP,
+    RAMP_DOWN,
+    OUT,
+    FINAL,
+  };
+
   DriveSubsystem* m_drive;
-  int m_stage = -1;
+  frc::Timer m_timer;
+  Stage m_stage = Stage::APPROACH;
   units::radian_t m_angle;
   units::radian_t m_angleThreshold;
+  units::radians_per_second_t m_velocity;
   units::radians_per_second_t m_velocityThreshold;
   units::meters_per_second_t m_speed;
   units::meters_per_second_t m_speedIn;
   units::meters_per_second_t m_speedOut;
   units::second_t m_timeOut;
-  units::second_t m_timeIn;
-  frc::Timer m_timer;
 };

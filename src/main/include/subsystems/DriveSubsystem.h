@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ctre/Phoenix.h>
+#include <frc/controller/PIDController.h>
 #include <frc/estimator/SwerveDrivePoseEstimator.h>
 #include <frc/filter/SlewRateLimiter.h>
 #include <frc/geometry/Pose2d.h>
@@ -13,6 +14,8 @@
 #include <networktables/DoubleArrayTopic.h>
 #include <networktables/NetworkTable.h>
 #include <networktables/NetworkTableInstance.h>
+
+#include <optional>
 
 #include "Constants.h"
 #include "MAXSwerveModule.h"
@@ -175,6 +178,28 @@ class DriveSubsystem : public frc2::SubsystemBase {
   void Stop();
 
   /**
+   * Enables orientation lock to the specified angle.
+   */
+  void EnableOrientationLock(units::radian_t angle);
+
+  /**
+   * Toggles orientation lock.
+   */
+  void ToggleOrientationLock(units::radian_t angle);
+
+  /**
+   * Disables orientation lock.
+   */
+  void DisableOrientationLock();
+
+  /**
+   * Determines whether orientation lock is engaged.
+   */
+  bool HasOrientationLock() const {
+    return m_orientationLock.has_value();
+  }
+
+  /**
    * Sets the drive subsystem to the specified chassis speeds.
    *
    * @param speeds Chassis speeds.
@@ -238,6 +263,10 @@ class DriveSubsystem : public frc2::SubsystemBase {
 
   // constrain translational direction heading to a discrete step values (in radians)
   double m_headingStep = 0.0;
+
+  // orientation to maintain while lock is in place
+  std::optional<units::radian_t> m_orientationLock;
+  frc::PIDController m_orientationController;
 
   // indicates that robot should maintain X wheel formation when stopped
   bool m_stopX;

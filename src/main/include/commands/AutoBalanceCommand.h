@@ -11,7 +11,7 @@
 
 class AutoBalanceCommand : public frc2::CommandHelper<frc2::CommandBase, AutoBalanceCommand> {
  public:
-  AutoBalanceCommand(DriveSubsystem* drive);
+  AutoBalanceCommand(DriveSubsystem* drive, Side side = Side::LEFT);
 
   void Initialize() override;
   void Execute() override;
@@ -19,13 +19,23 @@ class AutoBalanceCommand : public frc2::CommandHelper<frc2::CommandBase, AutoBal
   bool IsFinished() override;
 
  private:
-  DriveSubsystem* m_drive;
-  units::radian_t m_angle;
-  units::radians_per_second_t m_velocity;
+  enum Stage {
+    APPROACH,
+    RAMP,
+    BALANCE,
+    FINAL,
+  };
 
-  double m_factor;
+  DriveSubsystem* m_drive;
+  frc::Timer m_timer;
+  Stage m_stage = Stage::APPROACH;
+  double m_direction = 1.0;
+  double m_factor = 1.0;
+  units::second_t m_rampTime;
+  units::second_t m_maxTime;
+  units::radian_t m_angle;
+  units::radian_t m_angleThreshold;
+  units::radians_per_second_t m_velocity;
+  units::radians_per_second_t m_velocityThreshold;
   units::meters_per_second_t m_speed;
-  units::radians_per_second_t m_thresholdV;
-  units::radians_per_second_t m_stopV;
-  units::radian_t m_stopAngle;
 };

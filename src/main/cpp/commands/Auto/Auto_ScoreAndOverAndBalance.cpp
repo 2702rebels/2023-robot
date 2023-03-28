@@ -16,5 +16,5 @@ Auto_ScoreAndOverAndBalance::Auto_ScoreAndOverAndBalance(
     ArmMoveCommand(arm, ArmPosition::SCORE_HIGH_CUBE),
     ScoreCubeCommand(arm, intake),
     DriveOverBridgeCommand(drive),
-    AutoBalanceCommand(drive));
+    AutoBalanceCommand(drive, Side::RIGHT));
 }

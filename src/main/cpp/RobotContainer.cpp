@@ -97,15 +97,15 @@ RobotContainer::RobotContainer() {
   frc::ShuffleboardTab& tab = frc::Shuffleboard::GetTab("Auto");
   m_chooser.SetDefaultOption("DoNothing", &m_auto_doNothing);
   m_chooser.AddOption("DriveForwards", &m_auto_driveForwards);
-  m_chooser.AddOption("ScoreAndOverBalance", &m_auto_scoreAndOverAndBalance);
   m_chooser.AddOption("Auto2", &m_auto2);
+  m_chooser.AddOption("Auto3", &m_auto3);
 #ifdef ARM_ENABLED
+  m_chooser.AddOption("ScoreAndOverBalance", &m_auto_scoreAndOverAndBalance);
   m_chooser.AddOption("ScoreAndOut (Red)", &m_auto_scoreAndOutRed);
   m_chooser.AddOption("ScoreAndBalance (Red)", &m_auto_scoreAndBalanceRed);
   m_chooser.AddOption("ScoreAndOut (Blue)", &m_auto_scoreAndOutBlue);
   m_chooser.AddOption("ScoreAndBalance (Blue)", &m_auto_scoreAndBalanceBlue);
   m_chooser.AddOption("ScoreScoreSco", &m_auto_scoreScoreSco);
-  m_chooser.AddOption("Auto3", &m_auto3);
 #endif
   tab.Add(m_chooser);
 #endif
@@ -124,9 +124,11 @@ void RobotContainer::OnAutoEnable() {
 
 void RobotContainer::OnTeleEnable() {
   SetRobotMode(RobotMode::CUBE);
+#ifdef INTAKE_ENABLED
   m_intake.CloseCube();
   m_intake.HoldGamePiece();
   SetRobotScoreHeight(RobotScoreHeight::HIGH);
+#endif
 }
 
 void RobotContainer::OnDisable() {
@@ -233,6 +235,16 @@ void RobotContainer::ConfigureButtonBindings() {
     m_driverController.POVLeft(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
     .OnTrue(
       frc2::InstantCommand([this] { m_drive.UpdateTuningParameters(); }, { &m_drive }).ToPtr());
+
+  frc2::Trigger(
+    m_driverController.POVDown(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+    .OnTrue(frc2::InstantCommand([this] { m_drive.ToggleOrientationLock(180_deg); }, { &m_drive })
+              .ToPtr());
+
+  frc2::Trigger(
+    m_driverController.POVUp(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+    .OnTrue(
+      frc2::InstantCommand([this] { m_drive.ToggleOrientationLock(0_deg); }, { &m_drive }).ToPtr());
 
   // frc2::Trigger(
   //   m_driverController.POVDown(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
