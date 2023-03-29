@@ -216,19 +216,13 @@ void RobotContainer::ToggleFrontLights() {
 void RobotContainer::ConfigureButtonBindings() {
   // [Configure Driver Controller]
 
-#ifdef INTAKE_ENABLED
-  // Zero's the arm axis. TODO: Change this to run the homing command.
-  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kBack)
-    .OnTrue(IntakeClapCommand(&m_intake).ToPtr());
-#endif
-
 #ifdef DRIVETRAIN_ENABLED
   // Reset swerve heading by zeroing the gyro
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightStick)
     .OnTrue(frc2::InstantCommand([this] { m_drive.ZeroHeading(); }, { &m_drive }).ToPtr());
 
   // Lock the wheels
-  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kX)
+  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kStart)
     .WhileTrue(frc2::RunCommand([this] { m_drive.StopX(); }, { &m_drive }).ToPtr());
 
   frc2::Trigger(
@@ -237,12 +231,12 @@ void RobotContainer::ConfigureButtonBindings() {
       frc2::InstantCommand([this] { m_drive.UpdateTuningParameters(); }, { &m_drive }).ToPtr());
 
   frc2::Trigger(
-    m_driverController.POVDown(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+    m_driverController.LeftBumper(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
     .OnTrue(frc2::InstantCommand([this] { m_drive.ToggleOrientationLock(180_deg); }, { &m_drive })
               .ToPtr());
 
   frc2::Trigger(
-    m_driverController.POVUp(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+    m_driverController.RightBumper(frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
     .OnTrue(
       frc2::InstantCommand([this] { m_drive.ToggleOrientationLock(0_deg); }, { &m_drive }).ToPtr());
 
@@ -308,7 +302,7 @@ void RobotContainer::ConfigureButtonBindings() {
   //             .ToPtr());
 
   // Intake from the floor.
-  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightBumper)
+  frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kX)
     .OnTrue(frc2::cmd::Either(
       frc2::cmd::Sequence(
         ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CONE),

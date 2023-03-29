@@ -107,7 +107,4 @@ class ArmSubsystem : public frc2::SubsystemBase {
 
   void Axis1Control();
   void Axis2Control();
-
-  void SetAxis1NextSetpoint(units::degree_t setPoint);
-  void SetAxis2NextSetpoint(units::inch_t setPoint);
 };

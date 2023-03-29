@@ -214,7 +214,13 @@ void ArmSubsystem::Axis2Control() {
     };
 
     m_axis2TrapezoidalProfileState = axis2Profile.Calculate(ArmConstants::kDt);
-    ArmSubsystem::SetAxis2NextSetpoint(m_axis2TrapezoidalProfileState.position);
+    double rotations = units::inch_t(m_axis2TrapezoidalProfileState.position).value() *
+                       kAxis2MotorRotationsPerInchOfTravel;
+#ifdef VERBOSE_LOG
+    frc::DataLogManager::Log(
+      fmt::format("Axis2: Setting setpoint to: {}, Setting rotations to: {}", setPoint, rotations));
+#endif
+    m_axis2PIDController.SetReference(rotations, rev::CANSparkMax::ControlType::kPosition);
     // frc::DataLogManager::Log(fmt::format(
     //   "SetReference Rotations={}, Location={}",
     //   rotations,
@@ -258,17 +264,6 @@ double ArmSubsystem::GetAxis1Current() {
 
 double ArmSubsystem::GetAxis2Current() {
   return m_axis2Motor.GetOutputCurrent();
-}
-
-void ArmSubsystem::SetAxis1NextSetpoint(units::degree_t setPoint) {}
-
-void ArmSubsystem::SetAxis2NextSetpoint(units::inch_t setPoint) {
-  double rotations = setPoint.value() * kAxis2MotorRotationsPerInchOfTravel;
-#ifdef VERBOSE_LOG
-  frc::DataLogManager::Log(
-    fmt::format("Axis2: Setting setpoint to: {}, Setting rotations to: {}", setPoint, rotations));
-#endif
-  m_axis2PIDController.SetReference(rotations, rev::CANSparkMax::ControlType::kPosition);
 }
 
 void ArmSubsystem::SetAxis1DutyCycle(double dutyCycle) {

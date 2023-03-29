@@ -185,6 +185,10 @@ void DriveSubsystem::Periodic() {
 }
 
 void DriveSubsystem::Drive(double xSpeed, double ySpeed, double rotSpeed, bool fieldRelative) {
+  if (rotSpeed != 0 && m_orientationLock.has_value()) {
+    DisableOrientationLock();
+  }
+
   // convert XY to polar for rate limiting
 
   // clamp vector to unit circle, since joystick reports values that
