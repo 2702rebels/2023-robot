@@ -54,7 +54,7 @@ class WaypointTrajectory {
   frc::Pose2d FinalPose() const {
     const auto states = m_trajectory.States();
     return frc::Pose2d(
-      states.size() == 0 ? frc::Translation2d() : states.back().pose.Translation(),
+      states.empty() ? frc::Translation2d() : states.back().pose.Translation(),
       m_rotationProfile.FinalRotation());
   }
 
@@ -69,4 +69,11 @@ class WaypointTrajectory {
   frc::Trajectory m_trajectory;
   RotationProfile m_rotationProfile;
   units::meters_per_second_t m_endVelocity = 0_mps;
+
+  /**
+   * Constructs "fixed" trajectory since WPILIB trajectory generator
+   * sets the acceleration of the last state to non-zero causing
+   * spliced trajectory to incorrectly interpolate speeds in-between.
+   */
+  frc::Trajectory FixTrajectory(const frc::Trajectory& trajectory) const;
 };

@@ -39,11 +39,11 @@ REGISTER_DOUBLE(DriveOrientationP, "Drive/Tune/Orientation kP", 0.5)
 // clang-format on
 
 double to180(units::radian_t value) {
-  return MathUtils::ClampAngle(value).convert<units::degree>().value();
+  return MathUtils::ClampAngle(value).convert<units::degrees>().value();
 }
 
-double to90(units::radian_t value) {
-  const auto v = fabs(value.convert<units::degree>().value());
+double to90(units::degree_t value) {
+  const auto v = fabs(value.value());
   return v - ((int) v / 90.0) * 90.0;  // modulus 90
 }
 
@@ -56,7 +56,7 @@ DriveSubsystem::DriveSubsystem() :
   m_deadband { GetDriveTuneDeadband() },
   m_maxSpeed { units::meters_per_second_t { GetDriveTuneMaxSpeed() } },
   m_maxAngularSpeed { units::degrees_per_second_t { GetDriveTuneMaxAngularSpeed() } },
-  m_headingStep { units::convert<units::degree, units::radian>(GetDriveTuneHeadingStep()) },
+  m_headingStep { units::convert<units::degrees, units::radians>(GetDriveTuneHeadingStep()) },
   m_orientationController { GetDriveOrientationP(), 0.0, 0.0 },
   m_frontLeft {
     kFrontLeftDrivingCanId,
@@ -111,10 +111,10 @@ void DriveSubsystem::InitSendable(wpi::SendableBuilder& builder) {
 
   // clang-format off
   // user input from joystick/controller and values commanded to the modules
-  builder.AddDoubleProperty("Telemetry/Joystick/Heading",   [this] { return m_inputHeading.convert<units::degree>().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Joystick/Heading",   [this] { return m_inputHeading.convert<units::degrees>().value(); }, nullptr);
   builder.AddDoubleProperty("Telemetry/Joystick/Magnitude", [this] { return m_inputSpeed; }, nullptr);
   builder.AddDoubleProperty("Telemetry/Joystick/Rotation",  [this] { return m_inputRotation; }, nullptr);
-  builder.AddDoubleProperty("Telemetry/Commanded/Heading",  [this] { return m_currentHeading.convert<units::degree>().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Commanded/Heading",  [this] { return m_currentHeading.convert<units::degrees>().value(); }, nullptr);
   builder.AddDoubleProperty("Telemetry/Commanded/Speed",    [this] { return m_currentSpeed; }, nullptr);
   builder.AddDoubleProperty("Telemetry/Commanded/Rotation", [this] { return m_currentRotation; }, nullptr);
 
@@ -160,10 +160,10 @@ void DriveSubsystem::InitSendable(wpi::SendableBuilder& builder) {
     "Telemetry/Swerve States/Measured",
     [this] {
       return std::vector<double> {
-        to90(m_frontLeft.GetState().angle.Radians()),  fabs(m_frontLeft.GetState().speed.value()),
-        to90(m_frontRight.GetState().angle.Radians()), fabs(m_frontRight.GetState().speed.value()),
-        to90(m_rearLeft.GetState().angle.Radians()),   fabs(m_rearLeft.GetState().speed.value()),
-        to90(m_rearRight.GetState().angle.Radians()),  fabs(m_rearRight.GetState().speed.value()),
+        to90(m_frontLeft.GetState().angle.Degrees()),  fabs(m_frontLeft.GetState().speed.value()),
+        to90(m_frontRight.GetState().angle.Degrees()), fabs(m_frontRight.GetState().speed.value()),
+        to90(m_rearLeft.GetState().angle.Degrees()),   fabs(m_rearLeft.GetState().speed.value()),
+        to90(m_rearRight.GetState().angle.Degrees()),  fabs(m_rearRight.GetState().speed.value()),
       };
     },
     nullptr);
@@ -393,15 +393,15 @@ void DriveSubsystem::UpdateOdometry() {
   const auto cosTheta = heading.Cos();
   const auto sinTheta = heading.Sin();
 
-  m_inclination = cosTheta * m_pitch.convert<units::radian>() +
-                  m_gyroSign * sinTheta * m_roll.convert<units::radian>();
+  m_inclination = cosTheta * m_pitch.convert<units::radians>() +
+                  m_gyroSign * sinTheta * m_roll.convert<units::radians>();
 
   m_inclinationVelocity =
     cosTheta * m_pitchVelocity.convert<units::radians_per_second>() +
     m_gyroSign * sinTheta * m_rollVelocity.convert<units::radians_per_second>();
 }
 
-frc::Pose2d DriveSubsystem::GetPose() const {
+const frc::Pose2d& DriveSubsystem::GetPose() const {
 #ifdef DRIVETRAIN_ODOMETRY_VISION
   return m_odometry.GetEstimatedPosition();
 #else
@@ -415,7 +415,7 @@ void DriveSubsystem::UpdateTuningParameters() {
   m_deadband = GetDriveTuneDeadband();
   m_maxSpeed = units::meters_per_second_t { GetDriveTuneMaxSpeed() };
   m_maxAngularSpeed = units::degrees_per_second_t { GetDriveTuneMaxAngularSpeed() };
-  m_headingStep = units::convert<units::degree, units::radian>(GetDriveTuneHeadingStep());
+  m_headingStep = units::convert<units::degrees, units::radians>(GetDriveTuneHeadingStep());
 
   // re-create slew rate limiters for translation magnitude and rotation
   // since these do not have a mechanism to update rate limits at runtime
@@ -445,11 +445,11 @@ void DriveSubsystem::ResetOdometry(const frc::Pose2d& pose) {
 
 void DriveSubsystem::EnableOrientationLock(units::radian_t angle) {
   m_orientationLock = angle;
-  m_orientationController.SetSetpoint(angle.convert<units::radian>().value());
+  m_orientationController.SetSetpoint(angle.convert<units::radians>().value());
 }
 
 void DriveSubsystem::ToggleOrientationLock(units::radian_t angle) {
-  if (m_orientationLock.has_value()) {
+  if (m_orientationLock.has_value() && m_orientationLock.value() == angle) {
     DisableOrientationLock();
   } else {
     EnableOrientationLock(angle);

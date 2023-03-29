@@ -10,7 +10,7 @@
 #include "utils/MathUtils.h"
 
 // clang-format off
-REGISTER_DOUBLE(AutoDriveToPoseXYP,  "Auto/DriveToPose/XY - P", 1.0);
+REGISTER_DOUBLE(AutoDriveToPoseXYP,  "Auto/DriveToPose/XY - P", 2.0);
 REGISTER_DOUBLE(AutoDriveToPoseXYI,  "Auto/DriveToPose/XY - I", 0.0);
 REGISTER_DOUBLE(AutoDriveToPoseXYD,  "Auto/DriveToPose/XY - D", 0.0);
 REGISTER_DOUBLE(AutoDriveToPoseXYEp, "Auto/DriveToPose/XY - Ep (m)", 0.05);
@@ -95,14 +95,10 @@ void DriveToPoseCommand::Execute() {
 
   const auto currentPose = m_drive->GetPose();
   const auto desiredPose = m_desiredPose();
+  const auto currentRotation = currentPose.Rotation();
 
-  const auto distance = currentPose.Translation().Distance(desiredPose.Translation());
-
-  m_driveError = distance;
-  m_thetaError = MathUtils::ClampAngle(
-    units::math::fabs(currentPose.Rotation().Radians() - desiredPose.Rotation().Radians()));
-
-  auto driveVelocityMagnitude = m_driveController.Calculate(distance, 0_m);
+  auto driveVelocityMagnitude =
+    m_driveController.Calculate(currentPose.Translation().Distance(desiredPose.Translation()), 0_m);
 
   const auto driveAtGoal = m_driveController.AtGoal();
   if (driveAtGoal) {
@@ -110,7 +106,7 @@ void DriveToPoseCommand::Execute() {
   }
 
   auto thetaFF = units::radians_per_second_t { m_thetaController.Calculate(
-    currentPose.Rotation().Radians(), desiredPose.Rotation().Radians()) };
+    currentRotation.Radians(), desiredPose.Rotation().Radians()) };
 
   const auto thetaAtGoal = m_thetaController.AtGoal();
   if (thetaAtGoal) {
@@ -125,16 +121,16 @@ void DriveToPoseCommand::Execute() {
       .Translation();
 
   const auto speeds = frc::ChassisSpeeds::FromFieldRelativeSpeeds(
-    driveVelocity.X() / 1_s, driveVelocity.Y() / 1_s, thetaFF, currentPose.Rotation().Radians());
+    driveVelocity.X() / 1_s, driveVelocity.Y() / 1_s, thetaFF, currentRotation.Radians());
 
   m_drive->SetChassisSpeeds(speeds);
 
 #ifdef AUTO_COMMAND_LOG
   // clang-format off
-  frc::SmartDashboard::PutNumber("Telemetry/DriveToPose/Distance", m_driveError.convert<units::meter>().value());
-  frc::SmartDashboard::PutNumber("Telemetry/DriveToPose/Theta Error", m_thetaError.convert<units::degrees>().value());
-  frc::SmartDashboard::PutBoolean("Telemetry/DriveToPose/Theta At Goal", thetaAtGoal);
+  frc::SmartDashboard::PutNumber("Telemetry/DriveToPose/Distance", m_driveController.GetPositionError().convert<units::meters>().value());
+  frc::SmartDashboard::PutNumber("Telemetry/DriveToPose/Theta Error", m_thetaController.GetPositionError().convert<units::degrees>().value());
   frc::SmartDashboard::PutBoolean("Telemetry/DriveToPose/Drive At Goal", driveAtGoal);
+  frc::SmartDashboard::PutBoolean("Telemetry/DriveToPose/Theta At Goal", thetaAtGoal);
   // clang-format on
 #endif
 }
@@ -150,6 +146,10 @@ bool DriveToPoseCommand::AtGoal() const {
 
 bool DriveToPoseCommand::AtGoal(
   units::meter_t distanceTolerance, units::radian_t rotationTolerance) const {
-  return m_running && units::math::fabs(m_driveError) < distanceTolerance &&
-         units::math::fabs(m_thetaError) < rotationTolerance;
+  return m_running && units::math::fabs(m_driveController.GetPositionError()) < distanceTolerance &&
+         units::math::fabs(m_thetaController.GetPositionError()) < rotationTolerance;
+}
+
+bool DriveToPoseCommand::IsFinished() {
+  return AtGoal();
 }

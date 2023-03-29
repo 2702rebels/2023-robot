@@ -9,22 +9,15 @@
 CustomHolonomicDriveController::CustomHolonomicDriveController(
   frc2::PIDController xController,
   frc2::PIDController yController,
-  frc::ProfiledPIDController<units::radian> thetaController) :
+  frc2::PIDController thetaController) :
   m_xController(std::move(xController)),
   m_yController(std::move(yController)),
   m_thetaController(std::move(thetaController)) {
-  m_thetaController.EnableContinuousInput(
-    units::radian_t { -std::numbers::pi }, units::radian_t { std::numbers::pi });
+  m_thetaController.EnableContinuousInput(-std::numbers::pi, std::numbers::pi);
 }
 
-bool CustomHolonomicDriveController::AtReference() const {
-  const auto& eTranslate = m_poseError.Translation();
-  const auto& eRotate = m_rotationError;
-  const auto& tolTranslate = m_poseTolerance.Translation();
-  const auto& tolRotate = m_poseTolerance.Rotation();
-  return units::math::fabs(eTranslate.X()) < tolTranslate.X() &&
-         units::math::fabs(eTranslate.Y()) < tolTranslate.Y() &&
-         units::math::fabs(eRotate.Radians()) < tolRotate.Radians();
+bool CustomHolonomicDriveController::AtGoal() const {
+  return m_xController.AtSetpoint() && m_yController.AtSetpoint() && m_thetaController.AtSetpoint();
 }
 
 frc::ChassisSpeeds CustomHolonomicDriveController::Calculate(
@@ -33,19 +26,10 @@ frc::ChassisSpeeds CustomHolonomicDriveController::Calculate(
   const units::meters_per_second_t desiredLinearVelocity,
   const frc::Rotation2d& desiredRotation,
   const units::radians_per_second_t desiredAngularVelocity) {
-  // reset theta controller to current pose on the first run
-  if (m_firstRun) {
-    m_thetaController.Reset(currentPose.Rotation().Radians());
-    m_firstRun = false;
-  }
-
-  // calculate feedforward velocities (field-relative)
+  // calculate feed-forward velocities (field-relative)
   const auto xFF = desiredLinearVelocity * trajectoryPose.Rotation().Cos();
   const auto yFF = desiredLinearVelocity * trajectoryPose.Rotation().Sin();
   const auto thetaFF = desiredAngularVelocity;
-
-  m_poseError = trajectoryPose.RelativeTo(currentPose);
-  m_rotationError = desiredRotation - currentPose.Rotation();
 
   if (!m_enabled) {
     return frc::ChassisSpeeds::FromFieldRelativeSpeeds(xFF, yFF, thetaFF, currentPose.Rotation());
@@ -61,20 +45,21 @@ frc::ChassisSpeeds CustomHolonomicDriveController::Calculate(
   };
 
   const auto thetaFeedback = units::radians_per_second_t {
-    m_thetaController.Calculate(currentPose.Rotation().Radians(), desiredRotation.Radians()),
+    m_thetaController.Calculate(
+      currentPose.Rotation().Radians().value(), desiredRotation.Radians().value()),
   };
 
 #ifdef AUTO_COMMAND_LOG
   // clang-format off
-  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/ΔΘ ", m_rotationError.Radians().convert<units::degree>().value());
-  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/ΔX", m_poseError.Translation().X().value());
-  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/ΔY", m_poseError.Translation().Y().value());
+  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/ΔΘ ", units::convert<units::radians, units::degrees>(m_thetaController.GetPositionError()));
+  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/ΔX", m_xController.GetPositionError());
+  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/ΔY", m_yController.GetPositionError());
   frc::SmartDashboard::PutNumber("Telemetry/Holonomic/Θ FF", thetaFF.convert<units::degrees_per_second>().value());
   frc::SmartDashboard::PutNumber("Telemetry/Holonomic/Θ FB", thetaFeedback.convert<units::degrees_per_second>().value());
-  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/X FF", xFF.value());
-  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/X FB", xFeedback.value());
-  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/Y FF", yFF.value());
-  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/Y FB", yFeedback.value());
+  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/X FF", xFF.convert<units::meters_per_second>().value());
+  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/X FB", xFeedback.convert<units::meters_per_second>().value());
+  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/Y FF", yFF.convert<units::meters_per_second>().value());
+  frc::SmartDashboard::PutNumber("Telemetry/Holonomic/Y FB", yFeedback.convert<units::meters_per_second>().value());
   // clang-format on
 #endif
 

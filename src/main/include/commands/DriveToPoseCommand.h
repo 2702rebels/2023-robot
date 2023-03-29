@@ -18,6 +18,7 @@ class DriveToPoseCommand : public frc2::CommandHelper<frc2::CommandBase, DriveTo
   void Initialize() override;
   void Execute() override;
   void End(bool interrupted) override;
+  bool IsFinished() override;
 
   /**
    * Determines whether PID controllers are at goal and the command is running.
@@ -37,11 +38,9 @@ class DriveToPoseCommand : public frc2::CommandHelper<frc2::CommandBase, DriveTo
   }
 
  private:
+  bool m_running = false;
   DriveSubsystem* m_drive;
   std::function<frc::Pose2d()> m_desiredPose;
   frc::ProfiledPIDController<units::meter> m_driveController;
   frc::ProfiledPIDController<units::radians> m_thetaController;
-  bool m_running = false;
-  units::meter_t m_driveError;
-  units::radian_t m_thetaError;
 };

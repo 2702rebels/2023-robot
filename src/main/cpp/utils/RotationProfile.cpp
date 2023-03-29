@@ -32,12 +32,14 @@ RotationProfile::RotationProfile(
     // "abuse" trajectory generation mechanism treating angular parameters as linear
     // and using X coordinate as angular position
     frc::TrajectoryConfig config(
-      units::meters_per_second_t { maxVelocity.value() },
-      units::meters_per_second_squared_t { maxAcceleration.value() });
+      units::meters_per_second_t { maxVelocity.convert<units::rad_per_s>().value() },
+      units::meters_per_second_squared_t {
+        maxAcceleration.convert<units::rad_per_s_sq>().value() });
 
     std::vector<frc::Pose2d> poses;
     poses.push_back({ 0_m, 0_m, frc::Rotation2d() });
-    poses.push_back({ units::meter_t { fabs(delta.value()) }, 0_m, frc::Rotation2d() });
+    poses.push_back(
+      { units::meter_t { fabs(delta.convert<units::radians>().value()) }, 0_m, frc::Rotation2d() });
 
     m_trajectory = frc::TrajectoryGenerator::GenerateTrajectory(poses, config);
 #else
@@ -94,12 +96,12 @@ const std::vector<RotationProfile::State> RotationProfile::States() const {
 
 RotationProfile::State RotationProfile::Sample(const units::second_t t) const {
 #ifdef TRAJECTORY_BASED_PROFILE
-  if (m_trajectory.States().size() == 0) {
+  if (m_trajectory.States().empty()) {
     return RotationProfile::State { t, frc::Rotation2d(m_offset), 0_rad_per_s };
   }
   return convert(m_trajectory.Sample(t));
 #else
-  if (m_states.size() == 0) {
+  if (m_states.empty()) {
     return { t, frc::Rotation2d(), 0_rad_per_s };
   }
 

@@ -44,14 +44,25 @@ class DriveTrajectoryCommand
   void End(bool interrupted) override;
   bool IsFinished() override;
 
- private:
-  bool AtTarget() const;
+  /**
+   * Determines whether robot is at goal and the command is running.
+   */
+  bool AtGoal() const;
 
+  /**
+   * Determines whether command is running.
+   */
+  bool IsRunning() const {
+    return m_running;
+  }
+
+ private:
+  bool m_running = false;
   DriveSubsystem* m_drive;
+  frc::Timer m_timer;
   WaypointTrajectory m_trajectory;
   CustomHolonomicDriveController m_controller;
   frc::Pose2d m_finalPose;
   const bool m_resetOdometry;
   const bool m_stopByTimer;
-  frc::Timer m_timer;
 };

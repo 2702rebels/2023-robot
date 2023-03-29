@@ -60,15 +60,17 @@ WaypointTrajectory::WaypointTrajectory(
       if (endIndex > startIndex) {
         std::vector<frc::Pose2d> leg(poses.begin() + startIndex, poses.begin() + endIndex + 1);
 
+        const auto trajectoryVelocity = units::math::max(startVelocity, endVelocity);
         frc::TrajectoryConfig config(
-          startVelocity > 0_mps ? startVelocity : maxVelocity, maxAcceleration);
+          trajectoryVelocity > 0_mps ? trajectoryVelocity : maxVelocity, maxAcceleration);
 
         config.SetKinematics(kinematics);
         config.SetEndVelocity(endVelocity);
         config.SetStartVelocity(startVelocity);
 
         // splice trajectories
-        m_trajectory = m_trajectory + frc::TrajectoryGenerator::GenerateTrajectory(leg, config);
+        m_trajectory =
+          m_trajectory + FixTrajectory(frc::TrajectoryGenerator::GenerateTrajectory(leg, config));
       }
 
       startVelocity = endVelocity;
@@ -79,8 +81,9 @@ WaypointTrajectory::WaypointTrajectory(
     if (poses.begin() + startIndex < poses.end() - 1) {
       std::vector<frc::Pose2d> leg(poses.begin() + startIndex, poses.end());
 
+      const auto trajectoryVelocity = units::math::max(startVelocity, m_endVelocity);
       frc::TrajectoryConfig config(
-        startVelocity > 0_mps ? startVelocity : maxVelocity, maxAcceleration);
+        trajectoryVelocity > 0_mps ? trajectoryVelocity : maxVelocity, maxAcceleration);
 
       m_endVelocity = 0_mps;  // stop at the end
       config.SetKinematics(kinematics);
@@ -88,7 +91,8 @@ WaypointTrajectory::WaypointTrajectory(
       config.SetStartVelocity(startVelocity);
 
       // splice trajectories
-      m_trajectory = m_trajectory + frc::TrajectoryGenerator::GenerateTrajectory(leg, config);
+      m_trajectory =
+        m_trajectory + FixTrajectory(frc::TrajectoryGenerator::GenerateTrajectory(leg, config));
     } else {
       m_endVelocity = startVelocity;
     }
@@ -96,7 +100,7 @@ WaypointTrajectory::WaypointTrajectory(
     frc::TrajectoryConfig config(maxVelocity, maxAcceleration);
     config.SetKinematics(kinematics);
 
-    m_trajectory = frc::TrajectoryGenerator::GenerateTrajectory(poses, config);
+    m_trajectory = FixTrajectory(frc::TrajectoryGenerator::GenerateTrajectory(poses, config));
   }
 
   // now that we have constructed a drive trajectory we calculate a profile for
@@ -111,4 +115,28 @@ WaypointTrajectory::WaypointTrajectory(
     m_trajectory.TotalTime(),
     maxAngularVelocity,
     maxAngularAcceleration);
+}
+
+frc::Trajectory WaypointTrajectory::FixTrajectory(const frc::Trajectory& trajectory) const {
+  const auto states = trajectory.States();
+  if (states.empty()) {
+    return trajectory;
+  }
+
+  const auto endState = states.back();
+  if (endState.acceleration.value() == 0) {
+    return trajectory;
+  }
+
+  // create new trajectory with new end state
+  std::vector<frc::Trajectory::State> newStates(states.begin(), states.end() - 1);
+  newStates.emplace_back(frc::Trajectory::State {
+    endState.t,
+    endState.velocity,
+    0_mps_sq,
+    endState.pose,
+    endState.curvature,
+  });
+
+  return frc::Trajectory(newStates);
 }

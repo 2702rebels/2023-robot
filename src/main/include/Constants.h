@@ -140,8 +140,8 @@ constexpr units::volt_t kVoltageCompensation = 12_V;
 }  // namespace ModuleConstants
 
 namespace AutoConstants {
-constexpr auto kMaxSpeed = 1.5_mps;
-constexpr auto kMaxAcceleration = 2_mps_sq;
+constexpr auto kMaxSpeed = 3_mps;
+constexpr auto kMaxAcceleration = 6_mps_sq;
 constexpr auto kMaxAngularSpeed = 120_deg_per_s;
 constexpr auto kMaxAngularAcceleration = 180_deg_per_s_sq;
 

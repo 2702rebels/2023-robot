@@ -9,11 +9,14 @@
 
 // clang-format off
 REGISTER_DOUBLE(AutoBalanceSpeed, "Auto/Balance/Speed", 1.1);
-REGISTER_DOUBLE(AutoBalanceSpeedFactor, "Auto/Balance/Factor", 1.0);
+REGISTER_DOUBLE(AutoBalanceCrawlSpeed, "Auto/Balance/Crawl Speed", 0.35);
+REGISTER_DOUBLE(AutoBalanceSpeedFactor, "Auto/Balance/Factor", 1.1);
 REGISTER_DOUBLE(AutoBalanceRampTime, "Auto/Balance/Ramp Time", 1.2);
-REGISTER_DOUBLE(AutoBalanceMaxTime, "Auto/Balance/Max Time", 3.0);
-REGISTER_DOUBLE(AutoBalanceAngleThreshold, "Auto/Balance/Angle Threshold", 6.0);
+REGISTER_DOUBLE(AutoBalanceWaitTime, "Auto/Balance/Wait Time", 0.2);
+REGISTER_DOUBLE(AutoBalanceMaxTime, "Auto/Balance/Max Time", 6.0);
+REGISTER_DOUBLE(AutoBalanceAngleThreshold, "Auto/Balance/Angle Threshold", 7.0);
 REGISTER_DOUBLE(AutoBalanceVelocityThreshold, "Auto/Balance/Velocity Threshold", 15.0);
+REGISTER_DOUBLE(AutoBalanceLevelThreshold, "Auto/Balance/Level Threshold", 3.0);
 
 // clang-format on
 
@@ -27,8 +30,10 @@ void AutoBalanceCommand::Initialize() {
   m_speed = units::meters_per_second_t { GetAutoBalanceSpeed() };
   m_factor = GetAutoBalanceSpeedFactor();
   m_rampTime = units::second_t { GetAutoBalanceRampTime() };
+  m_waitTime = units::second_t { GetAutoBalanceWaitTime() };
   m_maxTime = units::second_t { GetAutoBalanceMaxTime() };
   m_angleThreshold = units::degree_t { GetAutoBalanceAngleThreshold() };
+  m_levelThreshold = units::degree_t { GetAutoBalanceLevelThreshold() };
   m_velocityThreshold = units::degrees_per_second_t { GetAutoBalanceVelocityThreshold() };
 
   m_stage = Stage::APPROACH;
@@ -66,7 +71,21 @@ void AutoBalanceCommand::Execute() {
         units::math::fabs(m_angle) < m_angleThreshold ||
         (units::math::fabs(m_velocity) > m_velocityThreshold &&
          m_angle.value() * m_velocity.value() < 0)) {
-        m_stage = Stage::FINAL;
+        m_stage = Stage::WAIT;
+        m_balancedAt = m_timer.Get();
+      }
+      break;
+
+    case Stage::WAIT:
+      speed = 0_mps;
+      if (m_timer.Get() - m_balancedAt >= m_waitTime) {
+        // if we are balanced -- end the command;
+        // otherwise, slowly crawl to rebalance
+        if (units::math::fabs(m_angle) < m_levelThreshold) {
+          m_stage = Stage::FINAL;
+        } else {
+          speed = (m_angle > 0_rad ? 1_mps : -1_mps) * GetAutoBalanceCrawlSpeed();
+        }
       }
       break;
 
@@ -83,12 +102,13 @@ void AutoBalanceCommand::Execute() {
 #ifdef AUTO_COMMAND_LOG
   // clang-format off
   frc::SmartDashboard::PutNumber("Telemetry/AutoBalance/Speed", speed.value());
-  frc::SmartDashboard::PutNumber("Telemetry/AutoBalance/Angle", m_angle.convert<units::degree>().value());
+  frc::SmartDashboard::PutNumber("Telemetry/AutoBalance/Angle", m_angle.convert<units::degrees>().value());
   frc::SmartDashboard::PutNumber("Telemetry/AutoBalance/Angle V", m_velocity.convert<units::degrees_per_second>().value());
   frc::SmartDashboard::PutString("Telemetry/AutoBalance/Stage",
     m_stage == Stage::APPROACH ? "Approach" :
     m_stage == Stage::RAMP ? "Ramping" :
-    m_stage == Stage::BALANCE ? "Balance" : "Final");
+    m_stage == Stage::BALANCE ? "Balance" :
+    m_stage == Stage::WAIT ? "Wait" : "Final");
   // clang-format on
 #endif
 }

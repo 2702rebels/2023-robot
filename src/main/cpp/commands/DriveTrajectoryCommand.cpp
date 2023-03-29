@@ -2,6 +2,7 @@
 
 #include <frc/DataLogManager.h>
 #include <frc/Timer.h>
+#include <frc/smartdashboard/SmartDashboard.h>
 #include <units/math.h>
 
 #include "Settings.h"
@@ -45,14 +46,10 @@ DriveTrajectoryCommand::DriveTrajectoryCommand(
       GetAutoDriveTrajectoryYI(),
       GetAutoDriveTrajectoryYD(),
     },
-    frc::ProfiledPIDController<units::radian> {
+    frc::PIDController {
       GetAutoDriveTrajectoryHP(),
       GetAutoDriveTrajectoryHI(),
       GetAutoDriveTrajectoryHD(),
-      frc::TrapezoidProfile<units::radian>::Constraints {
-        units::degrees_per_second_t { GetAutoDriveTrajectoryHV() },
-        units::degrees_per_second_squared_t { GetAutoDriveTrajectoryHA() },
-      },
     },
   },
   m_resetOdometry { resetOdometry },
@@ -73,13 +70,13 @@ DriveTrajectoryCommand::DriveTrajectoryCommand(
     frc::DataLogManager::Log(fmt::format("DriveTrajectory: Trajectory"));
     for (const auto& state : m_trajectory.Trajectory().States()) {
       frc::DataLogManager::Log(fmt::format(
-        "at {:.3f} -> ({:.2f}, {:.2f}, {:.1f}) r = {:.2f} v = {:.2f}",
+        "at {:.3f} -> ({:.2f}, {:.2f}, {:.1f}) v = {:.2f} a = {:.2f}",
         state.t.value(),
         state.pose.X().value(),
         state.pose.Y().value(),
         state.pose.Rotation().Degrees().value(),
-        state.curvature.value(),
-        state.velocity.value()));
+        state.velocity.value(),
+        state.acceleration.value()));
     }
 
     const auto rotationStates = m_trajectory.Rotations().States();
@@ -120,25 +117,43 @@ void DriveTrajectoryCommand::Initialize() {
     units::degree_t { GetAutoDriveTrajectoryHE() },
   });
 
-  m_controller.getXController().Reset();
-  m_controller.getYController().Reset();
-  m_controller.getThetaController().Reset(m_drive->GetHeading().Radians());
+  m_controller.Reset();
 
   m_finalPose = m_trajectory.FinalPose();
   m_timer.Restart();
 }
 
 void DriveTrajectoryCommand::Execute() {
+  m_running = true;
   const auto time = m_timer.Get();
 
+  const auto currentPose = m_drive->GetPose();
   const auto desiredState = m_trajectory.Trajectory().Sample(time);
   const auto desiredRotation = m_trajectory.Rotations().Sample(time);
 
-  const auto speeds = m_controller.Calculate(m_drive->GetPose(), desiredState, desiredRotation);
+  const auto speeds = m_controller.Calculate(currentPose, desiredState, desiredRotation);
   m_drive->SetChassisSpeeds(speeds);
+
+#ifdef AUTO_COMMAND_LOG
+  const auto distanceError = desiredState.pose.Translation().Distance(currentPose.Translation());
+  const auto thetaError =
+    MathUtils::ClampAngle(desiredRotation.rotation.Radians() - currentPose.Rotation().Radians());
+
+  // clang-format off
+  frc::SmartDashboard::PutNumber("Telemetry/DriveTrajectory/Desired X", desiredState.pose.X().convert<units::meters>().value());
+  frc::SmartDashboard::PutNumber("Telemetry/DriveTrajectory/Desired Y", desiredState.pose.Y().convert<units::meters>().value());
+  frc::SmartDashboard::PutNumber("Telemetry/DriveTrajectory/Desired V", desiredState.velocity.convert<units::meters_per_second>().value());
+  frc::SmartDashboard::PutNumber("Telemetry/DriveTrajectory/Desired Θ", desiredRotation.rotation.Degrees().convert<units::degrees>().value());
+  frc::SmartDashboard::PutNumber("Telemetry/DriveTrajectory/Desired ω", desiredRotation.velocity.convert<units::degrees_per_second>().value());
+  frc::SmartDashboard::PutNumber("Telemetry/DriveTrajectory/Distance Error", distanceError.convert<units::meters>().value());
+  frc::SmartDashboard::PutNumber("Telemetry/DriveTrajectory/Theta Error", thetaError.convert<units::degrees>().value());
+  frc::SmartDashboard::PutBoolean("Telemetry/DriveTrajectory/At Goal", AtGoal());
+  // clang-format on
+#endif
 }
 
 void DriveTrajectoryCommand::End(bool interrupted) {
+  m_running = false;
   m_timer.Stop();
 
   if (m_trajectory.GetEndVelocity() == 0_mps) {
@@ -146,13 +161,18 @@ void DriveTrajectoryCommand::End(bool interrupted) {
   }
 }
 
-bool DriveTrajectoryCommand::AtTarget() const {
+bool DriveTrajectoryCommand::AtGoal() const {
+  if (!m_running) {
+    return false;
+  }
+
   const auto currentPose = m_drive->GetPose();
   const auto tolerance = m_controller.GetTolerance();
+
   const auto eTranslate = (m_finalPose.RelativeTo(currentPose)).Translation();
-  const auto& eRotate = m_finalPose.Rotation() - currentPose.Rotation();
-  const auto& tolTranslate = tolerance.Translation();
-  const auto& tolRotate = tolerance.Rotation();
+  const auto eRotate = m_finalPose.Rotation() - currentPose.Rotation();
+  const auto tolTranslate = tolerance.Translation();
+  const auto tolRotate = tolerance.Rotation();
 
   return units::math::fabs(eTranslate.X()) < tolTranslate.X() &&
          units::math::fabs(eTranslate.Y()) < tolTranslate.Y() &&
@@ -160,5 +180,5 @@ bool DriveTrajectoryCommand::AtTarget() const {
 }
 
 bool DriveTrajectoryCommand::IsFinished() {
-  return m_stopByTimer ? m_timer.HasElapsed(m_trajectory.Trajectory().TotalTime()) : AtTarget();
+  return m_stopByTimer ? m_timer.HasElapsed(m_trajectory.Trajectory().TotalTime()) : AtGoal();
 }

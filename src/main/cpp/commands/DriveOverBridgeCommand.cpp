@@ -82,7 +82,7 @@ void DriveOverBridgeCommand::Execute() {
 
 #ifdef AUTO_COMMAND_LOG
   // clang-format off
-  frc::SmartDashboard::PutNumber("Telemetry/DriveOverBridge/Angle", m_angle.convert<units::degree>().value());
+  frc::SmartDashboard::PutNumber("Telemetry/DriveOverBridge/Angle", m_angle.convert<units::degrees>().value());
   frc::SmartDashboard::PutNumber("Telemetry/DriveOverBridge/Velocity", m_velocity.convert<units::degrees_per_second>().value());
   frc::SmartDashboard::PutString("Telemetry/DriveOverBridge/Stage",
     m_stage == Stage::APPROACH ? "Approach":

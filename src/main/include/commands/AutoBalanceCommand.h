@@ -23,6 +23,7 @@ class AutoBalanceCommand : public frc2::CommandHelper<frc2::CommandBase, AutoBal
     APPROACH,
     RAMP,
     BALANCE,
+    WAIT,
     FINAL,
   };
 
@@ -32,9 +33,12 @@ class AutoBalanceCommand : public frc2::CommandHelper<frc2::CommandBase, AutoBal
   double m_direction = 1.0;
   double m_factor = 1.0;
   units::second_t m_rampTime;
+  units::second_t m_waitTime;
   units::second_t m_maxTime;
+  units::second_t m_balancedAt;
   units::radian_t m_angle;
   units::radian_t m_angleThreshold;
+  units::radian_t m_levelThreshold;
   units::radians_per_second_t m_velocity;
   units::radians_per_second_t m_velocityThreshold;
   units::meters_per_second_t m_speed;

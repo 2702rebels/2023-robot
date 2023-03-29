@@ -1,7 +1,6 @@
 #pragma once
 
 #include <frc/controller/PIDController.h>
-#include <frc/controller/ProfiledPIDController.h>
 #include <frc/geometry/Pose2d.h>
 #include <frc/geometry/Rotation2d.h>
 #include <frc/kinematics/ChassisSpeeds.h>
@@ -16,21 +15,26 @@ class CustomHolonomicDriveController {
   CustomHolonomicDriveController(
     frc2::PIDController xController,
     frc2::PIDController yController,
-    frc::ProfiledPIDController<units::radian> thetaController);
+    frc2::PIDController thetaController);
 
   /**
-   * Returns true if the pose error is within tolerance of the reference.
+   * Returns true if the pose error is within tolerance of the goal.
    */
-  bool AtReference() const;
+  bool AtGoal() const;
 
   /**
    * Sets the pose error which is considered tolerable for use with
-   * AtReference().
+   * AtGoal().
    *
    * @param tolerance Pose error which is tolerable.
    */
   void SetTolerance(const frc::Pose2d& tolerance) {
     m_poseTolerance = tolerance;
+
+    const auto translation = tolerance.Translation();
+    m_xController.SetTolerance(translation.X().value());
+    m_yController.SetTolerance(translation.Y().value());
+    m_thetaController.SetTolerance(tolerance.Rotation().Radians().value());
   }
 
   /**
@@ -64,7 +68,7 @@ class CustomHolonomicDriveController {
 
   /**
    * Enables and disables the controller for troubleshooting purposes. When
-   * Calculate() is called on a disabled controller, only feedforward values
+   * Calculate() is called on a disabled controller, only feed-forward values
    * are returned.
    *
    * @param enabled If the controller is enabled or not.
@@ -74,35 +78,40 @@ class CustomHolonomicDriveController {
   }
 
   /**
-   * Returns the rotation ProfiledPIDController
+   * Returns the rotation PIDController.
    */
-  frc::ProfiledPIDController<units::radian>& getThetaController() {
+  frc2::PIDController& getThetaController() {
     return m_thetaController;
   }
 
   /**
-   * Returns the X PIDController
+   * Returns the X PIDController.
    */
   frc2::PIDController& getXController() {
     return m_xController;
   }
 
   /**
-   * Returns the Y PIDController
+   * Returns the Y PIDController.
    */
   frc2::PIDController& getYController() {
     return m_yController;
   }
 
+  /**
+   * Resets the controller.
+   */
+  void Reset() {
+    m_thetaController.Reset();
+    m_xController.Reset();
+    m_yController.Reset();
+  }
+
  private:
-  frc::Pose2d m_poseError;
-  frc::Rotation2d m_rotationError;
   frc::Pose2d m_poseTolerance;
   bool m_enabled = true;
 
   frc2::PIDController m_xController;
   frc2::PIDController m_yController;
-  frc::ProfiledPIDController<units::radian> m_thetaController;
-
-  bool m_firstRun = true;
+  frc2::PIDController m_thetaController;
 };
