@@ -272,9 +272,18 @@ void RobotContainer::ConfigureButtonBindings() {
   // Score Low.
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kA)
     .OnTrue(frc2::cmd::Sequence(
-      ArmMoveCommand(&m_arm, ArmPosition::SCORE_LOW_CUBE),
+      ArmMoveCommand(&m_arm, ArmPosition::SCORE_LOW_CUBE).ToPtr(),
       frc2::InstantCommand([this] { m_intake.SetIntakeSpeed(-0.5); }, { &m_intake }).ToPtr()))
     .OnFalse(frc2::InstantCommand([this] { m_intake.SetIntakeSpeed(0.0); }, { &m_intake }).ToPtr());
+
+#ifdef DRIVETRAIN_ENABLED
+  frc2::Trigger([this] { return m_arm.IsArmUp(); })
+    .OnTrue(frc2::InstantCommand(
+              [this] { m_drive.SetMaxSpeedOverride(m_arm.GetMaxSpeedOverride()); }, { &m_drive })
+              .ToPtr())
+    .OnFalse(
+      frc2::InstantCommand([this] { m_drive.ResetMaxSpeedOverride(); }, { &m_drive }).ToPtr());
+#endif
 
   // frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kY)
   //   .OnTrue(frc2::cmd::Either(

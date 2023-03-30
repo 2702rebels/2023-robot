@@ -114,11 +114,11 @@ constexpr units::radian_t kTurningEncoderPositionPIDMaxInput =
 constexpr uint32_t kDrivingVelocityMeasurementPeriodMs = 20;
 constexpr uint32_t kDrivingVelocityMeasurementDepth = 4;
 
-constexpr double kDrivingP = 0.09;
+constexpr double kDrivingP = 0.1;
 constexpr double kDrivingI = 0;
 constexpr double kDrivingD = 0;
 constexpr double kDrivingFF =
-  (1 / kDrivingWheelFreeSpeedRps) * 1.05;  // add +5% to overshoot and pull down with P
+  (1 / kDrivingWheelFreeSpeedRps) * 1.1;  // add +10% to overshoot and pull down with P
 constexpr double kDrivingMinOutput = -1;
 constexpr double kDrivingMaxOutput = 1;
 
@@ -132,7 +132,7 @@ constexpr double kTurningMaxOutput = 1;
 constexpr rev::CANSparkMax::IdleMode kDrivingMotorIdleMode = rev::CANSparkMax::IdleMode::kBrake;
 constexpr rev::CANSparkMax::IdleMode kTurningMotorIdleMode = rev::CANSparkMax::IdleMode::kBrake;
 
-constexpr units::ampere_t kDrivingMotorCurrentLimit = 40_A;
+constexpr units::ampere_t kDrivingMotorCurrentLimit = 60_A;
 constexpr units::ampere_t kTurningMotorCurrentLimit = 20_A;
 
 constexpr units::volt_t kVoltageNominal = 12_V;
@@ -141,9 +141,10 @@ constexpr units::volt_t kVoltageCompensation = 12_V;
 
 namespace AutoConstants {
 constexpr auto kMaxSpeed = 3_mps;
-constexpr auto kMaxAcceleration = 6_mps_sq;
-constexpr auto kMaxAngularSpeed = 120_deg_per_s;
-constexpr auto kMaxAngularAcceleration = 180_deg_per_s_sq;
+constexpr auto kMaxAcceleration = 4_mps_sq;
+constexpr auto kMaxDeceleration = 6_mps_sq;
+constexpr auto kMaxAngularSpeed = 480_deg_per_s;
+constexpr auto kMaxAngularAcceleration = 360_deg_per_s_sq;
 
 constexpr double kPXController = 1.5;
 constexpr double kIXController = 0.0;
@@ -151,7 +152,7 @@ constexpr double kDXController = 0.0;
 constexpr double kPYController = 1.5;
 constexpr double kIYController = 0.0;
 constexpr double kDYController = 0.0;
-constexpr double kPThetaController = 4.5;
+constexpr double kPThetaController = 9.0;
 constexpr double kIThetaController = 0.0;
 constexpr double kDThetaController = 0.0;
 }  // namespace AutoConstants

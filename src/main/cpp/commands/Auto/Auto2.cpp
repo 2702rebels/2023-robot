@@ -1,16 +1,18 @@
 #include "commands/auto/Auto2.h"
 
 #include "commands/AutoBalanceCommand.h"
+#include "commands/DriveRotateCommand.h"
 #include "commands/DriveToPoseCommand.h"
 #include "commands/DriveTrajectoryCommand.h"
 #include "frc2/command/InstantCommand.h"
 
-constexpr auto initialPose = frc::Pose2d { 0_m, 0_m, 0_deg };
+constexpr auto initialPose = frc::Pose2d { 0_m, 0_m, 180_deg };
 constexpr auto targetPose = frc::Pose2d { 2_m, 1_m, 90_deg };
 
 Auto2::Auto2(DriveSubsystem* drive) {
   AddCommands(
     frc2::InstantCommand([drive] { drive->ResetOdometry(initialPose); }, {}),
+    DriveRotateCommand(1_deg, drive),
     DriveTrajectoryCommand(
       {
         Waypoint(frc::Pose2d { 0_m, 0_m, 0_deg }, frc::Rotation2d(0_deg)),

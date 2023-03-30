@@ -29,8 +29,8 @@ DriveRotateCommand::DriveRotateCommand(
       GetAutoDriveRotateHI(),
       GetAutoDriveRotateHD(),
       frc::TrapezoidProfile<units::radians>::Constraints {
-        units::radians_per_second_t { GetAutoDriveRotateHV() },
-        units::radians_per_second_squared_t { GetAutoDriveRotateHA() },
+        units::degrees_per_second_t { GetAutoDriveRotateHV() },
+        units::degrees_per_second_squared_t { GetAutoDriveRotateHA() },
       },
     },
   } {
@@ -48,8 +48,8 @@ void DriveRotateCommand::Initialize() {
     units::degrees_per_second_t { GetAutoDriveRotateHEv() });
 
   m_thetaController.SetConstraints(frc::TrapezoidProfile<units::radians>::Constraints {
-    units::radians_per_second_t { GetAutoDriveRotateHV() },
-    units::radians_per_second_squared_t { GetAutoDriveRotateHA() },
+    units::degrees_per_second_t { GetAutoDriveRotateHV() },
+    units::degrees_per_second_squared_t { GetAutoDriveRotateHA() },
   });
 
   m_thetaController.Reset(m_drive->GetHeading().Radians());

@@ -74,10 +74,15 @@ class ArmSubsystem : public frc2::SubsystemBase {
     return m_whichRobotJumper.Get();
   }
 
+  bool IsArmUp();
+
+  units::meters_per_second_t GetMaxSpeedOverride() const;
+
  private:
   bool m_isAxis1ControlEnabled = false;
   bool m_isAxis2ControlEnabled = false;
 
+  units::degree_t m_armUpThreshold;
   units::degree_t m_axis1SetPoint;
   units::inch_t m_axis2SetPoint;
   // Components (e.g. motor controllers and sensors) should generally be

@@ -216,6 +216,20 @@ class DriveSubsystem : public frc2::SubsystemBase {
     wpi::array<SwerveModuleState, NUMBER_OF_MODULES> desiredStates, bool stopped = false);
 
   /**
+   * Sets the maximum speed override.
+   */
+  void SetMaxSpeedOverride(units::meters_per_second_t speed) {
+    m_maxSpeedOverride = speed;
+  }
+
+  /**
+   * Removes the maximum speed override.
+   */
+  void ResetMaxSpeedOverride() {
+    m_maxSpeedOverride = std::nullopt;
+  }
+
+  /**
    * Kinematics describing the drive type.
    */
   SwerveDriveKinematics<NUMBER_OF_MODULES> kDriveKinematics {
@@ -238,7 +252,7 @@ class DriveSubsystem : public frc2::SubsystemBase {
    * Gets effective maximum speed.
    */
   units::meters_per_second_t GetMaxSpeed() const {
-    return m_maxSpeed;
+    return m_maxSpeedOverride.has_value() ? m_maxSpeedOverride.value() : m_maxSpeed;
   }
 
   frc::SlewRateLimiter<units::scalar> m_rotLimiter;
@@ -260,6 +274,8 @@ class DriveSubsystem : public frc2::SubsystemBase {
   double m_deadband = OIConstants::kDriveDeadband;
   units::meters_per_second_t m_maxSpeed = DriveConstants::kMaxSpeed;
   units::radians_per_second_t m_maxAngularSpeed = DriveConstants::kMaxAngularSpeed;
+
+  std::optional<units::meters_per_second_t> m_maxSpeedOverride = std::nullopt;
 
   // constrain translational direction heading to a discrete step values (in radians)
   double m_headingStep = 0.0;

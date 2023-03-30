@@ -16,7 +16,7 @@ class DriveRotateCommand : public frc2::CommandHelper<frc2::CommandBase, DriveRo
   DriveRotateCommand(const frc::Rotation2d& desiredRotation, DriveSubsystem* drive) :
     DriveRotateCommand([desiredRotation] { return desiredRotation; }, drive) {}
 
-  DriveRotateCommand(const units::radian_t desiredAngle, DriveSubsystem* drive) :
+  DriveRotateCommand(units::degree_t desiredAngle, DriveSubsystem* drive) :
     DriveRotateCommand(frc::Rotation2d(desiredAngle), drive) {}
 
   void Initialize() override;

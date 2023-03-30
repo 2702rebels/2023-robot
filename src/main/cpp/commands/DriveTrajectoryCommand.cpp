@@ -21,7 +21,7 @@ REGISTER_DOUBLE(AutoDriveTrajectoryHI,  "Auto/DriveTrajectory/Theta - I", AutoCo
 REGISTER_DOUBLE(AutoDriveTrajectoryHD,  "Auto/DriveTrajectory/Theta - D", AutoConstants::kDThetaController);
 REGISTER_DOUBLE(AutoDriveTrajectoryHV,  "Auto/DriveTrajectory/Theta - v", AutoConstants::kMaxAngularSpeed.value());
 REGISTER_DOUBLE(AutoDriveTrajectoryHA,  "Auto/DriveTrajectory/Theta - a", AutoConstants::kMaxAngularAcceleration.value());
-REGISTER_DOUBLE(AutoDriveTrajectoryHE,  "Auto/DriveTrajectory/Theta - E (deg)", 2);
+REGISTER_DOUBLE(AutoDriveTrajectoryHE,  "Auto/DriveTrajectory/Theta - E (deg)", 1.5);
 REGISTER_DOUBLE(AutoDriveTrajectoryXYV, "Auto/DriveTrajectory/XY - v", AutoConstants::kMaxSpeed.value());
 REGISTER_DOUBLE(AutoDriveTrajectoryXYA, "Auto/DriveTrajectory/XY - a", AutoConstants::kMaxAcceleration.value());
 
@@ -169,13 +169,14 @@ bool DriveTrajectoryCommand::AtGoal() const {
   const auto currentPose = m_drive->GetPose();
   const auto tolerance = m_controller.GetTolerance();
 
-  const auto eTranslate = (m_finalPose.RelativeTo(currentPose)).Translation();
+  const auto eTranslateX = m_finalPose.X() - currentPose.X();
+  const auto eTranslateY = m_finalPose.Y() - currentPose.Y();
   const auto eRotate = m_finalPose.Rotation() - currentPose.Rotation();
   const auto tolTranslate = tolerance.Translation();
   const auto tolRotate = tolerance.Rotation();
 
-  return units::math::fabs(eTranslate.X()) < tolTranslate.X() &&
-         units::math::fabs(eTranslate.Y()) < tolTranslate.Y() &&
+  return units::math::fabs(eTranslateX) < tolTranslate.X() &&
+         units::math::fabs(eTranslateY) < tolTranslate.Y() &&
          units::math::fabs(eRotate.Radians()) < tolRotate.Radians();
 }
 

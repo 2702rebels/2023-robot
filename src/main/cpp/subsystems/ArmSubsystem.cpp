@@ -63,6 +63,8 @@ REGISTER_DOUBLE(CubeAxis1ScoreHigh, "ExArm/Position/Cube/ScoreHigh/Axis1", 70.0)
 REGISTER_DOUBLE(CubeAxis2ScoreHigh, "ExArm/Position/Cube/ScoreHigh/Axis2", 10.0)
 
 REGISTER_DOUBLE(JogDistance, "ExArm/JogDistance", 5.0);
+REGISTER_DOUBLE(DriveMaxSpeedOverride, "ExArm/Max Speed Override (mps)", 2.0);
+REGISTER_DOUBLE(ArmUpThreshold, "ExArm/Arm Up Threshold", 15.0);
 
 ArmSubsystem::ArmSubsystem() {
   frc::DataLogManager::Log(fmt::format("Initializing ArmSubsystem."));
@@ -136,6 +138,8 @@ void ArmSubsystem::ConfigureTuningParams() {
     kAxis2MaxOutput,
     GetAxis2MaxVelocity(),
     GetAxis2MaxAcceletration()));
+
+  m_armUpThreshold = units::degree_t { GetArmUpThreshold() };
 }
 
 // This method will be called once per scheduler run
@@ -148,6 +152,7 @@ void ArmSubsystem::Periodic() {
   frc::SmartDashboard::PutNumber("Axis1SetPoint", m_axis1SetPoint.value());
   frc::SmartDashboard::PutNumber("Axis2SetPoint", m_axis2SetPoint.value());
   frc::SmartDashboard::PutBoolean("IsComp", IsCompBot());
+  frc::SmartDashboard::PutBoolean("IsArmAtPosition", IsAtCommandedPosition());
 
   ArmSubsystem::Axis1Control();
   ArmSubsystem::Axis2Control();
@@ -214,7 +219,7 @@ void ArmSubsystem::Axis2Control() {
     };
 
     m_axis2TrapezoidalProfileState = axis2Profile.Calculate(ArmConstants::kDt);
-    double rotations = units::inch_t(m_axis2TrapezoidalProfileState.position).value() *
+    double rotations = m_axis2TrapezoidalProfileState.position.convert<units::inch>().value() *
                        kAxis2MotorRotationsPerInchOfTravel;
 #ifdef VERBOSE_LOG
     frc::DataLogManager::Log(
@@ -463,4 +468,12 @@ frc2::CommandPtr ArmSubsystem::JogDown() {
            // Require subsystem
            { this })
     .ToPtr();
+}
+
+bool ArmSubsystem::IsArmUp() {
+  return GetAxis1Angle() > m_armUpThreshold;
+}
+
+units::meters_per_second_t ArmSubsystem::GetMaxSpeedOverride() const {
+  return units::meters_per_second_t { GetDriveMaxSpeedOverride() };
 }

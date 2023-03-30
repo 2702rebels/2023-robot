@@ -48,8 +48,8 @@ DriveToPoseCommand::DriveToPoseCommand(
       GetAutoDriveToPoseHI(),
       GetAutoDriveToPoseHD(),
       frc::TrapezoidProfile<units::radians>::Constraints {
-        units::radians_per_second_t { GetAutoDriveToPoseHV() },
-        units::radians_per_second_squared_t { GetAutoDriveToPoseHA() },
+        units::degrees_per_second_t { GetAutoDriveToPoseHV() },
+        units::degrees_per_second_squared_t { GetAutoDriveToPoseHA() },
       },
     },
   } {
@@ -79,8 +79,8 @@ void DriveToPoseCommand::Initialize() {
     units::degrees_per_second_t { GetAutoDriveToPoseHEv() });
 
   m_thetaController.SetConstraints(frc::TrapezoidProfile<units::radians>::Constraints {
-    units::radians_per_second_t { GetAutoDriveToPoseHV() },
-    units::radians_per_second_squared_t { GetAutoDriveToPoseHA() },
+    units::degrees_per_second_t { GetAutoDriveToPoseHV() },
+    units::degrees_per_second_squared_t { GetAutoDriveToPoseHA() },
   });
 
   const auto currentPose = m_drive->GetPose();
