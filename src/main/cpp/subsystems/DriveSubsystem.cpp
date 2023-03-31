@@ -363,8 +363,9 @@ void DriveSubsystem::UpdateOdometry() {
 #ifdef DRIVETRAIN_ODOMETRY_VISION
   // feed global position from camera
   const auto visionPose = m_visionPose.GetAtomic();
-  const auto timestamp = frc::Timer::GetFPGATimestamp();
-  units::second_t { visionPose.serverTime };
+  const auto timestamp = units::microsecond_t { (double) visionPose.time };
+  // const auto timestamp = frc::Timer::GetFPGATimestamp();
+
   const auto x = units::length::meter_t { visionPose.value[0] };
   const auto y = units::length::meter_t { visionPose.value[1] };
   const auto r = units::angle::radian_t { visionPose.value[2] };
@@ -405,7 +406,7 @@ void DriveSubsystem::UpdateOdometry() {
     m_gyroSign * sinTheta * m_rollVelocity.convert<units::radians_per_second>();
 }
 
-const frc::Pose2d& DriveSubsystem::GetPose() const {
+frc::Pose2d DriveSubsystem::GetPose() const {
 #ifdef DRIVETRAIN_ODOMETRY_VISION
   return m_odometry.GetEstimatedPosition();
 #else

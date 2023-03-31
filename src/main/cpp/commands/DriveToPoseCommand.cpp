@@ -28,7 +28,8 @@ REGISTER_DOUBLE(AutoDriveToPoseHEv,  "Auto/DriveToPose/Theta - Ev (dps)", 10);
 // clang-format on
 
 DriveToPoseCommand::DriveToPoseCommand(
-  std::function<frc::Pose2d()> desiredPose, DriveSubsystem* drive) :
+  std::function<frc::Pose2d()> desiredPose, DriveSubsystem* drive, bool endAtGoal) :
+  m_endAtGoal { endAtGoal },
   m_drive { drive },
   m_desiredPose { desiredPose },
   m_driveController {
@@ -151,5 +152,5 @@ bool DriveToPoseCommand::AtGoal(
 }
 
 bool DriveToPoseCommand::IsFinished() {
-  return AtGoal();
+  return m_endAtGoal && AtGoal();
 }

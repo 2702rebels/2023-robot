@@ -10,10 +10,12 @@
 
 class DriveToPoseCommand : public frc2::CommandHelper<frc2::CommandBase, DriveToPoseCommand> {
  public:
-  DriveToPoseCommand(std::function<frc::Pose2d()> desiredPose, DriveSubsystem* drive);
+  DriveToPoseCommand(
+    std::function<frc::Pose2d()> desiredPose, DriveSubsystem* drive, bool endAtGoal = false);
 
-  DriveToPoseCommand(const frc::Pose2d& desiredPose, DriveSubsystem* drive) :
-    DriveToPoseCommand([desiredPose] { return desiredPose; }, drive) {}
+  DriveToPoseCommand(
+    const frc::Pose2d& desiredPose, DriveSubsystem* drive, bool endAtGoal = false) :
+    DriveToPoseCommand([desiredPose] { return desiredPose; }, drive, endAtGoal) {}
 
   void Initialize() override;
   void Execute() override;
@@ -39,6 +41,7 @@ class DriveToPoseCommand : public frc2::CommandHelper<frc2::CommandBase, DriveTo
 
  private:
   bool m_running = false;
+  bool m_endAtGoal;
   DriveSubsystem* m_drive;
   std::function<frc::Pose2d()> m_desiredPose;
   frc::ProfiledPIDController<units::meter> m_driveController;

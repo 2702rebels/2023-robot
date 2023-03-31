@@ -13,6 +13,7 @@
 
 #include "Constants.h"
 #include "commands/ArmMoveCommand.h"
+#include "commands/DriveToPoseCommand.h"
 #include "commands/IntakeAutonomouslyCommand.h"
 #include "commands/IntakeClapCommand.h"
 #include "commands/IntakeConeCommand.h"
@@ -309,6 +310,9 @@ void RobotContainer::ConfigureButtonBindings() {
   //             [this]() -> bool { return this->m_scoreHeight == RobotScoreHeight::HIGH; },
   //             [this]() -> bool { return this->m_mode == RobotMode::CONE; })
   //             .ToPtr());
+  frc2::Trigger(m_driverController.RightTrigger(
+                  0.5, frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+    .WhileTrue(DriveToPoseCommand([this] { return m_field.GetScorePosition(); }, &m_drive).ToPtr());
 
   // Intake from the floor.
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kX)
@@ -332,6 +336,14 @@ void RobotContainer::ConfigureButtonBindings() {
 
 #ifdef OPERATOR_CONTROLLER_ENABLED
   // [Configure Operator Controller]
+  m_field.SetDefaultCommand(frc2::RunCommand(
+    [this] {
+      m_field.ShiftSelection(
+        frc::ApplyDeadband(m_operatorController.GetLeftX(), m_drive.GetDeadband()),
+        -frc::ApplyDeadband(m_operatorController.GetLeftY(), m_drive.GetDeadband()));
+    },
+    { &m_field }));
+
 #ifdef ARM_ENABLED
 #ifdef INTAKE_ENABLED
   // Reload parameters.

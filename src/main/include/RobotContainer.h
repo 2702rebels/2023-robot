@@ -11,6 +11,7 @@
 #include <frc2/command/RunCommand.h>
 
 #include "Constants.h"
+#include "Field.h"
 #include "commands/Auto/Auto_ScoreAndOverAndBalance.h"
 #include "commands/auto/Auto2.h"
 #include "commands/auto/Auto3.h"
@@ -79,6 +80,8 @@ class RobotContainer {
 #ifdef LED_ENABLED
   LedSubsystem m_leds;
 #endif
+
+  Field m_field;
 
   // The autonomous routines
   Auto_DoNothing m_auto_doNothing;

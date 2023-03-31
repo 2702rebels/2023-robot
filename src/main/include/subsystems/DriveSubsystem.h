@@ -156,7 +156,7 @@ class DriveSubsystem : public frc2::SubsystemBase {
    * Returns the currently-estimated pose of the robot.
    * @return The pose.
    */
-  const frc::Pose2d& GetPose() const;
+  frc::Pose2d GetPose() const;
 
   /**
    * Gets the drive deadband.

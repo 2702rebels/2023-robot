@@ -29,6 +29,11 @@ enum Side { LEFT, RIGHT };
  * they are needed.
  */
 
+namespace RobotConstants {
+// Robot size accounting for bumpers
+constexpr units::inch_t kBumperSize = 31_in;
+}  // namespace RobotConstants
+
 namespace DriveConstants {
 // Driving Parameters
 // Note that these are not the maximum capable speeds of the robot, rather the
