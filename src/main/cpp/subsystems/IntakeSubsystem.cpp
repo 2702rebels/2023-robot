@@ -16,17 +16,18 @@ REGISTER_DOUBLE(WheelsCurrentLimit, "Intake/Wheels/CurrentLimit", 20)
 REGISTER_DOUBLE(WheelsCurrentLimitDuration, "Intake/Wheels/CurrentLimitDuration", 0.0)
 
 REGISTER_DOUBLE(GripperCurrentLimit, "Intake/Gripper/CurrentLimit", 20)
+REGISTER_DOUBLE(GripperPeakCurrentLimit, "Intake/Gripper/PeakCurrentLimit", 30)
 REGISTER_DOUBLE(GripperCurrentLimitDuration, "Intake/Gripper/CurrentLimitDuration", 0.0)
 REGISTER_DOUBLE(GripperP, "Intake/Gripper/PID/P", 0.008)
 REGISTER_DOUBLE(GripperI, "Intake/Gripper/PID/I", 0.0)
 REGISTER_DOUBLE(GripperD, "Intake/Gripper/PID/D", 0.0)
+REGISTER_DOUBLE(GripperFF, "Intake/Gripper/PID/FF", 0.0)
 REGISTER_DOUBLE(GripperConeOpen, "Intake/Gripper/Positions/Cone/Open", 25);
 REGISTER_DOUBLE(GripperConeClosed, "Intake/Gripper/Positions/Cone/Closed", -15);
 REGISTER_DOUBLE(GripperConePlace, "Intake/Gripper/Positions/Cone/Place", 40);
 REGISTER_DOUBLE(GripperCubeOpen, "Intake/Gripper/Positions/Cube/Open", 50);
 REGISTER_DOUBLE(GripperCubeClosed, "Intake/Gripper/Positions/Cube/Closed", 0);
 REGISTER_DOUBLE(GripperAutoOpen, "Intake/Gripper/Positions/Auto/Open", 60);
-REGISTER_BOOL(IntakeLimitSwitch, "Intake/LimitSwitchEnabled", true)
 
 IntakeSubsystem::IntakeSubsystem() {
   m_leaderMotorController.SetInverted(ctre::phoenix::motorcontrol::InvertType::InvertMotorOutput);
@@ -43,14 +44,14 @@ void IntakeSubsystem::ConfigureTuningParams() {
   // Gripper
   m_gripperMotor.ConfigFactoryDefault(50);
   m_gripperMotor.SetNeutralMode(ctre::phoenix::motorcontrol::NeutralMode::Brake);
-  m_gripperMotor.ConfigPeakCurrentLimit(GetGripperCurrentLimit());
+  m_gripperMotor.ConfigPeakCurrentLimit(GetGripperPeakCurrentLimit());
   m_gripperMotor.ConfigPeakCurrentDuration(GetGripperCurrentLimitDuration());
   m_gripperMotor.ConfigContinuousCurrentLimit(GetGripperCurrentLimit());
   // m_gripperMotor.EnableCurrentLimit(true);
   m_gripperMotorPIDController.SetP(GetGripperP());
   m_gripperMotorPIDController.SetI(GetGripperI());
   m_gripperMotorPIDController.SetD(GetGripperD());
-
+  m_gripperMotorFeedForwards = GetGripperFF();
   // m_gripperMotorEncoder.SetDistancePerPulse(0.087890625);
   frc::DataLogManager::Log(fmt::format(
     "Configured Gripper with parameters: P={}, I={}, D={}, CurrentLimit={}, "
@@ -66,7 +67,7 @@ void IntakeSubsystem::ConfigureTuningParams() {
 void IntakeSubsystem::Periodic() {
   frc::SmartDashboard::PutNumber("IntakeCurrent", GetIntakeCurrent());
   frc::SmartDashboard::PutBoolean("IntakeCurrentAboveValue", GetCurrentAboveValue(10.0));
-  frc::SmartDashboard::PutBoolean("HasGamePiece", m_isHasGamePiece);
+  frc::SmartDashboard::PutBoolean("GripperLimitSwitch", m_limitSwitch.Get());
   frc::SmartDashboard::PutNumber("GripperAngle", GetGripperAngle().value());
   frc::SmartDashboard::PutNumber("GripperCurrent", GetGripperCurrent());
 
@@ -76,11 +77,15 @@ void IntakeSubsystem::Periodic() {
   if (m_isGripperControlEnabled) {
     double clampedVal =
       m_gripperMotorPIDController.Calculate(IntakeSubsystem::GetGripperAngle().value());
-    if (clampedVal > 0.2) {
-      clampedVal = 0.2;
+
+    if (m_gripperMotorPIDController.GetSetpoint() <= 0) {
+      clampedVal -= GetGripperFF();
     }
-    if (clampedVal < -0.2) {
-      clampedVal = -0.2;
+    if (clampedVal > 0.3) {
+      clampedVal = 0.3;
+    }
+    if (clampedVal < -0.3) {
+      clampedVal = -0.3;
     }
     m_gripperMotor.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, clampedVal);
     // frc::DataLogManager::Log(fmt::format(
@@ -216,8 +221,5 @@ bool IntakeSubsystem::GetCurrentAboveValue(double val) {
 }
 
 bool IntakeSubsystem::IsGamePieceSwitchPressed() {
-  if (GetIntakeLimitSwitch()) {
-    return false;
-  }
   return m_limitSwitch.Get();
 }

@@ -66,4 +66,6 @@ class IntakeSubsystem : public frc2::SubsystemBase {
                                        IntakeConstants::kGripperEncoderChannel2Id };
 
   frc::DigitalInput m_limitSwitch { IntakeConstants::kIntakeSwitchId };
+
+  double m_gripperMotorFeedForwards = 0;
 };
