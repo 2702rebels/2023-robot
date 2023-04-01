@@ -407,9 +407,13 @@ void RobotContainer::ConfigureButtonBindings() {
                   0.5, frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
     .OnTrue(frc2::cmd::Either(
       frc2::cmd::Sequence(
-        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_STATION_CONE), IntakeConeCommand(&m_intake)),
+        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_STATION_CONE),
+        IntakeConeCommand(&m_intake),
+        SetLedCommand(&m_leds, 0, 0, 255, LEDPattern::FLASH, 300_ms, 3_s)),
       frc2::cmd::Sequence(
-        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_STATION_CUBE), IntakeCubeCommand(&m_intake)),
+        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_STATION_CUBE),
+        IntakeCubeCommand(&m_intake),
+        SetLedCommand(&m_leds, 0, 0, 255, LEDPattern::FLASH, 300_ms, 3_s)),
       [this] { return m_mode == RobotMode::CONE; }))
     .OnFalse(frc2::cmd::Sequence(ArmMoveCommand(&m_arm, ArmPosition::STOWED)));
 

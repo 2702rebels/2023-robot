@@ -81,11 +81,11 @@ void IntakeSubsystem::Periodic() {
     if (m_gripperMotorPIDController.GetSetpoint() <= 0) {
       clampedVal -= GetGripperFF();
     }
-    if (clampedVal > 0.3) {
-      clampedVal = 0.3;
+    if (clampedVal > 0.2) {
+      clampedVal = 0.2;
     }
-    if (clampedVal < -0.3) {
-      clampedVal = -0.3;
+    if (clampedVal < -0.2) {
+      clampedVal = -0.2;
     }
     m_gripperMotor.Set(ctre::phoenix::motorcontrol::ControlMode::PercentOutput, clampedVal);
     // frc::DataLogManager::Log(fmt::format(

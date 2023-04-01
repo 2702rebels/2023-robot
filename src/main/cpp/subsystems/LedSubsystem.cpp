@@ -23,7 +23,7 @@ void LedSubsystem::Periodic() {
   if (m_isNewPattern) {
     m_isNewPattern = false;
     m_periodStart = frc::Timer::GetFPGATimestamp();
-    if (m_pattern == LEDPattern::LOADING) {
+    if (m_pattern == LEDPattern::LOADING || m_pattern == LEDPattern::PONG) {
       for (int i = 0; i < LEDConstants::kLength; i++) {
         m_ledPatternBuffer[i].r = 0;
         m_ledPatternBuffer[i].g = 0;
@@ -92,11 +92,12 @@ void LedSubsystem::Periodic() {
 
       for (int i = 0; i < ledsToTurnOn; i++) {
         m_ledPatternBuffer[i] = m_ledColourBuffer[i];
-        m_ledPatternBuffer[i + columnSize] = m_ledColourBuffer[i + columnSize];
+        m_ledPatternBuffer[columnSize + columnSize - i] =
+          m_ledColourBuffer[columnSize + columnSize - i];
         m_ledPatternBuffer[i + columnSize + columnSize] =
           m_ledColourBuffer[i + columnSize + columnSize];
-        m_ledPatternBuffer[i + columnSize + columnSize + columnSize] =
-          m_ledColourBuffer[i + columnSize + columnSize + columnSize];
+        m_ledPatternBuffer[columnSize + columnSize + columnSize + columnSize - i] =
+          m_ledColourBuffer[columnSize + columnSize + columnSize + columnSize - i];
       }
 
       if (frc::Timer::GetFPGATimestamp() > m_periodStart + m_period) {

@@ -140,6 +140,10 @@ void ArmSubsystem::ConfigureTuningParams() {
     GetAxis2MaxAcceletration()));
 
   m_armUpThreshold = units::degree_t { GetArmUpThreshold() };
+
+  m_axis1PIDController.SetP(0, 1);
+  m_axis1PIDController.SetI(0, 1);
+  m_axis1PIDController.SetD(0, 1);
 }
 
 // This method will be called once per scheduler run
@@ -194,7 +198,7 @@ void ArmSubsystem::Axis1Control() {
       0,
       m_axis1feedforward
         ->Calculate(
-          ExtendingArmSubsystem::GetAxis1Angle() - kaxis1ffAngleCorrection,
+          ArmSubsystem::GetAxis1Angle() - units::degree_t(kaxis1ffAngleCorrection),
           units::radians_per_second_t(0),
           units::radians_per_second_squared_t(0))
         .value());

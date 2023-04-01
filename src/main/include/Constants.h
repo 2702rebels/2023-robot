@@ -183,7 +183,7 @@ constexpr int kGripperEncoderPulsesPerRevolution = 1024;
 constexpr double kGripperZeroOffset = 45.0;
 
 constexpr double kGripperReduction = 9 / 1 * 7 / 1;
-constexpr double kGripperAnglePerTick = 360.0 / (4096.0 * 7.0);
+constexpr double kGripperAnglePerTick = 360.0 / (4096.0 * 9.0);
 
 constexpr double kGripperHomeCurrent = 14;
 
@@ -220,7 +220,7 @@ constexpr double kAxis1MotorRotationsPerDegreeComp = kAxis1OverallReductionComp 
 constexpr double kAxis1ZeroAngle = 0;
 constexpr int kAxis1HomeTimeoutInSeconds = 3;
 constexpr double kAxis1HomeCurrentThreshold = 30;
-constexpr double kaxis1ffAngleCorrection = 70;
+constexpr double kaxis1ffAngleCorrection = 64;
 constexpr double kAxis1Deadband = 2;
 constexpr units::degree_t kAxis1MaxAngle = units::degree_t(100);
 
