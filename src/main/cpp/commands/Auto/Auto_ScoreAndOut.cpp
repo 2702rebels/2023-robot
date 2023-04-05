@@ -4,6 +4,7 @@
 #include <frc2/command/ParallelRaceGroup.h>
 #include <frc2/command/WaitCommand.h>
 
+#include "Field.h"
 #include "commands/ArmMoveCommand.h"
 #include "commands/AutoBalanceCommand.h"
 #include "commands/DriveTrajectoryCommand.h"
@@ -11,11 +12,10 @@
 #include "commands/ScoreConeCommand.h"
 #include "frc2/command/InstantCommand.h"
 
-constexpr auto initialPose = frc::Pose2d { 0_m, 0_m, 180_deg };
-
 Auto_ScoreAndOut::Auto_ScoreAndOut(
   Alliance alliance, DriveSubsystem* drive, ArmSubsystem* arm, IntakeSubsystem* intake) {
   AddCommands(
+    frc2::InstantCommand([drive] { drive->ResetOdometry(Field::GetFieldPose(Field::CONE_1)); }, {}),
     frc2::InstantCommand([intake] { intake->CloseCone(); }, {}),
     ArmMoveCommand(arm, 68_deg, 0_in),
     ArmMoveCommand(arm, 70_deg, 17_in),
@@ -25,7 +25,7 @@ Auto_ScoreAndOut::Auto_ScoreAndOut(
         Waypoint(frc::Pose2d { 0_m, 0_m, 0_deg }, frc::Rotation2d(180_deg)),
         Waypoint(frc::Pose2d { 2.7_m, 0_m, 0_deg }, frc::Rotation2d(180_deg), 0.7_mps),
       },
-      initialPose.Translation(),
+      Field::GetFieldPose(Field::CONE_1).Translation(),
       true,  // reset odometry
       true,  // stop based on timer
       drive),
@@ -39,7 +39,7 @@ Auto_ScoreAndOut::Auto_ScoreAndOut(
             frc::Pose2d { 4.9_m, alliance == Alliance::RED ? -0.3_m : 0.3_m, 0_deg },
             frc::Rotation2d(0_deg)),
         },
-        initialPose.Translation(),
+        Field::GetFieldPose(Field::CONE_1).Translation(),
         false,
         true,  // stop based on timer
         drive)),
