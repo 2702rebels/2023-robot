@@ -18,7 +18,7 @@ enum Alliance {
   BLUE,
 };
 
-enum Side { LEFT, RIGHT };
+enum Side { INNER, OUTER };
 
 /**
  * The Constants header provides a convenient place for teams to hold robot-wide
@@ -183,7 +183,7 @@ constexpr int kGripperEncoderPulsesPerRevolution = 1024;
 constexpr double kGripperZeroOffset = 45.0;
 
 constexpr double kGripperReduction = 9 / 1 * 7 / 1;
-constexpr double kGripperAnglePerTick = 360.0 / (4096.0 * 9.0);
+constexpr double kGripperAnglePerTick = 360.0 / (4096.0 * 10.0);
 
 constexpr double kGripperHomeCurrent = 14;
 

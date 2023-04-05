@@ -1,6 +1,7 @@
 #include "RobotContainer.h"
 
 #include <frc/DataLogManager.h>
+#include <frc/DriverStation.h>
 #include <frc/shuffleboard/Shuffleboard.h>
 #include <frc2/command/CommandScheduler.h>
 #include <frc2/command/Commands.h>
@@ -13,6 +14,7 @@
 
 #include "Constants.h"
 #include "commands/ArmMoveCommand.h"
+#include "commands/DriveAlignCommand.h"
 #include "commands/DriveToPoseCommand.h"
 #include "commands/IntakeAutonomouslyCommand.h"
 #include "commands/IntakeClapCommand.h"
@@ -40,6 +42,9 @@ RobotContainer::RobotContainer() {
 #endif
 #ifdef ARM_ENABLED
   frc::Shuffleboard::GetTab("Arm").Add(m_arm);
+#endif
+#ifdef INTAKE_ENABLED
+  frc::Shuffleboard::GetTab("Intake").Add(m_intake);
 #endif
 
 #ifdef TRACE_LOG
@@ -218,9 +223,11 @@ void RobotContainer::ConfigureButtonBindings() {
   // [Configure Driver Controller]
 
 #ifdef DRIVETRAIN_ENABLED
-  // Reset swerve heading by zeroing the gyro
+  // reset swerve odometry to the currently selected scoring station
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kRightStick)
-    .OnTrue(frc2::InstantCommand([this] { m_drive.ZeroHeading(); }, { &m_drive }).ToPtr());
+    .OnTrue(frc2::InstantCommand(
+              [this] { m_drive.ResetOdometry(m_field.GetScorePosition()); }, { &m_drive })
+              .ToPtr());
 
   // Lock the wheels
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kStart)
@@ -278,10 +285,10 @@ void RobotContainer::ConfigureButtonBindings() {
     .OnFalse(frc2::InstantCommand([this] { m_intake.SetIntakeSpeed(0.0); }, { &m_intake }).ToPtr());
 
 #ifdef DRIVETRAIN_ENABLED
-  frc2::Trigger([this] { return m_arm.IsArmUp(); })
-    .OnTrue(frc2::InstantCommand(
-              [this] { m_drive.SetMaxSpeedOverride(m_arm.GetMaxSpeedOverride()); }, { &m_drive })
-              .ToPtr())
+  frc2::Trigger([this] { return !frc::DriverStation::IsAutonomous() && m_arm.IsArmUp(); })
+    .OnTrue(
+      frc2::InstantCommand([this] { m_drive.SetMaxSpeedOverride(m_arm.GetMaxSpeedOverride()); }, {})
+        .ToPtr())
     .OnFalse(
       frc2::InstantCommand([this] { m_drive.ResetMaxSpeedOverride(); }, { &m_drive }).ToPtr());
 #endif
@@ -293,7 +300,7 @@ void RobotContainer::ConfigureButtonBindings() {
   //     [this] { return m_mode == RobotMode::CONE; }));
 
 #ifdef INTAKE_ENABLED
-  // // Intake automatically.
+  // Intake automatically.
   // frc2::Trigger(m_driverController.LeftTrigger(
   //                 0.5, frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
   //   .OnTrue(IntakeAutonomouslyCommand(&m_drive, &m_arm, &m_intake, [this]() -> bool {
@@ -310,21 +317,33 @@ void RobotContainer::ConfigureButtonBindings() {
   //             [this]() -> bool { return this->m_scoreHeight == RobotScoreHeight::HIGH; },
   //             [this]() -> bool { return this->m_mode == RobotMode::CONE; })
   //             .ToPtr());
+
+  // automatically drive to the scoring position while the trigger is held
   frc2::Trigger(m_driverController.RightTrigger(
                   0.5, frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
     .WhileTrue(DriveToPoseCommand([this] { return m_field.GetScorePosition(); }, &m_drive).ToPtr());
+
+  // automatically align and drive to the loading position while the trigger is held
+  // this works only if we have the corresponding april tag in view
+  frc2::Trigger(m_driverController.LeftTrigger(
+                  0.5, frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
+    .WhileTrue(DriveAlignCommand(
+                 [this] { return m_drive.GetLoadBeam(); },
+                 [this] { return m_field.GetLoadOffset(); },
+                 &m_drive)
+                 .ToPtr());
 
   // Intake from the floor.
   frc2::JoystickButton(&m_driverController, frc::XboxController::Button::kX)
     .OnTrue(frc2::cmd::Either(
       frc2::cmd::Sequence(
-        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CONE),
-        IntakeConeCommand(&m_intake),
-        SetLedCommand(&m_leds, 0, 0, 255, LEDPattern::FLASH, 300_ms, 3_s)),
+        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CONE).ToPtr(),
+        IntakeConeCommand(&m_intake).ToPtr(),
+        SetLedCommand(&m_leds, 0, 0, 255, LEDPattern::FLASH, 300_ms, 3_s).ToPtr()),
       frc2::cmd::Sequence(
-        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CUBE),
-        IntakeCubeCommand(&m_intake),
-        SetLedCommand(&m_leds, 0, 0, 255, LEDPattern::FLASH, 300_ms, 3_s)),
+        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CUBE).ToPtr(),
+        IntakeCubeCommand(&m_intake).ToPtr(),
+        SetLedCommand(&m_leds, 0, 0, 255, LEDPattern::FLASH, 300_ms, 3_s).ToPtr()),
       [this] { return m_mode == RobotMode::CONE; }))
     .OnFalse(ArmMoveCommand(&m_arm, ArmPosition::STOWED).ToPtr());
 
@@ -407,27 +426,27 @@ void RobotContainer::ConfigureButtonBindings() {
                   0.5, frc2::CommandScheduler::GetInstance().GetDefaultButtonLoop()))
     .OnTrue(frc2::cmd::Either(
       frc2::cmd::Sequence(
-        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_STATION_CONE),
-        IntakeConeCommand(&m_intake),
-        SetLedCommand(&m_leds, 0, 0, 255, LEDPattern::FLASH, 300_ms, 3_s)),
+        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_STATION_CONE).ToPtr(),
+        IntakeConeCommand(&m_intake).ToPtr(),
+        SetLedCommand(&m_leds, 0, 0, 255, LEDPattern::FLASH, 300_ms, 3_s).ToPtr()),
       frc2::cmd::Sequence(
-        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_STATION_CUBE),
-        IntakeCubeCommand(&m_intake),
-        SetLedCommand(&m_leds, 0, 0, 255, LEDPattern::FLASH, 300_ms, 3_s)),
+        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_STATION_CUBE).ToPtr(),
+        IntakeCubeCommand(&m_intake).ToPtr(),
+        SetLedCommand(&m_leds, 0, 0, 255, LEDPattern::FLASH, 300_ms, 3_s).ToPtr()),
       [this] { return m_mode == RobotMode::CONE; }))
-    .OnFalse(frc2::cmd::Sequence(ArmMoveCommand(&m_arm, ArmPosition::STOWED)));
+    .OnFalse(frc2::cmd::Sequence(ArmMoveCommand(&m_arm, ArmPosition::STOWED).ToPtr()));
 
   // Intake Floor.
   frc2::JoystickButton(&m_operatorController, frc::XboxController::Button::kRightBumper)
     .OnTrue(frc2::cmd::Either(
       frc2::cmd::Sequence(
-        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CONE),
-        IntakeConeCommand(&m_intake),
-        SetLedCommand(&m_leds, 0, 0, 255, LEDPattern::FLASH, 300_ms, 3_s)),
+        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CONE).ToPtr(),
+        IntakeConeCommand(&m_intake).ToPtr(),
+        SetLedCommand(&m_leds, 0, 0, 255, LEDPattern::FLASH, 300_ms, 3_s).ToPtr()),
       frc2::cmd::Sequence(
-        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CUBE),
-        IntakeCubeCommand(&m_intake),
-        SetLedCommand(&m_leds, 0, 0, 255, LEDPattern::FLASH, 300_ms, 3_s)),
+        ArmMoveCommand(&m_arm, ArmPosition::INTAKE_FLOOR_CUBE).ToPtr(),
+        IntakeCubeCommand(&m_intake).ToPtr(),
+        SetLedCommand(&m_leds, 0, 0, 255, LEDPattern::FLASH, 300_ms, 3_s).ToPtr()),
       [this] { return m_mode == RobotMode::CONE; }))
     .OnFalse(ArmMoveCommand(&m_arm, ArmPosition::STOWED).ToPtr());
 #endif

@@ -11,7 +11,7 @@
 
 class AutoBalanceCommand : public frc2::CommandHelper<frc2::CommandBase, AutoBalanceCommand> {
  public:
-  AutoBalanceCommand(DriveSubsystem* drive, Side side = Side::LEFT);
+  AutoBalanceCommand(DriveSubsystem* drive, Side side = Side::INNER);
 
   void Initialize() override;
   void Execute() override;

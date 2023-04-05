@@ -18,6 +18,8 @@ ScoreCubeCommand::ScoreCubeCommand(ArmSubsystem* arm, IntakeSubsystem* intake) :
 
 // Called when the command is initially scheduled.
 void ScoreCubeCommand::Initialize() {
+  frc::DataLogManager::Log("ScoreCubeCommand::Initialize");
+
   m_startTime = frc::Timer::GetFPGATimestamp();
   m_intake->OuttakeCube();
   m_arm->Move(0.0_in);

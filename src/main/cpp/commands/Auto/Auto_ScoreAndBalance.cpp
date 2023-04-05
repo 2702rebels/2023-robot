@@ -71,5 +71,5 @@ Auto_ScoreAndBalance::Auto_ScoreAndBalance(
         false,
         true,  // stop based on timer,
         drive)),
-    AutoBalanceCommand(drive, Side::LEFT));
+    AutoBalanceCommand(drive, Side::INNER));
 }

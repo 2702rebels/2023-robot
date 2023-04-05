@@ -5,8 +5,9 @@
 
 #include "Constants.h"
 #include "subsystems/DriveSubsystem.h"
+#include "subsystems/LedSubsystem.h"
 
 class Auto2 : public frc2::CommandHelper<frc2::SequentialCommandGroup, Auto2> {
  public:
-  Auto2(DriveSubsystem* drive);
+  Auto2(DriveSubsystem* drive, LedSubsystem* led);
 };

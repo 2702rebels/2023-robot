@@ -126,7 +126,7 @@ void DriveToPoseCommand::Execute() {
 
   m_drive->SetChassisSpeeds(speeds);
 
-#ifdef AUTO_COMMAND_LOG
+#ifdef LOG_AUTO_COMMAND
   // clang-format off
   frc::SmartDashboard::PutNumber("Telemetry/DriveToPose/Distance", m_driveController.GetPositionError().convert<units::meters>().value());
   frc::SmartDashboard::PutNumber("Telemetry/DriveToPose/Theta Error", m_thetaController.GetPositionError().convert<units::degrees>().value());

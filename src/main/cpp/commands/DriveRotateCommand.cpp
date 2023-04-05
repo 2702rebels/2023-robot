@@ -74,7 +74,7 @@ void DriveRotateCommand::Execute() {
 
   m_drive->SetChassisSpeeds(speeds);
 
-#ifdef AUTO_COMMAND_LOG
+#ifdef LOG_AUTO_COMMAND
   // clang-format off
   frc::SmartDashboard::PutNumber("Telemetry/DriveRotate/Theta Error", m_thetaController.GetPositionError().convert<units::degrees>().value());
   frc::SmartDashboard::PutBoolean("Telemetry/DriveRotate/Theta At Goal", thetaAtGoal);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ctre/Phoenix.h>
+#include <frc/DriverStation.h>
 #include <frc/controller/PIDController.h>
 #include <frc/estimator/SwerveDrivePoseEstimator.h>
 #include <frc/filter/SlewRateLimiter.h>
@@ -159,6 +160,14 @@ class DriveSubsystem : public frc2::SubsystemBase {
   frc::Pose2d GetPose() const;
 
   /**
+   * Returns the pose received from the vision.
+   * @return The pose in "alliance wall" coordinates.
+   */
+  const frc::Pose2d& GetVisionPose() const {
+    return m_visionPose;
+  }
+
+  /**
    * Gets the drive deadband.
    */
   double GetDeadband() const {
@@ -202,7 +211,12 @@ class DriveSubsystem : public frc2::SubsystemBase {
   /**
    * Sets the drive subsystem to the specified chassis speeds.
    *
-   * @param speeds Chassis speeds.
+   * The speed direction must be relative to the "alliance wall".
+   * Positive X is away from the wall.
+   * Positive Y is to the left.
+   * Zero heading is away from the wall.
+   *
+   * @param speeds Chassis speeds relative to the "alliance wall".
    */
   void SetChassisSpeeds(const frc::ChassisSpeeds& speeds);
 
@@ -227,6 +241,41 @@ class DriveSubsystem : public frc2::SubsystemBase {
    */
   void ResetMaxSpeedOverride() {
     m_maxSpeedOverride = std::nullopt;
+  }
+
+  /**
+   * Gets the beam vector to the loading zone vision target.
+   */
+  std::optional<frc::Pose2d> GetLoadBeam() const {
+    // note that index here is zero-based
+    return GetVisionTargetVector(
+      frc::DriverStation::GetAlliance() == frc::DriverStation::Alliance::kRed ? 4 : 3);
+  }
+
+  /**
+   * Gets the vector to the vision target.
+   */
+  std::optional<frc::Pose2d> GetVisionTargetVector(int index) const {
+    const auto target = m_visionTargets[index];
+    return target.Y() >= 0_m ? std::optional<frc::Pose2d> { target } : std::nullopt;
+  }
+
+  /**
+   * Gets the distance to the vision target.
+   */
+  std::optional<units::meter_t> GetVisionTargetDistance(int index) const {
+    const auto translation = m_visionTargets[index].Translation();
+    return translation.Y() >= 0_m ? std::optional<units::meter_t> { translation.Norm() }
+                                  : std::nullopt;
+  }
+
+  /**
+   * Gets the angle to the vision target.
+   */
+  std::optional<units::degree_t> GetVisionTargetAngle(int index) const {
+    const auto target = m_visionTargets[index];
+    return target.Y() >= 0_m ? std::optional<units::degree_t> { target.Rotation().Degrees() }
+                             : std::nullopt;
   }
 
   /**
@@ -284,6 +333,15 @@ class DriveSubsystem : public frc2::SubsystemBase {
   std::optional<units::radian_t> m_orientationLock;
   frc::PIDController m_orientationController;
 
+  // trust radius (must be within distance to the target for vision to be trusted)
+  units::meter_t m_trustRadius = -1_m;
+  units::meter_t m_tagLockX = 0_m;
+  units::meter_t m_tagLockY = 0_m;
+  units::second_t m_tagLockTime = 0_s;
+  double m_trustVisionX = 1.0;
+  double m_trustVisionY = 1.0;
+  double m_trustVisionH = 100.0;
+
   // indicates that robot should maintain X wheel formation when stopped
   bool m_stopX;
 
@@ -305,6 +363,8 @@ class DriveSubsystem : public frc2::SubsystemBase {
   WPI_PigeonIMU m_gyro { m_gyroController };
 
   static constexpr double m_gyroSign = -1.0;  // flip the sign if changing gyro orientation
+  static constexpr frc::Translation2d Zero = {};
+  static constexpr frc::Pose2d NoPose = { -100_m, -100_m, 0_rad };
 
   units::radian_t m_pitch;
   units::radian_t m_roll;
@@ -321,14 +381,38 @@ class DriveSubsystem : public frc2::SubsystemBase {
   // external vision system to compensate for the drift
   void UpdateOdometry();
 
+  double GetVisionTargetDistanceTelemetry(int index) const {
+    const auto d = GetVisionTargetDistance(index);
+    return d.has_value() ? d.value().value() : 0.0;
+  }
+
+  double GetVisionTargetAngleTelemetry(int index) const {
+    const auto d = GetVisionTargetAngle(index);
+    return d.has_value() ? d.value().value() : -1.0;
+  }
+
 #ifdef DRIVETRAIN_ODOMETRY_VISION
   frc::SwerveDrivePoseEstimator<NUMBER_OF_MODULES> m_odometry;
 #else
   frc::SwerveDriveOdometry<NUMBER_OF_MODULES> m_odometry;
 #endif
 
-  nt::DoubleArraySubscriber m_visionPose;
+  nt::DoubleArraySubscriber m_visionPoseSubscriber;
+  nt::DoubleArraySubscriber m_visionTargetsSubscriber;
 
-  // Tracks robot position on the field (for debugging via Glass)
+  // translation and direction to each of the vision targets
+  frc::Pose2d m_visionTargets[8];
+
+  // vision pose adjusted to the "alliance wall" coordinates
+  frc::Pose2d m_visionPose;
+
+  // identifier (index) of the currently locked target or -1 otherwise
+  int m_lockedTargetId = -1;
+
+  // timestamp when we had the lock acquired
+  units::second_t m_lockedTargetTimestamp;
+
+  // tracks robot position on the field (for debugging via Glass)
   frc::Field2d m_field;
+  frc::Field2d m_fieldVision;
 };

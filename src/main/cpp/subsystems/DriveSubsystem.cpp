@@ -13,6 +13,7 @@
 #include <wpi/sendable/SendableBuilder.h>
 
 #include "Constants.h"
+#include "Field.h"
 #include "Settings.h"
 #include "utils/MathUtils.h"
 #include "utils/SwerveUtils.h"
@@ -35,6 +36,10 @@ REGISTER_DOUBLE(DriveTuneMaxSpeed, "Drive/Tune/Max Speed (mps)", DriveConstants:
 REGISTER_DOUBLE(DriveTuneMaxAngularSpeed, "Drive/Tune/Max Angular Speed (dps)", DriveConstants::kMaxAngularSpeed.convert<units::degrees_per_second>().value())
 REGISTER_DOUBLE(DriveTuneDeadband, "Drive/Tune/Deadband", OIConstants::kDriveDeadband)
 REGISTER_DOUBLE(DriveOrientationP, "Drive/Tune/Orientation kP", 0.5)
+REGISTER_DOUBLE(DriveVisionTrustRadius, "Drive/Vision/Trust Radius", 3)
+REGISTER_DOUBLE(DriveVisionTagLockX, "Drive/Vision/Tag Lock X", 0.1)
+REGISTER_DOUBLE(DriveVisionTagLockY, "Drive/Vision/Tag Lock Y", 1)
+REGISTER_DOUBLE(DriveVisionTagLockTime, "Drive/Vision/Tag Lock Time (s)", 2)
 
 // clang-format on
 
@@ -48,6 +53,10 @@ double to90(units::degree_t value) {
 }
 
 static const double defaultVisionPosition[] = { -1.0, -1.0, 0.0 };
+static const double defaultVisionTargets[] = {
+  -1.0, -1.0, 0.0, -1.0, -1.0, 0.0, -1.0, -1.0, 0.0, -1.0, -1.0, 0.0,
+  -1.0, -1.0, 0.0, -1.0, -1.0, 0.0, -1.0, -1.0, 0.0, -1.0, -1.0, 0.0,
+};
 
 DriveSubsystem::DriveSubsystem() :
   m_rotLimiter(GetDriveSlewRateRotation() / 1_s),
@@ -58,6 +67,13 @@ DriveSubsystem::DriveSubsystem() :
   m_maxAngularSpeed { units::degrees_per_second_t { GetDriveTuneMaxAngularSpeed() } },
   m_headingStep { units::convert<units::degrees, units::radians>(GetDriveTuneHeadingStep()) },
   m_orientationController { GetDriveOrientationP(), 0.0, 0.0 },
+  m_trustRadius { units::meter_t { GetDriveVisionTrustRadius() } },
+  m_tagLockX { units::meter_t { GetDriveVisionTagLockX() } },
+  m_tagLockY { units::meter_t { GetDriveVisionTagLockY() } },
+  m_tagLockTime { units::second_t { GetDriveVisionTagLockTime() } },
+  m_trustVisionX { GetDrivePoseStdDevVisionX() },
+  m_trustVisionY { GetDrivePoseStdDevVisionY() },
+  m_trustVisionH { GetDrivePoseStdDevVisionH() },
   m_frontLeft {
     kFrontLeftDrivingCanId,
     kFrontLeftTurningCanId,
@@ -96,10 +112,14 @@ DriveSubsystem::DriveSubsystem() :
   m_orientationController.EnableContinuousInput(-std::numbers::pi, std::numbers::pi);
 
   frc::SmartDashboard::PutData("Field", &m_field);
+  frc::SmartDashboard::PutData("Field Vision", &m_fieldVision);
   frc::SmartDashboard::PutData("Gyro", &m_gyro);
 
   const auto ntinst = nt::NetworkTableInstance::GetDefault();
-  m_visionPose = ntinst.GetDoubleArrayTopic("/Vision/PoseArray").Subscribe(defaultVisionPosition);
+  m_visionPoseSubscriber =
+    ntinst.GetDoubleArrayTopic("/Vision/PoseArray").Subscribe(defaultVisionPosition);
+  m_visionTargetsSubscriber =
+    ntinst.GetDoubleArrayTopic("/Vision/TargetVectors").Subscribe(defaultVisionTargets);
 }
 
 void DriveSubsystem::InitSendable(wpi::SendableBuilder& builder) {
@@ -122,16 +142,40 @@ void DriveSubsystem::InitSendable(wpi::SendableBuilder& builder) {
   builder.AddDoubleProperty("Telemetry/Pose/X",             [this] { return GetPose().X().value(); }, nullptr);
   builder.AddDoubleProperty("Telemetry/Pose/Y",             [this] { return GetPose().Y().value(); }, nullptr);
   builder.AddDoubleProperty("Telemetry/Pose/Θ",             [this] { return to180(GetPose().Rotation().Radians()); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Vision Pose/X",      [this] { return GetVisionPose().X().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Vision Pose/Y",      [this] { return GetVisionPose().Y().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Vision Pose/Θ",      [this] { return to180(GetVisionPose().Rotation().Radians()); }, nullptr);
   builder.AddDoubleProperty("Telemetry/Speed/Vx",           [this] { return m_currentVx.value(); }, nullptr);
   builder.AddDoubleProperty("Telemetry/Speed/Vy",           [this] { return m_currentVy.value(); }, nullptr);
   builder.AddDoubleProperty("Telemetry/Speed/ω",            [this] { return m_currentOmega.convert<units::deg_per_s>().value(); }, nullptr);
   builder.AddDoubleProperty("Telemetry/Gyro/Yaw",           [this] { return to180(GetYaw().Radians()); }, nullptr);
-  builder.AddDoubleProperty("Telemetry/Gyro/Pitch",         [this] { return m_pitch.convert<units::degrees>().value(); }, nullptr);
-  builder.AddDoubleProperty("Telemetry/Gyro/Roll",          [this] { return m_roll.convert<units::degrees>().value(); }, nullptr);
-  builder.AddDoubleProperty("Telemetry/Gyro/Pitch per s",   [this] { return m_pitchVelocity.convert<units::deg_per_s>().value(); }, nullptr);
-  builder.AddDoubleProperty("Telemetry/Gyro/Roll per s",    [this] { return m_rollVelocity.convert<units::deg_per_s>().value(); }, nullptr);
-  builder.AddDoubleProperty("Telemetry/Gyro/Inclination",   [this] { return m_inclination.convert<units::degree>().value(); }, nullptr);
-  builder.AddDoubleProperty("Telemetry/Gyro/Incl per s",    [this] { return m_inclinationVelocity.convert<units::deg_per_s>().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Gyro/Pitch",         [this] { return GetPitch().convert<units::degrees>().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Gyro/Roll",          [this] { return GetRoll().convert<units::degrees>().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Gyro/Pitch per s",   [this] { return GetPitchVelocity().convert<units::deg_per_s>().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Gyro/Roll per s",    [this] { return GetRollVelocity().convert<units::deg_per_s>().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Gyro/Inclination",   [this] { return GetInclination().convert<units::degree>().value(); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Gyro/Incl per s",    [this] { return GetInclinationVelocity().convert<units::deg_per_s>().value(); }, nullptr);
+
+  // vision
+  #ifdef LOG_VISION_TARGETS
+  builder.AddDoubleProperty("Telemetry/Vision/T1/L",        [this] { return GetVisionTargetDistanceTelemetry(0); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Vision/T2/L",        [this] { return GetVisionTargetDistanceTelemetry(1); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Vision/T3/L",        [this] { return GetVisionTargetDistanceTelemetry(2); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Vision/T4/L",        [this] { return GetVisionTargetDistanceTelemetry(3); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Vision/T5/L",        [this] { return GetVisionTargetDistanceTelemetry(4); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Vision/T6/L",        [this] { return GetVisionTargetDistanceTelemetry(5); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Vision/T7/L",        [this] { return GetVisionTargetDistanceTelemetry(6); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Vision/T8/L",        [this] { return GetVisionTargetDistanceTelemetry(7); }, nullptr);
+
+  builder.AddDoubleProperty("Telemetry/Vision/T1/Θ",        [this] { return GetVisionTargetAngleTelemetry(0); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Vision/T2/Θ",        [this] { return GetVisionTargetAngleTelemetry(1); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Vision/T3/Θ",        [this] { return GetVisionTargetAngleTelemetry(2); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Vision/T4/Θ",        [this] { return GetVisionTargetAngleTelemetry(3); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Vision/T5/Θ",        [this] { return GetVisionTargetAngleTelemetry(4); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Vision/T6/Θ",        [this] { return GetVisionTargetAngleTelemetry(5); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Vision/T7/Θ",        [this] { return GetVisionTargetAngleTelemetry(6); }, nullptr);
+  builder.AddDoubleProperty("Telemetry/Vision/T8/Θ",        [this] { return GetVisionTargetAngleTelemetry(7); }, nullptr);
+  #endif
 
   // states
   builder.AddBooleanProperty("Telemetry/X formation",       [this] { return m_stopX; }, nullptr);
@@ -360,25 +404,133 @@ void DriveSubsystem::UpdateOdometry() {
       m_rearRight.GetPosition(),
     });
 
+  const auto visionTargets = m_visionTargetsSubscriber.GetAtomic();
+
+  // update vision target vectors and find the nearest one based on the Euclidean distance
+  units::meter_t shortestDistance = 999_m;  // some big number
+  int nearestTargetId = -1;
+
+  for (int i = 0; i < 8; ++i) {
+    m_visionTargets[i] = frc::Pose2d(
+      units::meter_t { visionTargets.value[i * 3] },
+      units::meter_t { visionTargets.value[i * 3 + 1] },
+      units::radian_t { visionTargets.value[i * 3 + 2] });
+
+    // important: vision target vector is pointing from the robot's center to the tag
+    // X indicates lateral translation (left or right) and can be negative
+    // Y indicates distance (projection) to the tag's plane and is always positive
+    //
+    // negative Y value is an indicator that tag's vector is not reported
+    if (m_visionTargets[i].Y() >= 0_m) {
+      const auto distance = m_visionTargets[i].Translation().Norm();
+      if (distance < shortestDistance) {
+        shortestDistance = distance;
+        nearestTargetId = i;
+      }
+    }
+  }
+
+  // we consider target "locked" when we are close (within 1 meter of
+  // the tag's Y coordinate of the vector) and we are aligned against
+  // the tag within certain boundaries (e.g. +/- 10cm)
+  if (nearestTargetId >= 0) {
+    const auto x = m_visionTargets[nearestTargetId].X();
+    const auto y = m_visionTargets[nearestTargetId].Y();
+
+    if (units::math::fabs(x) < m_tagLockX && units::math::fabs(y) < m_tagLockY) {
+      if (m_lockedTargetId != nearestTargetId) {
+        m_lockedTargetId = nearestTargetId;
+        m_lockedTargetTimestamp = frc::Timer::GetFPGATimestamp();
+      }
+    }
+  } else {
+    // reset any previous locks
+    m_lockedTargetId = -1;
+    m_lockedTargetTimestamp = -1_s;
+  }
+
 #ifdef DRIVETRAIN_ODOMETRY_VISION
+  // code here uses wpilib odometry that employs Kalman filters
+  // to compensate for noisy data coming from vision;
+  // however, it was discovered that produced estimated position
+  // swings dramatically (and inexplicably) after we restart
+  // feeding vision data once tag has been required, making
+  // this approach practically unusable
+
   // feed global position from camera
-  const auto visionPose = m_visionPose.GetAtomic();
-  const auto timestamp = units::microsecond_t { (double) visionPose.time };
-  // const auto timestamp = frc::Timer::GetFPGATimestamp();
+  const auto visionPose = m_visionPoseSubscriber.GetAtomic();
+  const auto x = units::meter_t { visionPose.value[0] };
 
-  const auto x = units::length::meter_t { visionPose.value[0] };
-  const auto y = units::length::meter_t { visionPose.value[1] };
-  const auto r = units::angle::radian_t { visionPose.value[2] };
+  // only use pose if we have one and if are within trust radius of any target
+  if (x.value() >= 0.0 && shortestDistance > 0_m && shortestDistance < m_trustRadius) {
+    const auto timestamp = units::microsecond_t { (double) visionPose.time };
+    const auto y = units::meter_t { visionPose.value[1] };
+    const auto r = units::radian_t { visionPose.value[2] };
 
+    m_visionPose =
+      Field::ToAlliancePose(frc::Pose2d { frc::Translation2d(x, y), frc::Rotation2d(r) });
+
+    m_odometry.SetVisionMeasurementStdDevs({
+      shortestDistance.value() * m_trustVisionX,
+      shortestDistance.value() * m_trustVisionY,
+      m_trustVisionH,
+    });
+
+    m_odometry.AddVisionMeasurement(m_visionPose, timestamp);
+  } else {
+    m_visionPose = NoPose;
+  }
+#else
+  // code here uses vision to reset odometry position, but not orientation
+  // unless we have a good target lock for some time;
+  // this allows periodic reset of the odometry without compromising driver's
+  // ability to control the robot, that depends exclusively on the correct
+  // orientation of the robot; essentially we put our trust in the gyro to
+  // control the orientation but periodically correct field positioning;
+  //
+  // worst case scenario, when the field placement is invalid, will skew
+  // auto alignment until positioning is restored, but won't tamper with
+  // driver's teleop controls
+
+  const auto visionPose = m_visionPoseSubscriber.GetAtomic();
+  const auto x = units::meter_t { visionPose.value[0] };
+
+  // X coordinate would be negative when the pose is not reported;
+  // vision code does some filtering of bad poses and won't report poses
+  // that fall outside of its trust radius (~3m)
   if (x.value() >= 0.0) {
-    frc::Pose2d pose(frc::Translation2d(x, y), frc::Rotation2d(r));
-    m_odometry.AddVisionMeasurement(pose, timestamp);
+    // const auto timestamp = units::microsecond_t { (double) visionPose.time };
+    const auto y = units::meter_t { visionPose.value[1] };
+    const auto r = units::radian_t { visionPose.value[2] };
+
+    m_visionPose =
+      Field::ToAlliancePose(frc::Pose2d { frc::Translation2d(x, y), frc::Rotation2d(r) });
+
+    // if do we have lock acquired long enough, use orientation from vision
+    // otherwise, keep use current heading from the gyro
+    const auto currentTime = frc::Timer::GetFPGATimestamp();
+    const auto useVisionHeading = m_lockedTargetId >= 0 && m_tagLockTime > 0_s &&
+                                  currentTime - m_lockedTargetTimestamp > m_tagLockTime;
+
+    m_odometry.ResetPosition(
+      GetYaw(),
+      {
+        m_frontLeft.GetPosition(),
+        m_frontRight.GetPosition(),
+        m_rearLeft.GetPosition(),
+        m_rearRight.GetPosition(),
+      },
+      frc::Pose2d {
+        m_visionPose.Translation(),
+        useVisionHeading ? m_visionPose.Rotation() : GetHeading(),
+      });
   }
 #endif
 
   // update field position for debugging purposes
   const auto pose = GetPose();
   m_field.SetRobotPose(pose);
+  m_fieldVision.SetRobotPose(m_visionPose);
 
   // update pitch/roll/inclination
   const auto heading = pose.Rotation();
@@ -421,6 +573,13 @@ void DriveSubsystem::UpdateTuningParameters() {
   m_maxSpeed = units::meters_per_second_t { GetDriveTuneMaxSpeed() };
   m_maxAngularSpeed = units::degrees_per_second_t { GetDriveTuneMaxAngularSpeed() };
   m_headingStep = units::convert<units::degrees, units::radians>(GetDriveTuneHeadingStep());
+  m_trustRadius = units::meter_t { GetDriveVisionTrustRadius() };
+  m_tagLockX = { units::meter_t { GetDriveVisionTagLockX() } };
+  m_tagLockY = { units::meter_t { GetDriveVisionTagLockY() } };
+  m_tagLockTime = { units::second_t { GetDriveVisionTagLockTime() } };
+  m_trustVisionX = GetDrivePoseStdDevVisionX();
+  m_trustVisionY = GetDrivePoseStdDevVisionY();
+  m_trustVisionH = GetDrivePoseStdDevVisionH();
 
   // re-create slew rate limiters for translation magnitude and rotation
   // since these do not have a mechanism to update rate limits at runtime
@@ -434,6 +593,8 @@ void DriveSubsystem::UpdateTuningParameters() {
   m_frontRight.UpdateTuningParameters();
   m_rearLeft.UpdateTuningParameters();
   m_rearRight.UpdateTuningParameters();
+
+  m_orientationController.SetP(GetDriveOrientationP());
 }
 
 void DriveSubsystem::ResetOdometry(const frc::Pose2d& pose) {

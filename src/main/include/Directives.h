@@ -1,5 +1,8 @@
 // Indicates that auto commands should log telemetry data
-#define AUTO_COMMAND_LOG
+#define LOG_AUTO_COMMAND
+
+// Indicates that vision targets distances and angles must be logged
+#define LOG_VISION_TARGETS
 
 // Indicates that detailed logging of DS and joystick controls should be enabled
 #define LOG_DATA_DRIVER_STATION

@@ -49,7 +49,7 @@ frc::ChassisSpeeds CustomHolonomicDriveController::Calculate(
       currentPose.Rotation().Radians().value(), desiredRotation.Radians().value()),
   };
 
-#ifdef AUTO_COMMAND_LOG
+#ifdef LOG_AUTO_COMMAND
   // clang-format off
   frc::SmartDashboard::PutNumber("Telemetry/Holonomic/ΔΘ ", units::convert<units::radians, units::degrees>(m_thetaController.GetPositionError()));
   frc::SmartDashboard::PutNumber("Telemetry/Holonomic/ΔX", m_xController.GetPositionError());

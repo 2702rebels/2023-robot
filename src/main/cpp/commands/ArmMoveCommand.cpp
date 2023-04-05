@@ -4,6 +4,8 @@
 
 #include "commands/ArmMoveCommand.h"
 
+#include "frc/DataLogManager.h"
+
 ArmMoveCommand::ArmMoveCommand(ArmSubsystem* arm, units::degree_t angle, units::inch_t distance) :
   m_arm(arm),
   m_axis1Angle(angle),
@@ -38,6 +40,8 @@ ArmMoveCommand::ArmMoveCommand(ArmSubsystem* arm, units::inch_t distance) :
 
 // Called when the command is initially scheduled.
 void ArmMoveCommand::Initialize() {
+  frc::DataLogManager::Log("ArmMoveCommand::Initialize");
+
   if (m_isUsePosition) {
     m_arm->Move(m_position);
   } else if (m_isAngleOnly) {
@@ -53,7 +57,9 @@ void ArmMoveCommand::Initialize() {
 void ArmMoveCommand::Execute() {}
 
 // Called once the command ends or is interrupted.
-void ArmMoveCommand::End(bool interrupted) {}
+void ArmMoveCommand::End(bool interrupted) {
+  frc::DataLogManager::Log(fmt::format("ArmMoveCommand::End {}", interrupted));
+}
 
 // Returns true when the command should end.
 bool ArmMoveCommand::IsFinished() {

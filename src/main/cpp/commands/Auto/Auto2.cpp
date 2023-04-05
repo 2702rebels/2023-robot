@@ -1,30 +1,19 @@
 #include "commands/auto/Auto2.h"
 
+#include "Field.h"
 #include "commands/AutoBalanceCommand.h"
 #include "commands/DriveRotateCommand.h"
 #include "commands/DriveToPoseCommand.h"
 #include "commands/DriveTrajectoryCommand.h"
 #include "frc2/command/InstantCommand.h"
 
-constexpr auto initialPose = frc::Pose2d { 0_m, 0_m, 180_deg };
-constexpr auto targetPose = frc::Pose2d { 2_m, 1_m, 90_deg };
+constexpr auto offset = frc::Translation2d { RobotConstants::kBumperSize / 2, 0_m };
 
-Auto2::Auto2(DriveSubsystem* drive) {
+Auto2::Auto2(DriveSubsystem* drive, LedSubsystem* led) {
   AddCommands(
-    frc2::InstantCommand([drive] { drive->ResetOdometry(initialPose); }, {}),
+    frc2::InstantCommand([led] { led->SetFrontLEDsOn(false); }, {}),
+    frc2::InstantCommand([drive] { drive->ResetOdometry(Field::GetFieldPose(Field::CONE_6)); }, {}),
     DriveRotateCommand(1_deg, drive),
-    DriveTrajectoryCommand(
-      {
-        Waypoint(frc::Pose2d { 0_m, 0_m, 0_deg }, frc::Rotation2d(0_deg)),
-        Waypoint(frc::Pose2d { 1_m, 0_m, 0_deg }),
-        Waypoint(frc::Pose2d { 2_m, 0_m, 0_deg }, 2.5_mps),
-        Waypoint(frc::Pose2d { 3.5_m, 0_m, 0_deg }, 1_mps),
-        Waypoint(frc::Pose2d { 4.8_m, 0_m, 0_deg }, frc::Rotation2d(0_deg)),
-      },
-      initialPose.Translation(),
-      true,   // reset odometry
-      false,  // timer-based stop
-      true,   // print trajectory
-      drive));
-  // DriveToPoseCommand(targetPose, drive));
+    DriveToPoseCommand({ Field::GetGamePiece(3) - offset, 0_deg }, drive, true),
+    DriveToPoseCommand(Field::GetFieldPose(Field::CUBE_3), drive, true));
 }

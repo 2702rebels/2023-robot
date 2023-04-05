@@ -80,7 +80,7 @@ void DriveOverBridgeCommand::Execute() {
 
   m_drive->SetChassisSpeeds(speeds);
 
-#ifdef AUTO_COMMAND_LOG
+#ifdef LOG_AUTO_COMMAND
   // clang-format off
   frc::SmartDashboard::PutNumber("Telemetry/DriveOverBridge/Angle", m_angle.convert<units::degrees>().value());
   frc::SmartDashboard::PutNumber("Telemetry/DriveOverBridge/Velocity", m_velocity.convert<units::degrees_per_second>().value());
@@ -95,7 +95,8 @@ void DriveOverBridgeCommand::Execute() {
 
 void DriveOverBridgeCommand::End(bool interrupted) {
   m_drive->Stop();
-  frc::SmartDashboard::PutString("Telemetry/DriveOverBridge/Stage", "Final");
+  frc::SmartDashboard::PutString(
+    "Telemetry/DriveOverBridge/Stage", interrupted ? "Final (interrupted)" : "Final");
 }
 
 bool DriveOverBridgeCommand::IsFinished() {

@@ -134,7 +134,7 @@ void DriveTrajectoryCommand::Execute() {
   const auto speeds = m_controller.Calculate(currentPose, desiredState, desiredRotation);
   m_drive->SetChassisSpeeds(speeds);
 
-#ifdef AUTO_COMMAND_LOG
+#ifdef LOG_AUTO_COMMAND
   const auto distanceError = desiredState.pose.Translation().Distance(currentPose.Translation());
   const auto thetaError =
     MathUtils::ClampAngle(desiredRotation.rotation.Radians() - currentPose.Rotation().Radians());

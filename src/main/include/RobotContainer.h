@@ -86,7 +86,7 @@ class RobotContainer {
   // The autonomous routines
   Auto_DoNothing m_auto_doNothing;
   Auto_DriveDistance m_auto_driveForwards { &m_drive };
-  Auto2 m_auto2 { &m_drive };
+  Auto2 m_auto2 { &m_drive, &m_leds };
   Auto3 m_auto3 { &m_drive };
 
 #ifdef ARM_ENABLED

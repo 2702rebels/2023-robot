@@ -22,7 +22,7 @@ REGISTER_DOUBLE(AutoBalanceLevelThreshold, "Auto/Balance/Level Threshold", 3.0);
 
 AutoBalanceCommand::AutoBalanceCommand(DriveSubsystem* drive, Side side) :
   m_drive { drive },
-  m_direction { side == Side::LEFT ? 1.0 : -1.0 } {
+  m_direction { side == Side::INNER ? 1.0 : -1.0 } {
   AddRequirements(drive);
 }
 
@@ -86,6 +86,8 @@ void AutoBalanceCommand::Execute() {
         } else {
           speed = (m_angle > 0_rad ? 1_mps : -1_mps) * GetAutoBalanceCrawlSpeed();
         }
+      } else {
+        m_drive->StopX();
       }
       break;
 
@@ -99,7 +101,7 @@ void AutoBalanceCommand::Execute() {
 
   m_drive->SetChassisSpeeds(speeds);
 
-#ifdef AUTO_COMMAND_LOG
+#ifdef LOG_AUTO_COMMAND
   // clang-format off
   frc::SmartDashboard::PutNumber("Telemetry/AutoBalance/Speed", speed.value());
   frc::SmartDashboard::PutNumber("Telemetry/AutoBalance/Angle", m_angle.convert<units::degrees>().value());
