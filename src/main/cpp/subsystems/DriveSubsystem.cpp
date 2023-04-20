@@ -509,8 +509,10 @@ void DriveSubsystem::UpdateOdometry() {
     // if do we have lock acquired long enough, use orientation from vision
     // otherwise, keep use current heading from the gyro
     const auto currentTime = frc::Timer::GetFPGATimestamp();
-    const auto useVisionHeading = m_lockedTargetId >= 0 && m_tagLockTime > 0_s &&
-                                  currentTime - m_lockedTargetTimestamp > m_tagLockTime;
+    // const auto useVisionHeading = m_lockedTargetId >= 0 && m_tagLockTime > 0_s &&
+    //                               currentTime - m_lockedTargetTimestamp > m_tagLockTime;
+
+    const auto useVisionHeading = false;
 
     m_odometry.ResetPosition(
       GetYaw(),
